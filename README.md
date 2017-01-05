@@ -11,6 +11,9 @@ as managing a connection pool to iRODS.
 
 TODO
 
+n.b., Uses Python 2.7 to maintain compatibility with the Arvados Python
+SDK.
+
 ## Configuration
 
 TODO
