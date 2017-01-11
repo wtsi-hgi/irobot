@@ -58,15 +58,18 @@ create_irods_env() {
 create_dockerfile() {
   # Create Dockerfile from template for user
   local user="$1"
+  local password="$2"
+  local krb_realm="$3"
   local dockerfile="Dockerfile-${user}"
 
   export user
-  export keytab="$2"
-  export krb_realm="$3"
+  export password
+  export krb_realm
   export gid="$(id -g ${user})"
   export group="$(id -gn ${user})"
   export uid="$(id -u ${user})"
   export irods_env="$(create_irods_env "${user}")"
+  export keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
   envsubst < Dockerfile.template > "${dockerfile}"
   
   echo "${dockerfile}"
@@ -77,8 +80,7 @@ main() {
   local password="$(get_password $user)"
   local krb_realm="$(get_krb_realm)"
 
-  local keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
-  local dockerfile="$(create_dockerfile "${user}" "${keytab}" "${krb_realm}")"
+  local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
 
   docker build -t "irods-kerberos-test:${user}" -f "${dockerfile}" .
 }
