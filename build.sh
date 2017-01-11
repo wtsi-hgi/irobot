@@ -17,7 +17,8 @@ get_password() {
   # Prompt for user password
   local user="$1"
   local password
-  read -s -p "Enter password for ${user}: " password
+
+  read -srp "Enter password for ${user}: " password
   echo "$password"
 }
 
@@ -39,7 +40,7 @@ create_keytab() {
 	EOF
   )"
 
-  rm -f ${keytab}
+  rm -f "${keytab}"
   ktutil < <(echo "${ktutil_script}") > /dev/null
   echo "${keytab}"
 }
@@ -65,9 +66,9 @@ create_dockerfile() {
   export user
   export password
   export krb_realm
-  export gid="$(id -g ${user})"
-  export group="$(id -gn ${user})"
-  export uid="$(id -u ${user})"
+  export gid="$(id -g "${user}")"
+  export group="$(id -gn "${user}")"
+  export uid="$(id -u "${user}")"
   export irods_env="$(create_irods_env "${user}")"
   export keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
   envsubst < Dockerfile.template > "${dockerfile}"
@@ -77,7 +78,7 @@ create_dockerfile() {
 
 main() {
   local user="$1"
-  local password="$(get_password $user)"
+  local password="$(get_password "${user}")"
   local krb_realm="$(get_krb_realm)"
 
   local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
@@ -85,4 +86,4 @@ main() {
   docker build -t "irods-kerberos-test:${user}" -f "${dockerfile}" .
 }
 
-main ${1:-$(whoami)}
+main "${1:-$(whoami)}"
