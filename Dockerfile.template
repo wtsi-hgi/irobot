@@ -14,4 +14,16 @@ RUN wget ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-icommands-
          ftp://ftp.renci.org/pub/irods/plugins/irods_auth_plugin_krb/1.4/irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
  && dpkg -i irods-icommands-4.1.10-ubuntu14-x86_64.deb \
             irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
- && apt-get -fy install
+ && apt-get -fy install \
+ && rm *.deb
+
+# Create user and group
+RUN groupadd -fg ${gid} ${group} \
+ && useradd -mg ${gid} -u ${uid} ${user}
+ADD ${keytab} /home/${user}/${keytab}
+RUN chown ${user} /home/${user}/${keytab}
+
+# Initialise Kerberos
+WORKDIR /home/${user}
+USER ${user}
+RUN kinit ${user}@${krb_realm} -k -t /home/${user}/${keytab}
