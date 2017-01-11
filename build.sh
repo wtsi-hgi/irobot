@@ -46,13 +46,18 @@ create_keytab() {
 
 create_dockerfile() {
   # Create Dockerfile from template for user
-  export user="$1"
+  local user="$1"
+  local dockerfile="Dockerfile-${user}"
+
+  export user
   export keytab="$2"
   export krb_realm="$3"
   export gid="$(id -g ${user})"
   export group="$(id -gn ${user})"
   export uid="$(id -u ${user})"
-  envsubst < Dockerfile.template
+  envsubst < Dockerfile.template > "${dockerfile}"
+  
+  echo "${dockerfile}"
 }
 
 main() {
@@ -61,8 +66,9 @@ main() {
   local krb_realm="$(get_krb_realm)"
 
   local keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
+  local dockerfile="$(create_dockerfile "${user}" "${keytab}" "${krb_realm}")"
 
-  docker build -t "irods-kerberos-test:${user}" -f <(create_dockerfile "${user}" "${keytab}" "${krb_realm}")
+  docker build -t "irods-kerberos-test:${user}" -f "${dockerfile}" .
 }
 
 main ${1:-$(whoami)}
