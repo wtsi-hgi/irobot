@@ -17,11 +17,12 @@ RUN wget ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-icommands-
  && apt-get -fy install \
  && rm *.deb
 
-# Create user and group
+# Create user and group, with Kerberos keytab and iRODS environment
 RUN groupadd -fg ${gid} ${group} \
  && useradd -mg ${gid} -u ${uid} ${user}
 ADD ${keytab} /home/${user}/${keytab}
-RUN chown ${user} /home/${user}/${keytab}
+ADD ${irods_env} /home/${user}/.irods/irods_environment.json
+RUN chown ${user}:${group} /home/${user}/${keytab} /home/${user}/.irods /home/${user}/.irods/irods_environment.json
 
 # Initialise Kerberos
 WORKDIR /home/${user}
