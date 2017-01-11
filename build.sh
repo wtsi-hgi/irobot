@@ -44,6 +44,17 @@ create_keytab() {
   echo "${keytab}"
 }
 
+create_irods_env() {
+  # Create irods_environment.json from template for user
+  local user="$1"
+  local irods_env="irods_environment.json-${user}"
+
+  export user
+  envsubst < irods_environment.json.template > "${irods_env}"
+
+  echo "${irods_env}"
+}
+
 create_dockerfile() {
   # Create Dockerfile from template for user
   local user="$1"
@@ -55,6 +66,7 @@ create_dockerfile() {
   export gid="$(id -g ${user})"
   export group="$(id -gn ${user})"
   export uid="$(id -u ${user})"
+  export irods_env="$(create_irods_env "${user}")"
   envsubst < Dockerfile.template > "${dockerfile}"
   
   echo "${dockerfile}"
