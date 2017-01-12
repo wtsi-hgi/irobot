@@ -19,15 +19,33 @@
 
 set -eu -o pipefail
 
-get_krb_realm() {
-  # Extract Kerberos realm from /etc/krb5.conf
-  (awk 'BEGIN { sec = 0 }
-        /\[.*\]/ { sec = 0 }
-        /\[libdefaults\]/ { sec = 1 }
-        { if (sec) print $0 }' \
-  | sed 's/#.*//' \
-  | awk '/default_realm/ { print $3 }') \
+trim() {
+  # Trim whitespace
+  awk '{ $1 = $1; print }'
+}
+
+get_krb_libdefaults() {
+  # Remove comments and extract libdefaults section from /etc/krb5.conf
+  (sed 's/#.*//' \
+  | awk 'BEGIN { libdefaults = 0 }
+         /\[.*\]/ { libdefaults = 0 }
+         /\[libdefaults\]/ { libdefaults = 1 }
+         { if (libdefaults) print $0 }') \
   < /etc/krb5.conf
+}
+
+get_krb_realm() {
+  # Extract Kerberos realm
+  get_krb_libdefaults \
+  | awk -F'=' '/default_realm/ { print $2 }' \
+  | trim
+}
+
+get_krb_ciphers() {
+  # Extract permitted Kerberos ciphers
+  get_krb_libdefaults \
+  | awk -F'=' '/permitted_enctypes/ { print $2 }' \
+  | trim
 }
 
 get_password() {
@@ -39,26 +57,31 @@ get_password() {
   echo "$password"
 }
 
+create_ktutil_script() {
+  # Create the ktutil script that creates the Kerberos keytab
+  local user="$1"
+  local password="$2"
+  local krb_realm="$3"
+  local keytab="$4"
+
+  for cipher in $(get_krb_ciphers); do
+    echo "addent -password -p ${user}@${krb_realm} -k 1 -e ${cipher}"
+    echo "${password}"
+  done
+
+  echo "wkt ${keytab}"
+  echo "quit"
+}
+
 create_keytab() {
   # Create a new Kerberos keytab file for user principal
-  # TODO Get encryption methods from Kerberos configuration
   local user="$1"
   local password="$2"
   local krb_realm="$3"
   local keytab="${user}.keytab"
 
-  local ktutil_script="$(cat <<-EOF
-	addent -password -p ${user}@${krb_realm} -k 1 -e arcfour-hmac-md5
-	${password}
-	addent -password -p ${user}@${krb_realm} -k 1 -e aes256-cts
-	${password}
-	wkt ${keytab}
-	quit
-	EOF
-  )"
-
   rm -f "${keytab}"
-  ktutil < <(echo "${ktutil_script}") > /dev/null
+  ktutil < <(create_ktutil_script "${user}" "${password}" "${krb_realm}" "${keytab}") > /dev/null
   echo "${keytab}"
 }
 
@@ -98,8 +121,9 @@ main() {
   local password="$(get_password "${user}")"
   local krb_realm="$(get_krb_realm)"
 
+  # We can't use process substitution because the Dockerfile needs to be
+  # within the build path, which can't work with named pipes
   local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
-
   docker build -t "hgi/irobot:${user}" -f "${dockerfile}" .
 }
 
