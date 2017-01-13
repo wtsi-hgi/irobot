@@ -19,7 +19,6 @@ RUN wget ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-icommands-
 
 # Create sudo user and group, with Kerberos keytab, iRODS environment
 # and crontab to renew Kerberos credentials every eight hours
-# NOTE Container must be started before the generated keytab expires
 RUN groupadd -fg ${gid} ${group} \
  && useradd -mg ${gid} -u ${uid} ${user} \
  && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user} \
@@ -28,10 +27,11 @@ ADD ${keytab} /home/${user}/${keytab}
 ADD ${irods_env} /home/${user}/.irods/irods_environment.json
 RUN chown -R ${user}:${group} /home/${user}
 
-# Initialise Kerberos
+# Initialise Kerberos with a seven day renewal
+# NOTE Container must be started before the renewal expiry
 WORKDIR /home/${user}
 USER ${user}
-RUN kinit ${user}@${krb_realm} -kt /home/${user}/${keytab}
+RUN kinit -r7d ${user}@${krb_realm} -kt /home/${user}/${keytab}
 
 # TODO Start service
 # CMD sudo cron \
