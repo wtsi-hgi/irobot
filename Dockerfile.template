@@ -17,14 +17,21 @@ RUN wget ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-icommands-
  && apt-get -fy install \
  && rm *.deb
 
-# Create user and group, with Kerberos keytab and iRODS environment
+# Create sudo user and group, with Kerberos keytab, iRODS environment
+# and crontab to renew Kerberos credentials every eight hours
 RUN groupadd -fg ${gid} ${group} \
- && useradd -mg ${gid} -u ${uid} ${user}
+ && useradd -mg ${gid} -u ${uid} ${user} \
+ && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user} \
+ && echo "0 */8 * * * ${user} kinit -R ${user}@${krb_realm} -kt /home/${user}/${keytab}" > /etc/cron.d/renew-kerberos
 ADD ${keytab} /home/${user}/${keytab}
 ADD ${irods_env} /home/${user}/.irods/irods_environment.json
-RUN chown ${user}:${group} /home/${user}/${keytab} /home/${user}/.irods /home/${user}/.irods/irods_environment.json
+RUN chown -R ${user}:${group} /home/${user}
 
 # Initialise Kerberos
 WORKDIR /home/${user}
 USER ${user}
 RUN kinit ${user}@${krb_realm} -k -t /home/${user}/${keytab}
+
+# TODO Start service
+# CMD sudo cron \
+#  && ./my-binary-here
