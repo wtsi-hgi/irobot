@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright (c) 2017 Genome Research Ltd.
 # 
@@ -59,10 +59,11 @@ get_krb_ciphers() {
 
 get_password() {
   # Prompt for user password
-  local user="$1"
+  local auth_method="$1"
+  local user="$2"
   local password
 
-  read -srp "Enter password for ${user}: " password
+  read -srp "Enter ${auth_method} password for ${user}: " password
   echo "$password"
 }
 
@@ -125,18 +126,48 @@ create_dockerfile() {
   new_working_file "${dockerfile}"
 }
 
+usage() {
+  cat <<-EOF
+	iRobot Containter Builder
+	Usage: $(basename "$0") AUTH_METHOD [USER]
+	
+	Build the iRobot container, using AUTH_METHOD authentication (native or
+	Kerberos), for iRODS's USER (defaults to current user: $(whoami)).
+	EOF
+  
+  exit 1
+}
+
 main() {
-  local user="$1"
-  local password="$(get_password "${user}")"
-  local krb_realm="$(get_krb_realm)"
+  local auth_method="$1"
+  local user="$2"
+
+  [ -z "${auth_method}" ] && usage
+
+  case "${auth_method,,}" in
+    "native" | "nat")
+      # TODO
+      local password="$(get_password "iRODS native (iinit)" "${user}")"
+      exit
+      ;;
+
+    "kerberos" | "krb")
+      local password="$(get_password "Kerberos" "${user}")"
+      local krb_realm="$(get_krb_realm)"
+      local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
+      ;;
+
+    *)
+      usage
+      ;;
+  esac
 
   # We can't use process substitution because the Dockerfile needs to be
-  # within the build path, which can't work with named pipes
-  local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
+  # within the build path, which can't work with named pipes. Given that
+  # we also create a bunch of other working files, we instead just
+  # delete them all once we're done.
   docker build -t "hgi/irobot:${user}" -f "${dockerfile}" .
-
-  # Delete working files
   rm -f "${CLEANUP[@]}"
 }
 
-main "${1:-$(whoami)}"
+main "${1:-}" "${2:-$(whoami)}"
