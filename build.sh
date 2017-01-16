@@ -19,9 +19,18 @@
 
 set -eu -o pipefail
 
+declare -a CLEANUP
+
 trim() {
   # Trim whitespace
   awk '{ $1 = $1; print }'
+}
+
+new_working_file() {
+  local filename="$1"
+
+  echo "${filename}"
+  CLEANUP=(${CLEANUP[@]} ${filename})
 }
 
 get_krb_libdefaults() {
@@ -82,7 +91,7 @@ create_keytab() {
 
   rm -f "${keytab}"
   ktutil < <(create_ktutil_script "${user}" "${password}" "${krb_realm}" "${keytab}") > /dev/null
-  echo "${keytab}"
+  new_working_file "${keytab}"
 }
 
 create_irods_env() {
@@ -93,7 +102,7 @@ create_irods_env() {
   export user
   envsubst < irods_environment.json.template > "${irods_env}"
 
-  echo "${irods_env}"
+  new_working_file "${irods_env}"
 }
 
 create_dockerfile() {
@@ -113,7 +122,7 @@ create_dockerfile() {
   export keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
   envsubst < Dockerfile.template > "${dockerfile}"
   
-  echo "${dockerfile}"
+  new_working_file "${dockerfile}"
 }
 
 main() {
@@ -125,6 +134,9 @@ main() {
   # within the build path, which can't work with named pipes
   local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
   docker build -t "hgi/irobot:${user}" -f "${dockerfile}" .
+
+  # Delete working files
+  rm -f "${CLEANUP[@]}"
 }
 
 main "${1:-$(whoami)}"
