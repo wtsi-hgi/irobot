@@ -50,7 +50,7 @@ To launch the container:
 
 (Note that bind mounting `/etc/krb5.conf` is only necessary when using
 Kerberos authentication. A `cron` job runs in the Kerberos container to
-renew authentication with the KDC periodically; if the container is down
+renew credentials with the KDC periodically; if the container is down
 for any significant amount of time, this may fail and you'll have to
 rebuild the image.)
 
@@ -81,10 +81,10 @@ changes without rebuilding. An example configuration can be found in
   to a defined limit. Upon reaching the limit, files are removed.
 
   The limit should be suffixed with any of the following units: `h`
-  (`hour`), `d` (`day`), `w` (`week`), `m` (`month`) or `y` (`year`);
-  fully spelt units may be optionally pluralised. Month and year units
-  will be relative (e.g., `1 year` means "delete a file on the
-  anniversary of its last access"), while the others will be absolute.
+  (`hour`), `d` (`day`), `w` (`week`) or `y` (`year`); fully spelt units
+  may be pluralised. Year units will be relative (e.g., `1 year` means
+  "delete a file on the anniversary of its last access"), while the
+  others will be absolute.
 
 TODO: Other stuff...
 
