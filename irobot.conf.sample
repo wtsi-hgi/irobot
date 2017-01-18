@@ -1,0 +1,16 @@
+[precache]
+
+# Maximum size of the precache: it can be set to "unlimited" to grow
+# indefinitely (until the disk fills) or a defined limit. Upon reaching
+# the limit, oldest files (in terms of access time) are removed. The
+# limit should be the number of bytes, optionally suffixed with "B";
+# decimal (base 1000: k, M, G, T) or binary (base 1024: ki, Mi, Gi, Ti)
+# multiplier prefixes may also be used with the "B" suffix.
+size = unlimited
+
+# Maximum age (in terms of access time) of files in the precache: it can
+# be set to "unlimited", so that files never expire, or a defined limit.
+# Upon reaching the limit, files are removed. The limit should be
+# suffixed with any of the following units: h(our(s)), d(ay(s)),
+# w(eek(s)), m(onth(s)) or y(ear(s)).
+expiry = unlimited
