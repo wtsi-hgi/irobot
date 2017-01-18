@@ -1,4 +1,2 @@
-irods_environment.json-*
 irods_environment.json.template
-*.keytab
-Dockerfile-*
+irobot.conf
