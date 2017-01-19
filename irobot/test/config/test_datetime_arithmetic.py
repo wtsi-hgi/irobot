@@ -25,14 +25,22 @@ from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
 
 class TestDateTimeArithmetic(unittest.TestCase):
     def setUp(self):
-        # n.b., 2000 was a leap year
-        self.base = datetime(2000, 1, 1)
+        self.base = datetime(2000, 1, 1)  # n.b., 2000 was a leap year
+        self.delta = timedelta(1)
 
     def test_type_assertions(self):
         self.assertRaises(TypeError, multiply_timedelta, 0, 0)
         self.assertRaises(TypeError, multiply_timedelta, timedelta(), 'foo')
         self.assertRaises(TypeError, add_years, 0, 0)
         self.assertRaises(TypeError, add_years, datetime.utcnow(), 'foo')
+
+    def test_multiply_timedelta(self):
+        self.assertEqual(multiply_timedelta(self.delta,  0),   timedelta(0))
+        self.assertEqual(multiply_timedelta(self.delta,  1),   timedelta(1))
+        self.assertEqual(multiply_timedelta(self.delta,  2),   timedelta(2))
+        self.assertEqual(multiply_timedelta(self.delta,  0.5), timedelta(hours = 12))
+        self.assertEqual(multiply_timedelta(self.delta, -1),   timedelta(-1))
+        self.assertEqual(multiply_timedelta(self.delta, -1.5), timedelta(-1.5))
 
     def test_whole_year_shift(self):
         self.assertEqual(add_years(self.base,  0), self.base)
