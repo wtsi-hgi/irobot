@@ -2,7 +2,7 @@
 
 <!-- TODO Change to master branch on release -->
 [![Build Status](https://travis-ci.org/wtsi-hgi/irobot.svg?branch=develop)](https://travis-ci.org/wtsi-hgi/irobot)
-[![codecov.io](https://codecov.io/github/wtsi-hgi/irobot/coverage.svg?branch=develop)](https://codecov.io/github/wtsi-hgi/irobot?branch=develop)
+[![Test Coverage](https://codecov.io/gh/wtsi-hgi/irobot/branch/develop/graph/badge.svg)](https://codecov.io/gh/wtsi-hgi/irobot)
 
 iRODS-Keep brokerage service: Data from iRODS is requested for Arvados,
 either directly by a job or from a trusted agent (e.g., [Cookie
