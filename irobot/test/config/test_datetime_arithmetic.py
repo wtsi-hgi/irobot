@@ -20,21 +20,21 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from datetime import datetime, timedelta
 
-from irobot.config._add_years import _multiply_timedelta, add_years
+from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
 
 
-class TestAddYears(unittest.TestCase):
+class TestDateTimeArithmetic(unittest.TestCase):
     def setUp(self):
         # n.b., 2000 was a leap year
         self.base = datetime(2000, 1, 1)
 
     def test_type_assertions(self):
-        self.assertRaises(AssertionError, _multiply_timedelta, 0, 0)
-        self.assertRaises(AssertionError, _multiply_timedelta, timedelta(), 'foo')
+        self.assertRaises(AssertionError, multiply_timedelta, 0, 0)
+        self.assertRaises(AssertionError, multiply_timedelta, timedelta(), 'foo')
         self.assertRaises(AssertionError, add_years, 0, 0)
         self.assertRaises(AssertionError, add_years, datetime.utcnow(), 'foo')
 
-    def test_whole_shift(self):
+    def test_whole_year_shift(self):
         self.assertEqual(add_years(self.base,  0), self.base)
         self.assertEqual(add_years(self.base,  1), datetime(2001, 1, 1))
         self.assertEqual(add_years(self.base,  2), datetime(2002, 1, 1))
@@ -47,8 +47,8 @@ class TestAddYears(unittest.TestCase):
         self.assertEqual(add_years(self.base, -4), datetime(1996, 1, 1))
         self.assertEqual(add_years(self.base, -5), datetime(1995, 1, 1))
 
-    def test_fractional_shift(self):
-        self.assertEqual(add_years(self.base,  0.5), self.base + timedelta(183))
+    def test_fractional_year_shift(self):
+        self.assertEqual(add_years(self.base,  0.5), self.base + timedelta(366 / 2))
         self.assertEqual(add_years(self.base,  1.5), self.base + timedelta(366 + (365 / 2.0)))
         self.assertEqual(add_years(self.base, -0.5), self.base - timedelta(365 / 2.0))
         self.assertEqual(add_years(self.base, -1.5), self.base - timedelta(365 + (365 / 2.0)))

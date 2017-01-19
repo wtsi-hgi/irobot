@@ -23,9 +23,12 @@ from fractions import Fraction
 from types import IntType, FloatType
 
 
-def _multiply_timedelta(delta, m):
+def multiply_timedelta(delta, m):
     """
     Multiply a timedelta by m, where m can be decimal
+    
+    @note    Python 2.7 only supports multiplication and division of
+             timedelta by integers
 
     @param   delta  Input timedelta (timedelta)
     @param   m      Multiplier (numeric)
@@ -59,6 +62,6 @@ def add_years(timestamp, years):
     over_shift = timestamp.replace(year = timestamp.year + over_years)
 
     frac_years = abs(years - int(years))
-    frac_delta = _multiply_timedelta(over_shift - whole_shift, frac_years)
+    frac_delta = multiply_timedelta(over_shift - whole_shift, frac_years)
 
     return whole_shift + frac_delta
