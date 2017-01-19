@@ -11,7 +11,7 @@ install:
   - pip install -r test-requirements.txt
 
 script:
-  - nose2 -Cv
+  - nose2 -F -C -v
 
 after_success:
   - codecov
