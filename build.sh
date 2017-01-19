@@ -97,9 +97,11 @@ create_keytab() {
 
 create_irods_env() {
   # Create irods_environment.json from template for user
-  local user="$1"
+  local auth_method="$1"
+  local user="$2"
   local irods_env="irods_environment.json-${user}"
 
+  export auth_method
   export user
   envsubst < irods_environment.json.template > "${irods_env}"
 
@@ -108,21 +110,41 @@ create_irods_env() {
 
 create_dockerfile() {
   # Create Dockerfile from template for user
-  local user="$1"
-  local password="$2"
-  local krb_realm="$3"
+  local auth_method="$1"
+  local user="$2"
+  local password="$3"
   local dockerfile="Dockerfile-${user}"
 
   export user
-  export password
-  export krb_realm
-  export gid="$(id -g "${user}")"
-  export group="$(id -gn "${user}")"
   export uid="$(id -u "${user}")"
-  export irods_env="$(create_irods_env "${user}")"
-  export keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
-  envsubst < Dockerfile.template > "${dockerfile}"
-  
+  export group="$(id -gn "${user}")"
+  export gid="$(id -g "${user}")"
+
+  case "${auth_method,,}" in
+    "native" | "nat")
+      auth_method="N"
+      local irods_env="$(create_irods_env native "${user}")"
+
+      export irods_env
+      export password
+      ;;
+
+    "kerberos" | "krb")
+      auth_method="K"
+      local irods_env="$(create_irods_env KRB "${user}")"
+      local krb_realm=$(get_krb_realm)
+      local keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
+
+      export irods_env
+      export krb_realm
+      export keytab
+      ;;
+  esac
+
+  sed -n "/^[*${auth_method}]/s/^..//p" Dockerfile.template \
+  | envsubst \
+  > "${dockerfile}"
+
   new_working_file "${dockerfile}"
 }
 
@@ -134,38 +156,34 @@ usage() {
 	Build the iRobot container, using AUTH_METHOD authentication (native or
 	Kerberos), for iRODS's USER (defaults to current user: $(whoami)).
 	EOF
-  
-  exit 1
 }
 
 main() {
   local auth_method="$1"
   local user="$2"
 
-  [ -z "${auth_method}" ] && usage
-
   case "${auth_method,,}" in
     "native" | "nat")
-      # TODO
-      local password="$(get_password "iRODS native (iinit)" "${user}")"
-      exit
+      local password_hint="iRODS native (iinit)"
       ;;
 
     "kerberos" | "krb")
-      local password="$(get_password "Kerberos" "${user}")"
-      local krb_realm="$(get_krb_realm)"
-      local dockerfile="$(create_dockerfile "${user}" "${password}" "${krb_realm}")"
+      local password_hint="Kerberos"
       ;;
 
     *)
       usage
+      exit 1
       ;;
   esac
+
+  local password="$(get_password "${password_hint}" "${user}")"
 
   # We can't use process substitution because the Dockerfile needs to be
   # within the build path, which can't work with named pipes. Given that
   # we also create a bunch of other working files, we instead just
   # delete them all once we're done.
+  local dockerfile="$(create_dockerfile "${auth_method}" "${user}" "${password}")"
   docker build -t "hgi/irobot:${user}" -f "${dockerfile}" .
   rm -f "${CLEANUP[@]}"
 }
