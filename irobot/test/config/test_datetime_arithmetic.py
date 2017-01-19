@@ -29,10 +29,10 @@ class TestDateTimeArithmetic(unittest.TestCase):
         self.base = datetime(2000, 1, 1)
 
     def test_type_assertions(self):
-        self.assertRaises(AssertionError, multiply_timedelta, 0, 0)
-        self.assertRaises(AssertionError, multiply_timedelta, timedelta(), 'foo')
-        self.assertRaises(AssertionError, add_years, 0, 0)
-        self.assertRaises(AssertionError, add_years, datetime.utcnow(), 'foo')
+        self.assertRaises(TypeError, multiply_timedelta, 0, 0)
+        self.assertRaises(TypeError, multiply_timedelta, timedelta(), 'foo')
+        self.assertRaises(TypeError, add_years, 0, 0)
+        self.assertRaises(TypeError, add_years, datetime.utcnow(), 'foo')
 
     def test_whole_year_shift(self):
         self.assertEqual(add_years(self.base,  0), self.base)
