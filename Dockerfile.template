@@ -31,8 +31,8 @@ K             irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
 # Create sudo user and group, with iRODS environment
 # Kerberos: Plus keytab and crontab to renew credentials every 8hrs
 * RUN groupadd -fg ${gid} ${group} \
-N  && useradd -mg ${gid} -u ${uid} ${user}
-K  && useradd -mg ${gid} -u ${uid} ${user} \
+*  && useradd -mg ${gid} -u ${uid} ${user} \
+N  && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user}
 K  && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user} \
 K  && echo "0 */8 * * * ${user} kinit -R ${user}@${krb_realm} -kt /home/${user}/${keytab}" > /etc/cron.d/renew-kerberos
 K ADD ${keytab} /home/${user}/${keytab}
@@ -44,7 +44,7 @@ K ADD ${keytab} /home/${user}/${keytab}
 #      container must be started before this renewal expiry date
 * WORKDIR /home/${user}
 * USER ${user}
-N RUN echo "${password}" | iinit
+N RUN echo "${password}" | iinit || true
 K RUN kinit -r7d ${user}@${krb_realm} -kt /home/${user}/${keytab}
 
 # TODO Start service
