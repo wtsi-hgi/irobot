@@ -30,7 +30,7 @@ new_working_file() {
   local filename="$1"
 
   echo "${filename}"
-  CLEANUP=(${CLEANUP[@]} ${filename})
+  CLEANUP+=(${filename})
 }
 
 get_krb_libdefaults() {
@@ -97,14 +97,15 @@ create_keytab() {
 
 create_irods_env() {
   # Create irods_environment.json from template for user
-  local auth_method="$1"
+  local -A auth_map=([N]="native" [K]="KRB")
+  export auth_method="${auth_map[$1]}"
+
   local user="$2"
+  export user
+
   local irods_env="irods_environment.json-${user}"
 
-  export auth_method
-  export user
   envsubst < irods_environment.json.template > "${irods_env}"
-
   new_working_file "${irods_env}"
 }
 
@@ -120,24 +121,17 @@ create_dockerfile() {
   export group="$(id -gn "${user}")"
   export gid="$(id -g "${user}")"
 
-  case "${auth_method,,}" in
-    "native" | "nat")
-      auth_method="N"
-      local irods_env="$(create_irods_env native "${user}")"
-
-      export irods_env
+  export irods_env="$(create_irods_env "${auth_method}" "${user}")"
+  
+  case "${auth_method}" in
+    "N")  # Native authentication
       export password
       ;;
 
-    "kerberos" | "krb")
-      auth_method="K"
-      local irods_env="$(create_irods_env KRB "${user}")"
+    "K")  # Kerberos authentication
       local krb_realm=$(get_krb_realm)
-      local keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
-
-      export irods_env
       export krb_realm
-      export keytab
+      export keytab="$(create_keytab "${user}" "${password}" "${krb_realm}")"
       ;;
   esac
 
@@ -163,12 +157,19 @@ main() {
   local user="$2"
 
   case "${auth_method,,}" in
-    "native" | "nat")
+    "native" | "nat" | "n")
+      auth_method="N"
       local password_hint="iRODS native (iinit)"
       ;;
 
-    "kerberos" | "krb")
+    "kerberos" | "krb" | "k")
+      auth_method="K"
       local password_hint="Kerberos"
+      ;;
+
+    "-h" | "--help")
+      usage
+      exit 0
       ;;
 
     *)
