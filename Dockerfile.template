@@ -44,7 +44,7 @@ K ADD ${keytab} /home/${user}/${keytab}
 #      container must be started before this renewal expiry date
 * WORKDIR /home/${user}
 * USER ${user}
-N RUN echo "${password}" | iinit || true
+N RUN echo "${password}" | iinit
 K RUN kinit -r7d ${user}@${krb_realm} -kt /home/${user}/${keytab}
 
 # TODO Start service
