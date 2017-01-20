@@ -19,7 +19,8 @@
 
 set -eu -o pipefail
 
-declare -a CLEANUP
+# Manifest of working files
+export CLEANUP_FILE="/tmp/irobot_build_$(dd if=/dev/urandom bs=1 count=6 2>/dev/null | base64)"
 
 trim() {
   # Trim whitespace
@@ -27,10 +28,15 @@ trim() {
 }
 
 new_working_file() {
+  # Log a new working file to stdout and the manifest
   local filename="$1"
+  echo "${filename}" | tee -a "${CLEANUP_FILE}"
+}
 
-  echo "${filename}"
-  CLEANUP+=(${filename})
+cleanup() {
+  # Delete the working files and their manifest
+  xargs -a "${CLEANUP_FILE}" rm -f
+  rm -f "${CLEANUP_FILE}"
 }
 
 get_krb_libdefaults() {
@@ -97,7 +103,7 @@ create_keytab() {
 
 create_irods_env() {
   # Create irods_environment.json from template for user
-  local -A auth_map=([N]="native" [K]="KRB")
+  declare -A auth_map=([N]="native" [K]="KRB")
   export auth_method="${auth_map[$1]}"
 
   local user="$2"
@@ -186,7 +192,7 @@ main() {
   # delete them all once we're done.
   local dockerfile="$(create_dockerfile "${auth_method}" "${user}" "${password}")"
   docker build -t "hgi/irobot:${user}" -f "${dockerfile}" .
-  rm -f "${CLEANUP[@]}"
 }
 
+trap cleanup EXIT
 main "${1:-}" "${2:-$(whoami)}"
