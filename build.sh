@@ -20,7 +20,7 @@
 set -eu -o pipefail
 
 # Manifest of working files
-export CLEANUP_FILE="/tmp/irobot_build_$(dd if=/dev/urandom bs=1 count=6 2>/dev/null | base64)"
+export CLEANUP_FILE="$(mktemp -t irobot_build_XXXXXXXX)"
 
 trim() {
   # Trim whitespace
