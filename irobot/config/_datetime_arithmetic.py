@@ -26,7 +26,7 @@ from types import IntType, FloatType
 def multiply_timedelta(delta, m):
     """
     Multiply a timedelta by m, where m can be decimal
-    
+
     @note    Python 2.7 only supports multiplication and division of
              timedelta by integers
 
