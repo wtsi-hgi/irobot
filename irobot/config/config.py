@@ -48,9 +48,8 @@ class _PrecacheConfig(object):
         if size.lower() == "unlimited":
             return None
 
-        pattern = re.compile(r"""
-            ^                          # Anchor to start of string
-            (?:
+        match = re.match(r"""
+            ^(?:                       # Anchor to start of string
                 (?:
                     (?P<bytes> \d+ )   # One or more digits into "bytes" group
                     (?: \s* B )?       # ...optionally followed by suffix
@@ -70,11 +69,8 @@ class _PrecacheConfig(object):
                     )
                     B
                 )
-            )
-            $                          # Anchor to end of string
-        """, re.VERBOSE)
-
-        match = pattern.match(size)
+            )$                         # Anchor to end of string
+        """, size, re.VERBOSE)
 
         if not match:
             raise ParsingError("Could not parse precache size configuration")
@@ -83,7 +79,7 @@ class _PrecacheConfig(object):
             # Whole number of bytes
             return int(match.group('bytes'))
 
-        elif match.group('quantity'):
+        if match.group('quantity'):
             # Suffixed multiplier
             size = float(match.group('quantity'))
             multipliers = {
