@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
+import os.path
 from ConfigParser import ParsingError
 from datetime import datetime, timedelta
 from types import IntType, FloatType, StringType
@@ -35,15 +36,27 @@ def _parse_location(location):
     # TODO
 
 
-def _parse_index(index):
+def _parse_index(location, index):
     """
     Parse precache tracking database name
 
-    @param   index  Tracking database filename (string)
+    @param   location  Precache directory (string)
+    @param   index     Tracking database filename (string)
     @return  Absolute tracking database path (string)
     """
+    type_check(location, StringType)
     type_check(index, StringType)
-    # TODO
+
+    dirname, basename = os.path.split(index)
+
+    if basename == "":
+        raise ParsingError("Precache index must be a filename")
+
+    if dirname == "" and basename == index:
+        return os.path.join(location, index)
+
+    dirname = os.path.abspath(os.path.expanduser(dirname))
+    return os.path.join(dirname, basename)
 
 
 def _parse_size(size):
@@ -172,7 +185,7 @@ class PrecacheConfig(object):
         type_check(expiry, StringType)
 
         self._location = _parse_location(location)
-        self._index = _parse_index(index)
+        self._index = _parse_index(self._location, index)
         self._size = _parse_size(size)
         self._expiry = _parse_expiry(expiry)
 
