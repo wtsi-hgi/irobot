@@ -33,7 +33,9 @@ def _parse_location(location):
     @return  Absolute precache directory path (string)
     """
     type_check(location, StringType)
-    # TODO
+    return os.path.abspath(
+               os.path.normpath(
+                   os.path.expanduser(location)))
 
 
 def _parse_index(location, index):
@@ -55,7 +57,9 @@ def _parse_index(location, index):
     if dirname == "" and basename == index:
         return os.path.join(location, index)
 
-    dirname = os.path.abspath(os.path.expanduser(dirname))
+    dirname = os.path.abspath(
+                  os.path.normpath(
+                      os.path.expanduser(dirname)))
     return os.path.join(dirname, basename)
 
 
