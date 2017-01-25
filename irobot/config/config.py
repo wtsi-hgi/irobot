@@ -20,7 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import ConfigParser
 
 from irobot.config._precache_config import PrecacheConfig
-#import irobot.config._consts as CONFIG
+
+
+PRECACHE = "precache"
+PRECACHE_SIZE = "size"
+PRECACHE_EXPIRY = "expiry"
 
 
 class Configuration(object):
@@ -37,6 +41,6 @@ class Configuration(object):
             config.readfp(fp)
 
         # Build precache configuration
-        size = config.get(CONFIG.PRECACHE, CONFIG.PRECACHE_SIZE)
-        expiry = config.get(CONFIG.PRECACHE, CONFIG.PRECACHE_EXPIRY)
+        size = config.get(PRECACHE, PRECACHE_SIZE)
+        expiry = config.get(PRECACHE, PRECACHE_EXPIRY)
         self.precache = PrecacheConfig(size, expiry)
