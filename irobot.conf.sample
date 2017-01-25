@@ -1,5 +1,16 @@
 [precache]
 
+# The directory that stores the contents of the precache. If using the
+# containerised application, this should be set to the location of the
+# bind mounted volume within the container.
+location = /precache
+
+# The precache tracking database filename. If a single filename
+# component is given, then it is assumed to reside within the precache
+# location; otherwise it will be stored at the specified location. (This
+# probably won't need to be changed.)
+index = .precache.db
+
 # Maximum size of the precache: it can be set to "unlimited" to grow
 # indefinitely (until the disk fills) or a defined limit. Upon reaching
 # the limit, oldest files (in terms of access time) are removed. The
@@ -14,3 +25,8 @@ size = unlimited
 # suffixed with any of the following units: h(our(s)), d(ay(s)),
 # w(eek(s)) or y(ear(s)).
 expiry = unlimited
+
+[irods]
+
+# Maximum number of concurrent connections to iRODS
+max_connections = 30

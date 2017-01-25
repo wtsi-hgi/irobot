@@ -67,6 +67,16 @@ changes without rebuilding. An example configuration can be found in
 
 ### Precache Policy
 
+* **`location`** The directory that stores the contents of the precache.
+  If using the containerised application, this should be set to the
+  location of the bind mounted volume within the container
+  (conventionally `/precache`).
+
+* **`index`** The precache tracking database filename. If a single
+  filename component is given, then it is assumed to reside within the
+  precache location; otherwise it will be stored at the specified
+  location. (This probably won't need to be changed.)
+
 * **`size`** The maximum size of the precache. It can be set to
   `unlimited`, where it is allowed to grow indefinitely (until the disk
   fills), or to a defined limit. Upon reaching the limit, the oldest
@@ -89,6 +99,11 @@ changes without rebuilding. An example configuration can be found in
   may be pluralised. Year units will be relative (e.g., `1 year` means
   "delete a file on the anniversary of its last access"), while the
   others will be absolute.
+
+### iRODS
+
+* **`max_connections`** The maximum number of concurrent connections
+  allowed to iRODS.
 
 TODO: Other stuff...
 
