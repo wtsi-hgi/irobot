@@ -48,7 +48,9 @@ def _parse_index(index):
 
 def _parse_size(size):
     """
-    Parse size string
+    Parse size string := "unlimited"
+                       | INTEGER ["B"]
+                       | NUMBER ("k" | "M" | "G" | "T") ["i"] "B"
 
     @param   size  Maximum precache size (string)
     @return  Precache size in bytes (numeric); or None for unlimited
@@ -104,13 +106,53 @@ def _parse_size(size):
 
 def _parse_expiry(expiry):
     """
-    Parse expiry string
+    Parse expiry string := "unlimited"
+                        |  NUMBER ( "h" | "hour" | "hours"
+                                  | "d" | "day"  | "days"
+                                  | "w" | "week" | "weeks"
+                                  | "y" | "year" | "years" )
 
     @param   expiry  Maximum file age (string)
-    @return  ...
+    @return  None for unlimited; an absolute difference (timedelta); or
+             a number of years (numeric)
     """
     type_check(expiry, StringType)
-    # TODO
+
+    if expiry.lower() == "unlimited":
+        return None
+
+    match = re.match(r"""
+        ^                     # Anchor to start of string
+        (?P<quantity>
+            \d+               # Integer or floating point number into
+            (?: \. \d+ )?     # "quantity" group
+        )
+        \s*
+        (?P<unit>             # Into "unit" group:
+            h (?: our s?)? |  # * Hours 
+            d (?: ay s?)?  |  # * Days
+            w (?: eek s?)? |  # * Weeks
+            y (?: ear s?)?    # * Years
+        )
+        $
+    """, expiry, re.VERBOSE | re.IGNORECASE)
+
+    if not match:
+        raise ParsingError("Could not parse precache expiry configuration")
+
+    val = float(match.group('quantity'))
+    unit = match.group('unit')[0].lower()  # First character (lowercase)
+
+    # Years
+    if unit == "y":
+        return val
+
+    # Hours, Days or Weeks
+    return multiply_timedelta({
+        "h": timedelta(hours = 1),
+        "d": timedelta(days  = 1),
+        "w": timedelta(weeks = 1)
+    }[unit], val)
 
 
 class PrecacheConfig(object):
