@@ -21,7 +21,7 @@ from ConfigParser import ConfigParser
 from types import StringType
 
 from irobot.common import type_check
-from irobot.config._precache_config import PrecacheConfig
+from irobot.config._precache import PrecacheConfig
 
 
 PRECACHE = "precache"
