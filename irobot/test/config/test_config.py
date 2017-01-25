@@ -28,7 +28,7 @@ class TestConfiguration(unittest.TestCase):
     def setUp(self):
         self.config_file = NamedTemporaryFile()
 
-        self.config_file.writelines([
+        self.config_file.write("\n".join([
             "[precache]",
             "location = /foo",
             "index = bar",
@@ -37,7 +37,7 @@ class TestConfiguration(unittest.TestCase):
 
             "[irods]",
             "max_connections = 30"
-        ])
+        ]))
         self.config_file.flush()
 
     def tearDown(self):
