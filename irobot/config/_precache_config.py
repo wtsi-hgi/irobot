@@ -22,8 +22,7 @@ from ConfigParser import ParsingError
 from datetime import datetime, timedelta
 from types import IntType, FloatType, StringType
 
-from irobot.common import type_check
-from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
+from irobot.common import type_check, multiply_timedelta, add_years
 
 
 def _parse_location(location):
