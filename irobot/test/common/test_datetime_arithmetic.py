@@ -20,19 +20,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from datetime import datetime, timedelta
 
-from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
+from irobot.common import multiply_timedelta, add_years
 
 
 class TestDateTimeArithmetic(unittest.TestCase):
     def setUp(self):
         self.base = datetime(2000, 1, 1)  # n.b., 2000 was a leap year
         self.delta = timedelta(1)
-
-    def test_type_assertions(self):
-        self.assertRaises(TypeError, multiply_timedelta, 0, 0)
-        self.assertRaises(TypeError, multiply_timedelta, timedelta(), 'foo')
-        self.assertRaises(TypeError, add_years, 0, 0)
-        self.assertRaises(TypeError, add_years, datetime.utcnow(), 'foo')
 
     def test_multiply_timedelta(self):
         self.assertEqual(multiply_timedelta(self.delta,  0),   timedelta(0))
