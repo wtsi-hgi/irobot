@@ -20,8 +20,28 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import re
 from ConfigParser import ParsingError
 from datetime import datetime, timedelta
+from types import IntType, FloatType, StringType
 
 from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
+
+
+def _parse_location(location):
+    """
+    Parse precache directory location
+    @param   location  Precache directory (string)
+    @return  Absolute precache directory path (string)
+    """
+    pass
+
+
+def _parse_index(index):
+    """
+    Parse precache tracking database name
+
+    @param   index  Tracking database filename (string)
+    @return  Absolute tracking database path (string)
+    """
+    pass
 
 
 def _parse_size(size):
@@ -31,6 +51,11 @@ def _parse_size(size):
     @param   size  Maximum precache size (string)
     @return  Precache size in bytes (numeric); or None for unlimited
     """
+    try:
+        assert type(size) is StringType, "Expecting string, not %s" % type(size)
+    except AssertionError as e:
+        raise TypeError(e.message)
+
     if size.lower() == "unlimited":
         return None
 
@@ -77,6 +102,7 @@ def _parse_size(size):
 
         return int(size * multipliers[match.group('multiplier')])
 
+
 def _parse_expiry(expiry):
     """
     Parse expiry string
@@ -84,20 +110,53 @@ def _parse_expiry(expiry):
     @param   expiry  Maximum file age (string)
     @return  ...
     """
+    try:
+        assert type(expiry) is StringType, "Expecting string, not %s" % type(expiry)
+    except AssertionError as e:
+        raise TypeError(e.message)
+
     pass
 
 
 class PrecacheConfig(object):
     """ Precache configuration """
-    def __init__(self, size, expiry):
+    def __init__(self, location, index, size, expiry):
         """
         Parse precache configuration
 
-        @param   size    Maximum precache size (string)
-        @param   expiry  Maximum file age (string)
+        @param   location  Precache directory (string)
+        @param   index     Tracking database filename (string)
+        @param   size      Maximum precache size (string)
+        @param   expiry    Maximum file age (string)
         """
+        try:
+            assert type(location) is StringType, "Expecting string, not %s" % type(location)
+            assert type(index) is StringType, "Expecting string, not %s" % type(index)
+            assert type(size) is StringType, "Expecting string, not %s" % type(size)
+            assert type(expiry) is StringType, "Expecting string, not %s" % type(expiry)
+        except AssertionError as e:
+            raise TypeError(e.message)
+
+        self._location = _parse_location(location)
+        self._index = _parse_index(index)
         self._size = _parse_size(size)
         self._expiry = _parse_expiry(expiry)
+
+    def location(self):
+        """
+        Get precache directory
+
+        @return  Precache directory (string)
+        """
+        return self._location
+
+    def index(self):
+        """
+        Get precache tracking database filename
+
+        @return  Precache tracking database filename (string)
+        """
+        return self._index
 
     def size(self):
         """
@@ -114,4 +173,19 @@ class PrecacheConfig(object):
         @param   from_atime  Basis access time (datetime)
         @return  Expiry timestamp (datetime)
         """
-        return self._expiry(from_atime)
+        try:
+            assert isinstance(from_atime, datetime), "Expecting datetime, not %s" % type(from_atime)
+        except AssertionError as e:
+            raise TypeError(e.message)
+
+        if not self._expiry:
+            # Unlimited
+            return None
+
+        if isinstance(self._expiry, timedelta):
+            # +timedelta
+            return from_atime + self._expiry
+
+        if type(self._expiry) in [IntType, FloatType]:
+            # +x years
+            return add_years(from_atime, self._expiry)
