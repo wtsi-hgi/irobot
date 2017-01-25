@@ -22,6 +22,7 @@ from ConfigParser import ParsingError
 from datetime import datetime, timedelta
 from types import IntType, FloatType, StringType
 
+from irobot.common import type_check
 from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
 
 
@@ -31,7 +32,8 @@ def _parse_location(location):
     @param   location  Precache directory (string)
     @return  Absolute precache directory path (string)
     """
-    pass
+    type_check(location, StringType)
+    # TODO
 
 
 def _parse_index(index):
@@ -41,7 +43,8 @@ def _parse_index(index):
     @param   index  Tracking database filename (string)
     @return  Absolute tracking database path (string)
     """
-    pass
+    type_check(index, StringType)
+    # TODO
 
 
 def _parse_size(size):
@@ -51,10 +54,7 @@ def _parse_size(size):
     @param   size  Maximum precache size (string)
     @return  Precache size in bytes (numeric); or None for unlimited
     """
-    try:
-        assert type(size) is StringType, "Expecting string, not %s" % type(size)
-    except AssertionError as e:
-        raise TypeError(e.message)
+    type_check(size, StringType)
 
     if size.lower() == "unlimited":
         return None
@@ -110,12 +110,8 @@ def _parse_expiry(expiry):
     @param   expiry  Maximum file age (string)
     @return  ...
     """
-    try:
-        assert type(expiry) is StringType, "Expecting string, not %s" % type(expiry)
-    except AssertionError as e:
-        raise TypeError(e.message)
-
-    pass
+    type_check(expiry, StringType)
+    # TODO
 
 
 class PrecacheConfig(object):
@@ -129,13 +125,10 @@ class PrecacheConfig(object):
         @param   size      Maximum precache size (string)
         @param   expiry    Maximum file age (string)
         """
-        try:
-            assert type(location) is StringType, "Expecting string, not %s" % type(location)
-            assert type(index) is StringType, "Expecting string, not %s" % type(index)
-            assert type(size) is StringType, "Expecting string, not %s" % type(size)
-            assert type(expiry) is StringType, "Expecting string, not %s" % type(expiry)
-        except AssertionError as e:
-            raise TypeError(e.message)
+        type_check(location, StringType)
+        type_check(index, StringType)
+        type_check(size, StringType)
+        type_check(expiry, StringType)
 
         self._location = _parse_location(location)
         self._index = _parse_index(index)
@@ -173,10 +166,7 @@ class PrecacheConfig(object):
         @param   from_atime  Basis access time (datetime)
         @return  Expiry timestamp (datetime)
         """
-        try:
-            assert isinstance(from_atime, datetime), "Expecting datetime, not %s" % type(from_atime)
-        except AssertionError as e:
-            raise TypeError(e.message)
+        type_check(from_atime, datetime)
 
         if not self._expiry:
             # Unlimited

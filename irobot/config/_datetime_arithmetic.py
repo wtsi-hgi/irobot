@@ -22,6 +22,8 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from types import IntType, FloatType
 
+from irobot.common import type_check
+
 
 def multiply_timedelta(delta, m):
     """
@@ -34,11 +36,8 @@ def multiply_timedelta(delta, m):
     @param   m      Multiplier (numeric)
     @return  Multiplied timedelta (timedelta)
     """
-    try:
-        assert isinstance(delta, timedelta), "Expecting timedelta, not %s" % type(timedelta)
-        assert type(m) in [IntType, FloatType], "Expecting numeric multiplier, not %s" % type(m)
-    except AssertionError as e:
-        raise TypeError(e.message)
+    type_check(delta, timedelta)
+    type_check(m, IntType, FloatType)
 
     frac_m = Fraction(m).limit_denominator(1000)
     return (delta * frac_m.numerator) / frac_m.denominator
@@ -53,11 +52,8 @@ def add_years(timestamp, years):
     @param   years      Years to add (numeric)
     @return  Shifted timestamp in UTC (datetime)
     """
-    try:
-        assert isinstance(timestamp, datetime), "Expecting datetime, not %s" % type(timestamp)
-        assert type(years) in [IntType, FloatType], "Expecting numeric shift, not %s" % type(years)
-    except AssertionError as e:
-        raise TypeError(e.message)
+    type_check(timestamp, datetime)
+    type_check(years, IntType, FloatType)
 
     if years == 0:
         return timestamp

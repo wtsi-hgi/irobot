@@ -18,7 +18,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from ConfigParser import ConfigParser
+from types import StringType
 
+from irobot.commom import type_check
 from irobot.config._precache_config import PrecacheConfig
 
 
@@ -40,6 +42,8 @@ class Configuration(object):
 
         @param   config_file  Configuration filename
         """
+        type_check(config_file, StringType)
+
         config = ConfigParser()
 
         with open(config_file, "r") as fp:
