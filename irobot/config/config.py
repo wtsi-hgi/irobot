@@ -23,8 +23,13 @@ from irobot.config._precache_config import PrecacheConfig
 
 
 PRECACHE = "precache"
+PRECACHE_LOCATION = "location"
+PRECACHE_INDEX = "index"
 PRECACHE_SIZE = "size"
 PRECACHE_EXPIRY = "expiry"
+
+IRODS = "irods"
+IRODS_MAX_CONNECTIONS = "max_connections"
 
 
 class Configuration(object):
@@ -41,6 +46,10 @@ class Configuration(object):
             config.readfp(fp)
 
         # Build precache configuration
-        size = config.get(PRECACHE, PRECACHE_SIZE)
-        expiry = config.get(PRECACHE, PRECACHE_EXPIRY)
-        self.precache = PrecacheConfig(size, expiry)
+        self.precache = PrecacheConfig(**{
+            k:config.get(PRECACHE, k)
+            for k in [PRECACHE_LOCATION,
+                      PRECACHE_INDEX,
+                      PRECACHE_SIZE,
+                      PRECACHE_EXPIRY]
+        })
