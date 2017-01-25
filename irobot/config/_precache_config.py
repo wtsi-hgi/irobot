@@ -24,6 +24,69 @@ from datetime import datetime, timedelta
 from irobot.config._datetime_arithmetic import multiply_timedelta, add_years
 
 
+def _parse_size(size):
+    """
+    Parse size string
+
+    @param   size  Maximum precache size (string)
+    @return  Precache size in bytes (numeric); or None for unlimited
+    """
+    if size.lower() == "unlimited":
+        return None
+
+    match = re.match(r"""
+        ^(?:                       # Anchor to start of string
+            (?:
+                (?P<bytes> \d+ )   # One or more digits into "bytes" group
+                (?: \s* B )?       # ...optionally followed by suffix
+            )
+            |                      # OR
+            (?:
+                (?P<quantity>
+                    \d+            # Integer or floating point number
+                    (?: \. \d+ )?  # into "quantity" group
+                )
+                \s*
+                (?P<multiplier>    # Into "multiplier" group:
+                    ki? |          # * Kilo or kibibytes
+                    Mi? |          # * Mega or mebibytes
+                    Gi? |          # * Giga or gibibytes
+                    Ti?            # * Tera or tibibytes
+                )
+                B
+            )
+        )$                         # Anchor to end of string
+    """, size, re.VERBOSE)
+
+    if not match:
+        raise ParsingError("Could not parse precache size configuration")
+
+    if match.group('bytes'):
+        # Whole number of bytes
+        return int(match.group('bytes'))
+
+    if match.group('quantity'):
+        # Suffixed multiplier
+        size = float(match.group('quantity'))
+        multipliers = {
+            'k': 1000,    'ki': 1024,
+            'M': 1000**2, 'Mi': 1024**2,
+            'G': 1000**3, 'Gi': 1024**3,
+            'T': 1000**4, 'Ti': 1024**4
+        }
+
+        return int(size * multipliers[match.group('multiplier')])
+
+def _parse_expiry(expiry):
+    """
+    Parse expiry string
+
+    @param   expiry  Maximum file age (string)
+    @return  ...
+    """
+    pass
+
+
 class PrecacheConfig(object):
     """ Precache configuration """
     def __init__(self, size, expiry):
@@ -33,72 +96,8 @@ class PrecacheConfig(object):
         @param   size    Maximum precache size (string)
         @param   expiry  Maximum file age (string)
         """
-        self._size = PrecacheConfig._parse_size(size)
-        self._expiry = PrecacheConfig._parse_expiry(expiry)
-
-    @staticmethod
-    def _parse_size(size):
-        """
-        Parse size string
-
-        @param   size  Maximum precache size (string)
-        @return  Precache size in bytes (numeric); or None for unlimited
-        """
-        if size.lower() == "unlimited":
-            return None
-
-        match = re.match(r"""
-            ^(?:                       # Anchor to start of string
-                (?:
-                    (?P<bytes> \d+ )   # One or more digits into "bytes" group
-                    (?: \s* B )?       # ...optionally followed by suffix
-                )
-                |                      # OR
-                (?:
-                    (?P<quantity>
-                        \d+            # Integer or floating point number
-                        (?: \. \d+ )?  # into "quantity" group
-                    )
-                    \s*
-                    (?P<multiplier>    # Into "multiplier" group:
-                        ki? |          # * Kilo or kibibytes
-                        Mi? |          # * Mega or mebibytes
-                        Gi? |          # * Giga or gibibytes
-                        Ti?            # * Tera or tibibytes
-                    )
-                    B
-                )
-            )$                         # Anchor to end of string
-        """, size, re.VERBOSE)
-
-        if not match:
-            raise ParsingError("Could not parse precache size configuration")
-
-        if match.group('bytes'):
-            # Whole number of bytes
-            return int(match.group('bytes'))
-
-        if match.group('quantity'):
-            # Suffixed multiplier
-            size = float(match.group('quantity'))
-            multipliers = {
-                'k': 1000,    'ki': 1024,
-                'M': 1000**2, 'Mi': 1024**2,
-                'G': 1000**3, 'Gi': 1024**3,
-                'T': 1000**4, 'Ti': 1024**4
-            }
-
-            return int(size * multipliers[match.group('multiplier')])
-
-    @staticmethod
-    def _parse_expiry(expiry):
-        """
-        Parse expiry string
-
-        @param   expiry  Maximum file age (string)
-        @return  ...
-        """
-        pass
+        self._size = _parse_size(size)
+        self._expiry = _parse_expiry(expiry)
 
     def size(self):
         """
