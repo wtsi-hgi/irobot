@@ -49,7 +49,7 @@ To launch the container:
     docker run -v /path/to/your/precache/directory:/precache \
                -v /etc/krb5.conf:/etc/krb5.conf \
                -v /path/to/your/irobot.conf:/home/USER/irobot.conf \
-               -p TODO:TODO \
+               -p 5000:5000 \
                hgi/irobot:USER
 
 (Note that bind mounting `/etc/krb5.conf` is only necessary when using
@@ -104,6 +104,21 @@ changes without rebuilding. An example configuration can be found in
 
 * **`max_connections`** The maximum number of concurrent connections
   allowed to iRODS.
+
+### HTTP API
+
+* **`bind_address`** The IPv4 address to which the HTTP API server
+  should bind. When containerised, this can be set to `127.0.0.1`.
+
+* **`listen`** The network port to which the HTTP API server should
+  listen for requests. When containerised, this port should be exposed
+  and mapped to a host port with the `-p` option to `docker run`.
+
+### Miscellaneous
+
+* **`log_level`** The level of logging output by iRobot, which can be
+  set to any of the following in decreasing granularity (in terms of
+  output): `debug`, `info`, `warning`, `error` or `critical`.
 
 TODO: Other stuff...
 
