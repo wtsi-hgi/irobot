@@ -23,7 +23,7 @@ from ConfigParser import ParsingError
 from datetime import datetime, timedelta
 from types import IntType, FloatType, StringType
 
-from irobot.common import type_check, multiply_timedelta, add_years
+from irobot.common import type_check, multiply_timedelta, add_years, canonical_path
 
 
 def _parse_location(location):
@@ -33,9 +33,7 @@ def _parse_location(location):
     @return  Absolute precache directory path (string)
     """
     type_check(location, StringType)
-    return os.path.abspath(
-               os.path.normpath(
-                   os.path.expanduser(location)))
+    return canonical_path(location)
 
 
 def _parse_index(location, index):
@@ -57,10 +55,7 @@ def _parse_index(location, index):
     if dirname == "" and basename == index:
         return os.path.join(location, index)
 
-    dirname = os.path.abspath(
-                  os.path.normpath(
-                      os.path.expanduser(dirname)))
-    return os.path.join(dirname, basename)
+    return os.path.join(canonical_path(dirname), basename)
 
 
 def _parse_size(size):

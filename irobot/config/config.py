@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import ConfigParser
 from types import StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, canonical_path
 from irobot.config._precache import PrecacheConfig
 
 
@@ -46,7 +46,7 @@ class Configuration(object):
 
         config = ConfigParser()
 
-        with open(config_file, "r") as fp:
+        with open(canonical_path(config_file), "r") as fp:
             config.readfp(fp)
 
         # Build precache configuration

@@ -43,6 +43,9 @@ class TestConfiguration(unittest.TestCase):
     def tearDown(self):
         self.config_file.close()
 
+    def test_invalid_file(self):
+        self.assertRaises(IOError, Configuration, "/this_file_probably_does_not_exist")
+
     def test_config(self):
         config = Configuration(self.config_file.name)
 

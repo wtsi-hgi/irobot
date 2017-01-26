@@ -46,9 +46,6 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEquals(parse_index("", "foo"), "foo")
         self.assertEquals(parse_index("foo", "bar"), "foo/bar")
         self.assertEquals(parse_index("", "/foo/bar"), "/foo/bar")
-        self.assertEquals(parse_index("", "/./bar"), "/bar")
-        self.assertEquals(parse_index("", "~/bar"), os.path.join(self.homedir, "bar"))
-        self.assertEquals(parse_index("", "../bar"), os.path.normpath(os.path.join(self.cwd, "../bar")))
 
     def test_size_parsing(self):
         parse_size = precache._parse_size
@@ -89,16 +86,16 @@ class TestPrecacheConfig(unittest.TestCase):
 
     def test_instance(self):
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited")
-        self.assertEqual(config.location(), "/foo")
-        self.assertEqual(config.index(), "/foo/bar")
-        self.assertEqual(config.size(), 123 * (1000**3))
+        self.assertEquals(config.location(), "/foo")
+        self.assertEquals(config.index(), "/foo/bar")
+        self.assertEquals(config.size(), 123 * (1000**3))
         self.assertIsNone(config.expiry(self.now))
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks")
-        self.assertEqual(config.expiry(self.now), self.now + timedelta(weeks = 3))
+        self.assertEquals(config.expiry(self.now), self.now + timedelta(weeks = 3))
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years")
-        self.assertEqual(config.expiry(self.now), add_years(self.now, 1.2))
+        self.assertEquals(config.expiry(self.now), add_years(self.now, 1.2))
 
 
 if __name__ == "__main__":
