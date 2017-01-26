@@ -28,5 +28,20 @@ expiry = unlimited
 
 [irods]
 
-# Maximum number of concurrent connections to iRODS
+# Maximum number of concurrent connections to iRODS.
 max_connections = 30
+
+[httpd]
+
+# IPv4 address to which the HTTP API server should bind.
+bind_address = 0.0.0.0
+
+# Port to which the HTTP API server should listen. If using the
+# containerised application, this should be mapped to a host port.
+listen = 5000
+
+[misc]
+
+# Logging level output, to decreasing granularity: debug, info, warning,
+# error or critical
+log_level = warning
