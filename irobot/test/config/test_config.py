@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
+import logging
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
@@ -49,6 +50,9 @@ class TestConfiguration(unittest.TestCase):
             "[httpd]",
             "bind_address = 0.0.0.0",
             "listen = 5000",
+
+            "[misc]",
+            "log_level = warning",
 
             "[foo]",
             "bar = 123",
@@ -83,6 +87,8 @@ class TestConfiguration(unittest.TestCase):
 
         self.assertEquals(config.httpd.bind_address(), "0.0.0.0")
         self.assertEquals(config.httpd.listen(), 5000)
+
+        self.assertEquals(config.misc.log_level(), logging.WARNING)
 
 
 if __name__ == "__main__":
