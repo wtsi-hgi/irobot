@@ -20,12 +20,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from types import IntType, FloatType, StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_collection
+
 
 if __debug__:
     class TestTypeCheck(unittest.TestCase):
         def test_too_few_arguments(self):
             self.assertRaises(AssertionError, type_check, 1)
+            self.assertRaises(AssertionError, type_check_collection, [1, 2, 3])
 
         def test_simple(self):
             self.assertIsNone(type_check(1, IntType))
@@ -35,10 +37,17 @@ if __debug__:
             self.assertIsNone(type_check(1, IntType, StringType))
             self.assertRaises(TypeError, type_check, 'foo', IntType, FloatType)
 
+        def test_collection(self):
+            self.assertIsNone(type_check_collection([1, 2, 3], IntType))
+            self.assertIsNone(type_check_collection([1, 2.3, 4.56], IntType, FloatType))
+            self.assertRaises(TypeError, type_check_collection, 1)
+            self.assertRaises(TypeError, type_check_collection, [1, 2, 3], StringType)
+
 else:
     class TestTypeCheck(unittest.TestCase):
         def test_passthrough(self):
             self.assertIsNone(type_check())
+            self.assertIsNone(type_check_collection())
 
 
 if __name__ == "__main__":
