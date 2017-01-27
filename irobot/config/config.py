@@ -18,10 +18,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from ConfigParser import ConfigParser
-from types import StringType
+from types import StringType, TypeType
 
-from irobot.common import type_check, canonical_path
+from irobot.common import type_check, type_check_collection, canonical_path
 from irobot.config._precache import PrecacheConfig
+# from irobot.config._irods import iRODSConfig
+# from irobot.config._httpd import HTTPdConfig
+# from irobot.config._misc import MiscConfig
 
 
 PRECACHE = "precache"
@@ -32,6 +35,13 @@ PRECACHE_EXPIRY = "expiry"
 
 IRODS = "irods"
 IRODS_MAX_CONNECTIONS = "max_connections"
+
+HTTPD = "httpd"
+HTTPD_BIND_ADDRESS = "bind_address"
+HTTPD_LISTEN = "listen"
+
+MISC = "misc"
+MISC_LOG_LEVEL = "log_level"
 
 
 class Configuration(object):
@@ -44,16 +54,41 @@ class Configuration(object):
         """
         type_check(config_file, StringType)
 
-        config = ConfigParser()
+        self.config = ConfigParser()
 
         with open(canonical_path(config_file), "r") as fp:
-            config.readfp(fp)
+            self.config.readfp(fp)
 
         # Build precache configuration
-        self.precache = PrecacheConfig(**{
-            k:config.get(PRECACHE, k)
-            for k in [PRECACHE_LOCATION,
-                      PRECACHE_INDEX,
-                      PRECACHE_SIZE,
-                      PRECACHE_EXPIRY]
+        self.precache = self._build_config(PrecacheConfig, PRECACHE, PRECACHE_LOCATION,
+                                                                     PRECACHE_INDEX,
+                                                                     PRECACHE_SIZE,
+                                                                     PRECACHE_EXPIRY)
+        # Build iRODS configuration
+        # self.irods = self._build_config(iRODSConfig, IRODS, IRODS_MAX_CONNECTIONS)
+
+        # Build HTTPd configuration
+        # self.httpd = self._build_config(HTTPdConfig, HTTPD, HTTPD_BIND_ADDRESS,
+        #                                                     HTTPD_LISTEN)
+
+        # Build miscellaneous configuration
+        # self.misc = self._build_config(MiscConfig, MISC, MISC_LOG_LEVEL)
+
+    def _build_config(self, constructor, section, *options):
+        """
+        Build configuration
+
+        @param   constructor  Configuration class (class)
+        @param   section      Section (string)
+        @param   *options     Options (strings)
+
+        @return  Instantiated configuration (object)
+        """
+        type_check(constructor, TypeType)
+        type_check(section, StringType)
+        type_check_collection(options, StringType)
+
+        return constructor(**{
+            k:self.config.get(section, k)
+            for k in options
         })

@@ -24,6 +24,14 @@ from tempfile import NamedTemporaryFile
 from irobot.config import Configuration
 
 
+class _FooConfig(object):
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    def get(self, k):
+        return self.kwargs[k]
+
+
 class TestConfiguration(unittest.TestCase):
     def setUp(self):
         self.config_file = NamedTemporaryFile()
@@ -36,7 +44,12 @@ class TestConfiguration(unittest.TestCase):
             "expiry = unlimited",
 
             "[irods]",
-            "max_connections = 30"
+            "max_connections = 30",
+
+            "[foo]",
+            "bar = 123",
+            "quux = 456",
+            "xyzzy = 789"
         ]))
         self.config_file.flush()
 
@@ -46,11 +59,19 @@ class TestConfiguration(unittest.TestCase):
     def test_invalid_file(self):
         self.assertRaises(IOError, Configuration, "/this_file_probably_does_not_exist")
 
+    def test_builder(self):
+        config = Configuration(self.config_file.name)
+        foo = config._build_config(_FooConfig, "foo", "bar", "quux", "xyzzy")
+
+        self.assertEquals(foo.get("bar"),   "123")
+        self.assertEquals(foo.get("quux"),  "456")
+        self.assertEquals(foo.get("xyzzy"), "789")
+
     def test_config(self):
         config = Configuration(self.config_file.name)
 
-        self.assertEqual(config.precache.location(), "/foo")
-        self.assertEqual(config.precache.index(), "/foo/bar")
+        self.assertEquals(config.precache.location(), "/foo")
+        self.assertEquals(config.precache.index(), "/foo/bar")
         self.assertIsNone(config.precache.size())
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
 
