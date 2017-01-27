@@ -46,6 +46,10 @@ class TestConfiguration(unittest.TestCase):
             "[irods]",
             "max_connections = 30",
 
+            "[httpd]",
+            "bind_address = 0.0.0.0",
+            "listen = 5000",
+
             "[foo]",
             "bar = 123",
             "quux = 456",
@@ -76,6 +80,9 @@ class TestConfiguration(unittest.TestCase):
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
 
         self.assertEquals(config.irods.max_connections(), 30)
+
+        self.assertEquals(config.httpd.bind_address(), "0.0.0.0")
+        self.assertEquals(config.httpd.listen(), 5000)
 
 
 if __name__ == "__main__":

@@ -54,6 +54,7 @@ class iRODSConfig(object):
     def max_connections(self):
         """
         Get maximum concurrent connections
+
         @return  Maximum concurrent connections (int)
         """
         return self._max_connections
