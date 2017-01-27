@@ -24,7 +24,7 @@ from irobot.common import type_check, type_check_collection, canonical_path
 from irobot.config._precache import PrecacheConfig
 from irobot.config._irods import iRODSConfig
 from irobot.config._httpd import HTTPdConfig
-# from irobot.config._misc import MiscConfig
+from irobot.config._misc import MiscConfig
 
 
 PRECACHE = "precache"
@@ -72,7 +72,7 @@ class Configuration(object):
                                                             HTTPD_LISTEN)
 
         # Build miscellaneous configuration
-        # self.misc = self._build_config(MiscConfig, MISC, MISC_LOG_LEVEL)
+        self.misc = self._build_config(MiscConfig, MISC, MISC_LOG_LEVEL)
 
     def _build_config(self, constructor, section, *options):
         """
