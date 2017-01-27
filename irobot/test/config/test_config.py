@@ -75,6 +75,8 @@ class TestConfiguration(unittest.TestCase):
         self.assertIsNone(config.precache.size())
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
 
+        self.assertEquals(config.irods.max_connections(), 30)
+
 
 if __name__ == "__main__":
     unittest.main()

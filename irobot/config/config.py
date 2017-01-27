@@ -22,7 +22,7 @@ from types import StringType, TypeType
 
 from irobot.common import type_check, type_check_collection, canonical_path
 from irobot.config._precache import PrecacheConfig
-# from irobot.config._irods import iRODSConfig
+from irobot.config._irods import iRODSConfig
 # from irobot.config._httpd import HTTPdConfig
 # from irobot.config._misc import MiscConfig
 
@@ -65,7 +65,7 @@ class Configuration(object):
                                                                      PRECACHE_SIZE,
                                                                      PRECACHE_EXPIRY)
         # Build iRODS configuration
-        # self.irods = self._build_config(iRODSConfig, IRODS, IRODS_MAX_CONNECTIONS)
+        self.irods = self._build_config(iRODSConfig, IRODS, IRODS_MAX_CONNECTIONS)
 
         # Build HTTPd configuration
         # self.httpd = self._build_config(HTTPdConfig, HTTPD, HTTPD_BIND_ADDRESS,
