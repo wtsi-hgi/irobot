@@ -125,8 +125,99 @@ changes without rebuilding. An example configuration can be found in
   set to any of the following in decreasing granularity (in terms of
   output): `debug`, `info`, `warning`, `error` or `critical`.
 
-TODO: Other stuff...
-
 ## API
 
-TODO
+Note that, due to iRODS data objects' full paths starting with a slash,
+HTTP resource addressing makes productive use of the query string,
+rather than embedding paths into the URL. If the requested data object
+does not exist in iRODS, then a `404 Not Found` response will be
+returned.
+
+### Authorisation
+
+All HTTP requests must include the `Authorization` header with the
+following contents:
+
+    Arvados <API Token>
+
+...where `<API Token>` is the API token provided by Arvados. If the
+token cannot be validated, a `401 Unauthorized` response will be
+returned. If the token can be validated, but the user does not have the
+necessary access to the requested resource, a `403 Forbidden` response
+will be returned.
+
+### Precache Failure
+
+If the constraints of the precache are impossible to resolve (e.g.,
+trying to fetch a data object that's bigger than the precache), then a
+`507 Insufficient Storage` response will be returned.
+
+### `/data/?do=<iRODS Data Object Path>`
+
+#### `GET`
+
+Fetch the data object from iRODS as `application/octet-stream`. This
+method accepts range requests to return requested byte ranges of the
+data object.
+
+ Status | Semantics
+:------:|:--------------------------------------------------------------
+ 200    | Return data object
+ 202    | Data object still being fetched from iRODS
+ 206    | Return ranges of data object
+
+Note that if iRobot has yet to fetch the data object (or any specified
+ranges thereof), a `202 Accepted` response will be returned with the
+`text/plain` content of the estimated finish time (per ISO 8601), or
+empty content if this estimate cannot be calculated. A data object can
+be forcibly refetched by sending the `Cache-Control: no-cache` request
+header.
+
+#### `POST`
+
+Seed the precache with the data object and its metadata.
+
+ Status | Semantics
+:------:|:--------------------------------------------------------------
+ 202    | Seed the precache with data object
+
+Note that if the data object and its metadata are already cached or
+partially cached, this action will forcibly refetch them.
+
+### `/metadata/?do=<iRODS Data Object Path>`
+
+#### `GET`
+
+Fetch the iRODS metadata of the requested data object as
+`application/json`. Note that iRODS AVUs will have their units stripped
+out; additional metadata (such as file size, timestamps, etc.) will also
+be included.
+
+ Status | Semantics
+:------:|:--------------------------------------------------------------
+ 200    | Return iRODS metadata of data object
+
+Note that the metadata for the requested data object will be cached from
+the first fetch. To forcibly refetch the metadata (and update the cache)
+the `Cache-Control: no-cache` request header can be sent. This will not
+refetch the data object.
+
+### `/checksum/?do=<iRODS Data Object Path>`
+
+#### `GET`
+
+Fetch the MD5 checksum of the requested data object, as computed by
+iRobot, as `text/plain`. This method accepts range requests to return
+the MD5 checksums of requested byte ranges of the data object.
+
+ Status | Semantics
+:------:|:--------------------------------------------------------------
+ 200    | Return MD5 checksum of entire data object
+ 202    | MD5 checksum calculation pending
+ 206    | Return MD5 checksums of ranges of data object
+
+Note that if iRobot has yet to compute the MD5 sum for the data object,
+a `202 Accepted` response will be returned with the `text/plain` content
+of the estimated finish time (per ISO 8601), or empty content if this
+estimate cannot be calculated. MD5 checksums of range requests will be
+chunked according to the precache chunk size.
