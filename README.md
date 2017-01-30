@@ -82,8 +82,8 @@ changes without rebuilding. An example configuration can be found in
   fills), or to a defined limit. Upon reaching the limit, the oldest
   files (in terms of access time) are removed.
 
-  The limit should be the number of bytes, optionally suffixed with `B`.
-  Decimal (base 1000: `k`, `M`, `G`, `T`) or binary (base 1024: `ki`,
+  The limit should be the number of bytes, optionally suffixed with `B`;
+  decimal (base 1000: `k`, `M`, `G`, `T`) or binary (base 1024: `ki`,
   `Mi`, `Gi`, `Ti`) multiplier prefixes may also be used with the `B`
   suffix.
 
@@ -99,6 +99,11 @@ changes without rebuilding. An example configuration can be found in
   may be pluralised. Year units will be relative (e.g., `1 year` means
   "delete a file on the anniversary of its last access"), while the
   others will be absolute.
+
+* **`chunk_size`** The size of file blocks for MD5 checksums. The size
+  should be the number of bytes, optionally suffixed with `B`; decimal
+  (base 1000: `k`, `M`, `G`, `T`) or binary (base 1024: `ki`, `Mi`,
+  `Gi`, `Ti`) multiplier prefixes may also be used with the `B` suffix.
 
 ### iRODS
 
