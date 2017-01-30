@@ -26,6 +26,12 @@ size = unlimited
 # w(eek(s)) or y(ear(s)).
 expiry = unlimited
 
+# Size of file blocks for MD5 checksumming: it should be the number of
+# bytes, optionally suffixed with "B"; decimal (base 1000: k, M, G, T)
+# or binary (base 1024: ki, Mi, Gi, Ti) multiplier prefixes may also be
+# used with the "B" suffix.
+chunk_size = 64MB
+
 [irods]
 
 # Maximum number of concurrent connections to iRODS.
