@@ -21,7 +21,7 @@ import unittest
 import logging
 from ConfigParser import ParsingError
 
-import irobot.config._misc as misc
+import irobot.config.misc as misc
 
 
 class TestMiscConfig(unittest.TestCase):
