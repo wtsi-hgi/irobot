@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from ConfigParser import ParsingError
 
-import irobot.config._irods as irods
+import irobot.config.irods as irods
 
 
 class TestiRODSConfig(unittest.TestCase):

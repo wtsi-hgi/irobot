@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from ConfigParser import ParsingError
 
-import irobot.config._httpd as httpd
+import irobot.config.httpd as httpd
 
 
 class TestHTTPdConfig(unittest.TestCase):

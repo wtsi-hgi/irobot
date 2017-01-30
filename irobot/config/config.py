@@ -21,10 +21,10 @@ from ConfigParser import ConfigParser
 from types import StringType, TypeType
 
 from irobot.common import type_check, type_check_collection, canonical_path
-from irobot.config._precache import PrecacheConfig
-from irobot.config._irods import iRODSConfig
-from irobot.config._httpd import HTTPdConfig
-from irobot.config._misc import MiscConfig
+from irobot.config.precache import PrecacheConfig
+from irobot.config.irods import iRODSConfig
+from irobot.config.httpd import HTTPdConfig
+from irobot.config.misc import MiscConfig
 
 
 PRECACHE = "precache"
