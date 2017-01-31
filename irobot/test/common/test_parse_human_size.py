@@ -57,17 +57,17 @@ class TestParseHumanSize(unittest.TestCase):
         self.assertRaises(ValueError, parse_human_size, "1 XiB")
 
         self.assertEquals(parse_human_size("1kiB"),     1024)
-        self.assertEquals(parse_human_size("1.2kiB"),   1.2 * 1024)
-        self.assertEquals(parse_human_size("1.23 kiB"), 1.23 * 1024)
+        self.assertEquals(parse_human_size("1.2kiB"),   int(1.2 * 1024))
+        self.assertEquals(parse_human_size("1.23 kiB"), int(1.23 * 1024))
         self.assertEquals(parse_human_size("1MiB"),     1024**2)
-        self.assertEquals(parse_human_size("1.2MiB"),   1.2 * (1024**2))
-        self.assertEquals(parse_human_size("1.23 MiB"), 1.23 * (1024**2))
+        self.assertEquals(parse_human_size("1.2MiB"),   int(1.2 * (1024**2)))
+        self.assertEquals(parse_human_size("1.23 MiB"), int(1.23 * (1024**2)))
         self.assertEquals(parse_human_size("1GiB"),     1024**3)
-        self.assertEquals(parse_human_size("1.2GiB"),   1.2 * (1024**3))
-        self.assertEquals(parse_human_size("1.23 GiB"), 1.23 * (1024**3))
+        self.assertEquals(parse_human_size("1.2GiB"),   int(1.2 * (1024**3)))
+        self.assertEquals(parse_human_size("1.23 GiB"), int(1.23 * (1024**3)))
         self.assertEquals(parse_human_size("1TiB"),     1024**4)
-        self.assertEquals(parse_human_size("1.2TiB"),   1.2 * (1024**4))
-        self.assertEquals(parse_human_size("1.23 TiB"), 1.23 * (1024**4))
+        self.assertEquals(parse_human_size("1.2TiB"),   int(1.2 * (1024**4)))
+        self.assertEquals(parse_human_size("1.23 TiB"), int(1.23 * (1024**4)))
 
 
 if __name__ == "__main__":
