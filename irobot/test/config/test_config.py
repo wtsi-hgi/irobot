@@ -43,6 +43,7 @@ class TestConfiguration(unittest.TestCase):
             "index = bar",
             "size = unlimited",
             "expiry = unlimited",
+            "chunk_size = 64MB",
 
             "[irods]",
             "max_connections = 30",
@@ -82,6 +83,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertEquals(config.precache.index(), "/foo/bar")
         self.assertIsNone(config.precache.size())
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
+        self.assertEquals(config.precache.chunk_size(), 64 * (1000**2))
 
         self.assertEquals(config.irods.max_connections(), 30)
 

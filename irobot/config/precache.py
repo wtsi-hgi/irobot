@@ -62,24 +62,36 @@ def _parse_index(location, index):
     return os.path.join(canonical_path(dirname), basename)
 
 
-def _parse_size(size):
+def _parse_limited_size(size):
+    """
+    Parse size string := HUMAN-SIZE
+
+    @param   size  File size, optionally suffixed (string)
+    @return  Size in bytes (int)
+    """
+    type_check(size, StringType)
+
+    try:
+        return parse_human_size(size)
+
+    except ValueError:
+        raise ParsingError("Could not parse file size configuration")
+
+
+def _parse_unlimited_size(size):
     """
     Parse size string := "unlimited"
                        | HUMAN-SIZE
 
-    @param   size  Maximum precache size (string)
-    @return  Precache size in bytes (int); or None for unlimited
+    @param   size  File size, optionally suffixed (string)
+    @return  Size in bytes (int); or None for unlimited
     """
     type_check(size, StringType)
 
     if size.lower() == "unlimited":
         return None
 
-    try:
-        return parse_human_size(size)
-
-    except ValueError:
-        raise ParsingError("Could not parse precache size configuration")
+    return _parse_limited_size(size)
 
 
 def _parse_expiry(expiry):
@@ -135,24 +147,27 @@ def _parse_expiry(expiry):
 
 class PrecacheConfig(object):
     """ Precache configuration """
-    def __init__(self, location, index, size, expiry):
+    def __init__(self, location, index, size, expiry, chunk_size):
         """
         Parse precache configuration
 
-        @param   location  Precache directory (string)
-        @param   index     Tracking database filename (string)
-        @param   size      Maximum precache size (string)
-        @param   expiry    Maximum file age (string)
+        @param   location    Precache directory (string)
+        @param   index       Tracking database filename (string)
+        @param   size        Maximum precache size (string)
+        @param   expiry      Maximum file age (string)
+        @param   chunk_size  File block size for checksumming (string)
         """
         type_check(location, StringType)
         type_check(index, StringType)
         type_check(size, StringType)
         type_check(expiry, StringType)
+        type_check(chunk_size, StringType)
 
         self._location = _parse_location(location)
         self._index = _parse_index(self._location, index)
-        self._size = _parse_size(size)
+        self._size = _parse_unlimited_size(size)
         self._expiry = _parse_expiry(expiry)
+        self._chunk_size = _parse_limited_size(chunk_size)
 
     def location(self):
         """
@@ -198,3 +213,11 @@ class PrecacheConfig(object):
         if type(self._expiry) in [IntType, FloatType]:
             # +x years
             return add_years(from_atime, self._expiry)
+
+    def chunk_size(self):
+        """
+        Get file chunking size for checksumming
+
+        @return  Chunk size in bytes (int)
+        """
+        return self._chunk_size

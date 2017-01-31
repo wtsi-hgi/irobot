@@ -32,6 +32,7 @@ PRECACHE_LOCATION = "location"
 PRECACHE_INDEX = "index"
 PRECACHE_SIZE = "size"
 PRECACHE_EXPIRY = "expiry"
+PRECACHE_CHUNK_SIZE = "chunk_size"
 
 IRODS = "irods"
 IRODS_MAX_CONNECTIONS = "max_connections"
@@ -63,7 +64,8 @@ class Configuration(object):
         self.precache = self._build_config(PrecacheConfig, PRECACHE, PRECACHE_LOCATION,
                                                                      PRECACHE_INDEX,
                                                                      PRECACHE_SIZE,
-                                                                     PRECACHE_EXPIRY)
+                                                                     PRECACHE_EXPIRY,
+                                                                     PRECACHE_CHUNK_SIZE)
         # Build iRODS configuration
         self.irods = self._build_config(iRODSConfig, IRODS, IRODS_MAX_CONNECTIONS)
 

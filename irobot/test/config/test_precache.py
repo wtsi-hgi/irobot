@@ -48,12 +48,16 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEquals(parse_index("", "/foo/bar"), "/foo/bar")
 
     def test_size_parsing(self):
-        parse_size = precache._parse_size
+        parse_limited_size = precache._parse_limited_size
+        parse_unlimited_size = precache._parse_unlimited_size
 
-        self.assertRaises(ParsingError, parse_size, "foo")
-        self.assertRaises(ParsingError, parse_size, "1.23 B")
-        self.assertIsNone(parse_size("unlimited"))
-        self.assertEquals(parse_size("123"), 123)
+        self.assertRaises(ParsingError, parse_limited_size, "foo")
+        self.assertRaises(ParsingError, parse_limited_size, "unlimited")
+        self.assertRaises(ParsingError, parse_limited_size, "1.23 B")
+        self.assertRaises(ParsingError, parse_unlimited_size, "foo")
+
+        self.assertIsNone(parse_unlimited_size("unlimited"))
+        self.assertEquals(parse_limited_size("123"), 123)
 
     def test_expiry_parsing(self):
         parse_expiry = precache._parse_expiry
@@ -74,16 +78,17 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEquals(parse_expiry("1.2 years"), 1.2)
 
     def test_instance(self):
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited")
+        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited", "64MB")
         self.assertEquals(config.location(), "/foo")
         self.assertEquals(config.index(), "/foo/bar")
         self.assertEquals(config.size(), 123 * (1000**3))
         self.assertIsNone(config.expiry(self.now))
+        self.assertEquals(config.chunk_size(), 64 * (1000**2))
 
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks")
+        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks", "64MB")
         self.assertEquals(config.expiry(self.now), self.now + timedelta(weeks = 3))
 
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years")
+        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB")
         self.assertEquals(config.expiry(self.now), add_years(self.now, 1.2))
 
 
