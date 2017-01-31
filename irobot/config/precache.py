@@ -23,7 +23,11 @@ from ConfigParser import ParsingError
 from datetime import datetime, timedelta
 from types import IntType, FloatType, StringType
 
-from irobot.common import type_check, multiply_timedelta, add_years, canonical_path
+from irobot.common import add_years, \
+                          canonical_path, \
+                          multiply_timedelta, \
+                          parse_human_size, \
+                          type_check
 
 
 def _parse_location(location):
@@ -61,65 +65,27 @@ def _parse_index(location, index):
 def _parse_size(size):
     """
     Parse size string := "unlimited"
-                       | INTEGER ["B"]
-                       | NUMBER ("k" | "M" | "G" | "T") ["i"] "B"
+                       | HUMAN-SIZE
 
     @param   size  Maximum precache size (string)
-    @return  Precache size in bytes (numeric); or None for unlimited
+    @return  Precache size in bytes (int); or None for unlimited
     """
     type_check(size, StringType)
 
     if size.lower() == "unlimited":
         return None
 
-    match = re.match(r"""
-        ^(?:                       # Anchor to start of string
-            (?:
-                (?P<bytes> \d+ )   # One or more digits into "bytes" group
-                (?: \s* B )?       # ...optionally followed by suffix
-            )
-            |                      # OR
-            (?:
-                (?P<quantity>
-                    \d+            # Integer or floating point number
-                    (?: \. \d+ )?  # into "quantity" group
-                )
-                \s*
-                (?P<multiplier>    # Into "multiplier" group:
-                    ki? |          # * Kilo or kibibytes
-                    Mi? |          # * Mega or mebibytes
-                    Gi? |          # * Giga or gibibytes
-                    Ti?            # * Tera or tibibytes
-                )
-                B
-            )
-        )$                         # Anchor to end of string
-    """, size, re.VERBOSE)
+    try:
+        return parse_human_size(size)
 
-    if not match:
+    except ValueError:
         raise ParsingError("Could not parse precache size configuration")
-
-    if match.group('bytes'):
-        # Whole number of bytes
-        return int(match.group('bytes'))
-
-    if match.group('quantity'):
-        # Suffixed multiplier
-        size = float(match.group('quantity'))
-        multipliers = {
-            'k': 1000,    'ki': 1024,
-            'M': 1000**2, 'Mi': 1024**2,
-            'G': 1000**3, 'Gi': 1024**3,
-            'T': 1000**4, 'Ti': 1024**4
-        }
-
-        return int(size * multipliers[match.group('multiplier')])
 
 
 def _parse_expiry(expiry):
     """
     Parse expiry string := "unlimited"
-                        |  NUMBER ( "h" | "hour" | "hours"
+                         | NUMBER ( "h" | "hour" | "hours"
                                   | "d" | "day"  | "days"
                                   | "w" | "week" | "weeks"
                                   | "y" | "year" | "years" )

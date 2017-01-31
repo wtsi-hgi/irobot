@@ -54,17 +54,6 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertRaises(ParsingError, parse_size, "1.23 B")
         self.assertIsNone(parse_size("unlimited"))
         self.assertEquals(parse_size("123"), 123)
-        self.assertEquals(parse_size("123B"), 123)
-        self.assertEquals(parse_size("123 B"), 123)
-        self.assertEquals(parse_size("1kB"), 1000)
-        self.assertEquals(parse_size("1MB"), 1000**2)
-        self.assertEquals(parse_size("1GB"), 1000**3)
-        self.assertEquals(parse_size("1TB"), 1000**4)
-        self.assertEquals(parse_size("1kiB"), 1024)
-        self.assertEquals(parse_size("1MiB"), 1024**2)
-        self.assertEquals(parse_size("1GiB"), 1024**3)
-        self.assertEquals(parse_size("1TiB"), 1024**4)
-        self.assertEquals(parse_size("1.234 kB"), 1234)
 
     def test_expiry_parsing(self):
         parse_expiry = precache._parse_expiry
