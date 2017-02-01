@@ -35,17 +35,17 @@ class TestPrecacheConfig(unittest.TestCase):
     def test_location_parsing(self):
         parse_location = precache._parse_location
 
-        self.assertEquals(parse_location("/foo"), "/foo")
-        self.assertEquals(parse_location("~/foo"), os.path.join(self.homedir, "foo"))
-        self.assertEquals(parse_location("foo"), os.path.join(self.cwd, "foo"))
+        self.assertEqual(parse_location("/foo"), "/foo")
+        self.assertEqual(parse_location("~/foo"), os.path.join(self.homedir, "foo"))
+        self.assertEqual(parse_location("foo"), os.path.join(self.cwd, "foo"))
 
     def test_index_parsing(self):
         parse_index = precache._parse_index
 
         self.assertRaises(ParsingError, parse_index, "", "foo/")
-        self.assertEquals(parse_index("", "foo"), "foo")
-        self.assertEquals(parse_index("foo", "bar"), "foo/bar")
-        self.assertEquals(parse_index("", "/foo/bar"), "/foo/bar")
+        self.assertEqual(parse_index("", "foo"), "foo")
+        self.assertEqual(parse_index("foo", "bar"), "foo/bar")
+        self.assertEqual(parse_index("", "/foo/bar"), "/foo/bar")
 
     def test_size_parsing(self):
         parse_limited_size = precache._parse_limited_size
@@ -57,39 +57,39 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertRaises(ParsingError, parse_unlimited_size, "foo")
 
         self.assertIsNone(parse_unlimited_size("unlimited"))
-        self.assertEquals(parse_limited_size("123"), 123)
+        self.assertEqual(parse_limited_size("123"), 123)
 
     def test_expiry_parsing(self):
         parse_expiry = precache._parse_expiry
 
         self.assertRaises(ParsingError, parse_expiry, "foo")
         self.assertIsNone(parse_expiry("unlimited"))
-        self.assertEquals(parse_expiry("1h"), timedelta(hours = 1))
-        self.assertEquals(parse_expiry("1 hour"), timedelta(hours = 1))
-        self.assertEquals(parse_expiry("1.2 hours"), timedelta(hours = 1.2))
-        self.assertEquals(parse_expiry("1d"), timedelta(days = 1))
-        self.assertEquals(parse_expiry("1 day"), timedelta(days = 1))
-        self.assertEquals(parse_expiry("1.2 days"), timedelta(days = 1.2))
-        self.assertEquals(parse_expiry("1w"), timedelta(weeks = 1))
-        self.assertEquals(parse_expiry("1 week"), timedelta(weeks = 1))
-        self.assertEquals(parse_expiry("1.2 weeks"), timedelta(weeks = 1.2))
-        self.assertEquals(parse_expiry("1y"), 1)
-        self.assertEquals(parse_expiry("1 year"), 1)
-        self.assertEquals(parse_expiry("1.2 years"), 1.2)
+        self.assertEqual(parse_expiry("1h"), timedelta(hours = 1))
+        self.assertEqual(parse_expiry("1 hour"), timedelta(hours = 1))
+        self.assertEqual(parse_expiry("1.2 hours"), timedelta(hours = 1.2))
+        self.assertEqual(parse_expiry("1d"), timedelta(days = 1))
+        self.assertEqual(parse_expiry("1 day"), timedelta(days = 1))
+        self.assertEqual(parse_expiry("1.2 days"), timedelta(days = 1.2))
+        self.assertEqual(parse_expiry("1w"), timedelta(weeks = 1))
+        self.assertEqual(parse_expiry("1 week"), timedelta(weeks = 1))
+        self.assertEqual(parse_expiry("1.2 weeks"), timedelta(weeks = 1.2))
+        self.assertEqual(parse_expiry("1y"), 1)
+        self.assertEqual(parse_expiry("1 year"), 1)
+        self.assertEqual(parse_expiry("1.2 years"), 1.2)
 
     def test_instance(self):
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited", "64MB")
-        self.assertEquals(config.location(), "/foo")
-        self.assertEquals(config.index(), "/foo/bar")
-        self.assertEquals(config.size(), 123 * (1000**3))
+        self.assertEqual(config.location(), "/foo")
+        self.assertEqual(config.index(), "/foo/bar")
+        self.assertEqual(config.size(), 123 * (1000**3))
         self.assertIsNone(config.expiry(self.now))
-        self.assertEquals(config.chunk_size(), 64 * (1000**2))
+        self.assertEqual(config.chunk_size(), 64 * (1000**2))
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks", "64MB")
-        self.assertEquals(config.expiry(self.now), self.now + timedelta(weeks = 3))
+        self.assertEqual(config.expiry(self.now), self.now + timedelta(weeks = 3))
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB")
-        self.assertEquals(config.expiry(self.now), add_years(self.now, 1.2))
+        self.assertEqual(config.expiry(self.now), add_years(self.now, 1.2))
 
 
 if __name__ == "__main__":
