@@ -29,16 +29,16 @@ class TestMiscConfig(unittest.TestCase):
         parse_log_level = misc._parse_log_level
 
         self.assertRaises(ParsingError, parse_log_level, "foo")
-        self.assertEquals(parse_log_level("debug"),    logging.DEBUG)
-        self.assertEquals(parse_log_level("info"),     logging.INFO)
-        self.assertEquals(parse_log_level("warning"),  logging.WARNING)
-        self.assertEquals(parse_log_level("error"),    logging.ERROR)
-        self.assertEquals(parse_log_level("critical"), logging.CRITICAL)
+        self.assertEqual(parse_log_level("debug"),    logging.DEBUG)
+        self.assertEqual(parse_log_level("info"),     logging.INFO)
+        self.assertEqual(parse_log_level("warning"),  logging.WARNING)
+        self.assertEqual(parse_log_level("error"),    logging.ERROR)
+        self.assertEqual(parse_log_level("critical"), logging.CRITICAL)
 
     def test_instance(self):
         config = misc.MiscConfig("debug")
 
-        self.assertEquals(config.log_level(), logging.DEBUG)
+        self.assertEqual(config.log_level(), logging.DEBUG)
 
 
 if __name__ == "__main__":

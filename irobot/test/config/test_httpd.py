@@ -31,11 +31,11 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertRaises(ParsingError, parse_bind_address, "999.999.999.999")
         self.assertRaises(ParsingError, parse_bind_address, "0777.0777.0777.0777")
         self.assertRaises(ParsingError, parse_bind_address, str(2**32))
-        self.assertEquals(parse_bind_address("222.173.190.239"), "222.173.190.239")
-        self.assertEquals(parse_bind_address("3735928559"), "222.173.190.239")
-        self.assertEquals(parse_bind_address("0xdeadbeef"), "222.173.190.239")
-        self.assertEquals(parse_bind_address("0xDE.0xAD.0xBE.0xEF"), "222.173.190.239")
-        self.assertEquals(parse_bind_address("0336.0255.0276.0357"), "222.173.190.239")
+        self.assertEqual(parse_bind_address("222.173.190.239"), "222.173.190.239")
+        self.assertEqual(parse_bind_address("3735928559"), "222.173.190.239")
+        self.assertEqual(parse_bind_address("0xdeadbeef"), "222.173.190.239")
+        self.assertEqual(parse_bind_address("0xDE.0xAD.0xBE.0xEF"), "222.173.190.239")
+        self.assertEqual(parse_bind_address("0336.0255.0276.0357"), "222.173.190.239")
 
     def test_listening_port_parsing(self):
         parse_listening_port = httpd._parse_listening_port
@@ -43,13 +43,13 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertRaises(ValueError, parse_listening_port, "foo")
         self.assertRaises(ParsingError, parse_listening_port, "-1")
         self.assertRaises(ParsingError, parse_listening_port, "65536")
-        self.assertEquals(parse_listening_port("1234"), 1234)
+        self.assertEqual(parse_listening_port("1234"), 1234)
 
     def test_instance(self):
         config = httpd.HTTPdConfig("0.0.0.0", "5000")
 
-        self.assertEquals(config.bind_address(), "0.0.0.0")
-        self.assertEquals(config.listen(), 5000)
+        self.assertEqual(config.bind_address(), "0.0.0.0")
+        self.assertEqual(config.listen(), 5000)
 
 
 if __name__ == "__main__":

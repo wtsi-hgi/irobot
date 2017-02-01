@@ -27,14 +27,14 @@ class TestiRODSConfig(unittest.TestCase):
     def test_max_connection_parsing(self):
         parse_max_connections = irods._parse_max_connections
 
-        self.assertEquals(parse_max_connections("10"), 10)
+        self.assertEqual(parse_max_connections("10"), 10)
         self.assertRaises(ParsingError, parse_max_connections, "0")
         self.assertRaises(ParsingError, parse_max_connections, "-5")
 
     def test_instance(self):
         config = irods.iRODSConfig("123")
 
-        self.assertEquals(config.max_connections(), 123)
+        self.assertEqual(config.max_connections(), 123)
 
 
 if __name__ == "__main__":

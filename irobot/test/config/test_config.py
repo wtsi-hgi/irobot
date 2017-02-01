@@ -35,7 +35,7 @@ class _FooConfig(object):
 
 class TestConfiguration(unittest.TestCase):
     def setUp(self):
-        self.config_file = NamedTemporaryFile()
+        self.config_file = NamedTemporaryFile(delete=True)
 
         self.config_file.write("\n".join([
             "[precache]",
@@ -72,25 +72,25 @@ class TestConfiguration(unittest.TestCase):
         config = Configuration(self.config_file.name)
         foo = config._build_config(_FooConfig, "foo", "bar", "quux", "xyzzy")
 
-        self.assertEquals(foo.get("bar"),   "123")
-        self.assertEquals(foo.get("quux"),  "456")
-        self.assertEquals(foo.get("xyzzy"), "789")
+        self.assertEqual(foo.get("bar"),   "123")
+        self.assertEqual(foo.get("quux"),  "456")
+        self.assertEqual(foo.get("xyzzy"), "789")
 
     def test_config(self):
         config = Configuration(self.config_file.name)
 
-        self.assertEquals(config.precache.location(), "/foo")
-        self.assertEquals(config.precache.index(), "/foo/bar")
+        self.assertEqual(config.precache.location(), "/foo")
+        self.assertEqual(config.precache.index(), "/foo/bar")
         self.assertIsNone(config.precache.size())
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
-        self.assertEquals(config.precache.chunk_size(), 64 * (1000**2))
+        self.assertEqual(config.precache.chunk_size(), 64 * (1000**2))
 
-        self.assertEquals(config.irods.max_connections(), 30)
+        self.assertEqual(config.irods.max_connections(), 30)
 
-        self.assertEquals(config.httpd.bind_address(), "0.0.0.0")
-        self.assertEquals(config.httpd.listen(), 5000)
+        self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
+        self.assertEqual(config.httpd.listen(), 5000)
 
-        self.assertEquals(config.misc.log_level(), logging.WARNING)
+        self.assertEqual(config.misc.log_level(), logging.WARNING)
 
 
 if __name__ == "__main__":

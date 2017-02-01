@@ -31,15 +31,15 @@ class TestCanonicalPath(unittest.TestCase):
     has no effect on the outcome.
     """
     def test_user_expansion(self):
-        self.assertEquals(canonical_path("~"), os.path.expanduser("~"))
+        self.assertEqual(canonical_path("~"), os.path.expanduser("~"))
 
     def test_path_normalisation(self):
         for case in ["/A//B", "/A/B/", "/A/./B", "/A/foo/../B"]:
-            self.assertEquals(canonical_path(case), os.path.normpath(case))
+            self.assertEqual(canonical_path(case), os.path.normpath(case))
 
     def test_abs_path(self):
-        self.assertEquals(canonical_path("/foo"), "/foo")
-        self.assertEquals(canonical_path("foo"), os.path.normpath(os.path.join(os.getcwd(), "foo")))
+        self.assertEqual(canonical_path("/foo"), "/foo")
+        self.assertEqual(canonical_path("foo"), os.path.normpath(os.path.join(os.getcwd(), "foo")))
 
 
 if __name__ == "__main__":
