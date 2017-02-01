@@ -25,7 +25,7 @@ if __debug__:
         Poor man's type checking
 
         @param   var     Variable to check
-        @param   *types  Union of types to check against
+        @param   *types  Union of types to check against (types)
         """
         assert len(types) > 0, "Expecting at least one type to check against"
         if not any(isinstance(var, t) for t in types):
@@ -35,8 +35,8 @@ if __debug__:
         """
         Type checking for homogeneous collections
 
-        @param   collection  Collection to check
-        @param   *types      Union of types to check against
+        @param   collection  Collection to check (iterable)
+        @param   *types      Union of types to check against (types)
         """
         type_check(collection, Iterable)
         assert len(types) > 0, "Expecting at least one type to check against"
