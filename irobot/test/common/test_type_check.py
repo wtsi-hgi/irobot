@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from types import IntType, FloatType, StringType
+from types import FloatType, IntType, StringType
 
 from irobot.common import type_check, type_check_collection
 

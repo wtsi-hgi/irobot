@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import math
 from datetime import datetime, timedelta
 from fractions import Fraction
-from types import IntType, FloatType
+from types import FloatType, IntType
 
 from irobot.common import type_check
 

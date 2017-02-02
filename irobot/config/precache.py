@@ -17,17 +17,14 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import re
-import os.path
 from ConfigParser import ParsingError
 from datetime import datetime, timedelta
-from types import IntType, FloatType, StringType
+from types import FloatType, IntType, StringType
 
-from irobot.common import add_years, \
-                          canonical_path, \
-                          multiply_timedelta, \
-                          parse_human_size, \
-                          type_check
+from irobot.common import (add_years, canonical_path, multiply_timedelta,
+                           parse_human_size, type_check)
 
 
 def _parse_location(location):

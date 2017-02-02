@@ -20,11 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import ConfigParser
 from types import StringType, TypeType
 
-from irobot.common import type_check, type_check_collection, canonical_path
-from irobot.config.precache import PrecacheConfig
-from irobot.config.irods import iRODSConfig
+from irobot.common import canonical_path, type_check, type_check_collection
 from irobot.config.httpd import HTTPdConfig
+from irobot.config.irods import iRODSConfig
 from irobot.config.misc import MiscConfig
+from irobot.config.precache import PrecacheConfig
 
 
 PRECACHE = "precache"
