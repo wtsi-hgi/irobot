@@ -1,1 +1,2 @@
 arvados-python-client==0.1.20161216224559
+mock==2.0.0
