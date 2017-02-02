@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
+import json
 import subprocess
 from collections import Iterable
 from tempfile import TemporaryFile
@@ -110,6 +111,7 @@ def baton(irods_path):
     Wrapper for baton-list
 
     @param   irods_path  Path to data object on iRODS (string)
+    @return  Deserialised JSON (various)
     """
     type_check(irods_path, StringType)
 
@@ -121,4 +123,4 @@ def baton(irods_path):
         raise subprocess.CalledProcessError(returncode=exit_code,
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
-    return stdout
+    return json.loads(stdout)

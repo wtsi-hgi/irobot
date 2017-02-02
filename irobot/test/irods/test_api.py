@@ -28,7 +28,7 @@ import irobot.irods._api as api
 
 _original_invoke = api._invoke
 _mock_invoke = MagicMock()
-_mock_invoke_pass = (0, "foo", "")
+_mock_invoke_pass = (0, "{\"foo\":\"bar\"}", "")
 _mock_invoke_fail = (1, "", "")
 
 
@@ -110,7 +110,7 @@ class TestiRODSAPI(unittest.TestCase):
 
     def test_baton_pass(self):
         api._invoke.return_value = _mock_invoke_pass
-        self.assertEqual(api.baton("/foo/bar"), "foo")
+        self.assertEqual(api.baton("/foo/bar"), {"foo": "bar"})
         api._invoke.assert_called_once_with(["baton-list", "--avu", "--size", "--checksum", "--acl", "--timestamp"],
                                             "{\"collection\":\"/foo\",\"data_object\":\"bar\"}")
 
