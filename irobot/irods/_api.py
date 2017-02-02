@@ -17,12 +17,12 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
 import json
+import os
 import subprocess
 from collections import Iterable
 from tempfile import TemporaryFile
-from types import IntType, StringType, BooleanType, FileType, NoneType
+from types import BooleanType, FileType, IntType, NoneType, StringType
 
 from irobot.common import type_check, type_check_collection
 

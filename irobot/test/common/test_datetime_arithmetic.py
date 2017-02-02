@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from datetime import datetime, timedelta
 
-from irobot.common import multiply_timedelta, add_years
+from irobot.common import add_years, multiply_timedelta
 
 
 class TestDateTimeArithmetic(unittest.TestCase):

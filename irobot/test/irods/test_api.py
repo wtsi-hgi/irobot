@@ -19,9 +19,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import unittest
-from mock import MagicMock
-from tempfile import TemporaryFile
 from subprocess import CalledProcessError
+from tempfile import TemporaryFile
+
+from mock import MagicMock
 
 import irobot.irods._api as api
 

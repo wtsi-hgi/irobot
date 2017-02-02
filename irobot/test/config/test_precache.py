@@ -22,8 +22,8 @@ import unittest
 from ConfigParser import ParsingError
 from datetime import datetime, timedelta
 
-from irobot.common import add_years
 import irobot.config.precache as precache
+from irobot.common import add_years
 
 
 class TestPrecacheConfig(unittest.TestCase):
