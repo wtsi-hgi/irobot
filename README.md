@@ -188,10 +188,8 @@ partially cached, this action will forcibly refetch them.
 
 #### `GET`
 
-Fetch the iRODS metadata of the requested data object as
-`application/json`. Note that iRODS AVUs will have their units stripped
-out; additional metadata (such as file size, timestamps, etc.) will also
-be included.
+Fetch the iRODS AVU and filesystem metadata of the requested data object
+as `application/json`.
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
