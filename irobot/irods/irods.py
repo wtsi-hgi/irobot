@@ -113,8 +113,8 @@ class iRODS(object):
 
     def get_dataobject(self, irods_path, local_path):
         """
-        Retrieve data object from iRODS and store it in the local
-        filesystem
+        Enqueue retrieval of data object from iRODS and store it in the
+        local filesystem, broadcasting retrieval status to listeners
 
         @param   irods_path  Path to data object on iRODS (string)
         @param   local_path  Local filesystem target file (string)
