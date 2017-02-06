@@ -17,12 +17,13 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import logging
 from collections import deque
 from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
 from types import StringType
 
-from irobot.common import Listener, type_check
+from irobot.common import Listener, LogWriter, type_check
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 
@@ -47,9 +48,9 @@ def _exists(irods_path):
         raise IOError("Data object \"%s\" inaccessible" % irods_path)
 
 
-class iRODS(Listener):
+class iRODS(Listener, LogWriter):
     """ High level iRODS interface with iget pool management """
-    def __init__(self, irods_config):
+    def __init__(self, irods_config, logger=None):
         """
         Constructor
 
@@ -58,7 +59,9 @@ class iRODS(Listener):
         type_check(irods_config, iRODSConfig)
         self._config = irods_config
 
-        super(iRODS, self).__init__()
+        # Initialise superclasses (multiple inheritance is a PITA)
+        super(iRODS, self).__init__(logger=logger)
+        self.add_listener(self._broadcast_iget_to_log)
 
         self._iget_queue = deque()  # n.b., collections.deque is thread-safe
         self._iget_pool = BoundedSemaphore(self._config.max_connections())
@@ -70,6 +73,7 @@ class iRODS(Listener):
 
     def _thread_runner(self):
         """ Thread runner to invoke igets """
+        self.log(logging.DEBUG, "Starting iget pool")
         while self._running:
             if self._iget_queue:
                 iget_args = self._iget_queue.popleft()
@@ -78,7 +82,17 @@ class iRODS(Listener):
 
     def __del__(self):
         """ Stop thread runner on GC """
+        self.log(logging.DEBUG, "Shutting down iget pool")
         self._running = False
+
+    def _broadcast_iget_to_log(self, timestamp, *args, **kwargs):
+        """
+        Log all broadcast iget messages
+
+        @note    *args will be a tuple of the status and iRODS path
+        """
+        level = logging.WARNING if args[0] == IGET_FAILED else logging.INFO
+        self.log(level, "iget: %s %s" % args)
 
     def get_dataobject(self, irods_path, local_path):
         """
@@ -112,8 +126,7 @@ class iRODS(Listener):
         except CalledProcessError:
             self.broadcast(IGET_FAILED, irods_path)
 
-    @staticmethod
-    def get_metadata(irods_path):
+    def get_metadata(self, irods_path):
         """
         Retrieve AVU and filesystem metadata for data object from iRODS
 
@@ -123,6 +136,8 @@ class iRODS(Listener):
         type_check(irods_path, StringType)
 
         _exists(irods_path)
+
+        self.log(logging.INFO, "Getting metadata for %s" % irods_path)
         baton_output = baton(irods_path)
 
         fs_keys = ["checksum", "size", "access", "timestamps"]
