@@ -23,6 +23,7 @@ from subprocess import CalledProcessError
 from mock import MagicMock, call
 
 import irobot.irods.irods as irods
+import irobot.common.listener as listener
 from irobot.config.irods import iRODSConfig
 
 
@@ -51,6 +52,21 @@ irods.ils = MagicMock()
 irods.iget = MagicMock()
 
 
+class ListenerInternals(object):
+    def __init__(self, original):
+        self._orig = original
+        self._orig_check_listener = original._check_listener
+        self._orig_broadcast_time = original._broadcast_time
+
+    def mock(self):
+        self._orig._check_listener = MagicMock()
+        self._orig._broadcast_time = MagicMock(return_value=1234)
+
+    def reset(self):
+        self._orig._check_listener = self._orig_check_listener
+        self._orig._broadcast_time = self._orig_broadcast_time
+
+
 class TestExists(unittest.TestCase):
     def tearDown(self):
         irods.ils.reset_mock()
@@ -69,8 +85,11 @@ class TestiRODS(unittest.TestCase):
     def setUp(self):
         config = iRODSConfig(max_connections="1")
         self.irods = irods.iRODS(config)
+        self.listener_interals = ListenerInternals(listener)
     
     def tearDown(self):
+        self.listener_interals.reset()
+
         irods.baton.reset_mock()
         irods.ils.reset_mock()
         irods.ils.side_effect = None
@@ -85,61 +104,9 @@ class TestiRODS(unittest.TestCase):
         self.irods.__del__()
         self.assertFalse(self.irods._running)
 
-    def test_add_listener(self):
-        class _listeners(object):
-            def bad(self, a, b, c, d):
-                pass
-
-            def good(self, a, b, c):
-                pass
-
-        def _listener_bad(a, b, c, d):
-            pass
-
-        def _listener_good(a, b, c):
-            pass
-
-        _listener = _listeners()
-
-        self.assertRaises(TypeError, self.irods.add_listener, _listener_bad)
-        self.assertRaises(TypeError, self.irods.add_listener, _listener.bad)
-
-        self.assertIsNone(self.irods.add_listener(_listener_good))
-        self.assertEqual(len(self.irods._listeners), 1)
-        self.assertEqual(self.irods._listeners.pop(), _listener_good)
-
-        self.assertIsNone(self.irods.add_listener(_listener.good))
-        self.assertEqual(len(self.irods._listeners), 1)
-        self.assertEqual(self.irods._listeners.pop(), _listener.good)
-
-    def test_broadcast(self):
-        # Bypass type checking for listeners
-        _old_type_check, irods.type_check = irods.type_check, MagicMock()
-        _old_getargspec, irods.getargspec = irods.getargspec, MagicMock()
-        irods.getargspec().args = [1, 2, 3]
-
-        _old_datetime, irods.datetime = irods.datetime, MagicMock()
-        irods.datetime.utcnow = MagicMock(return_value=1234)
-
-        _listener = MagicMock()
-        self.irods.add_listener(_listener)
-
-        self.irods._broadcast("foo", "/foo/bar")
-        _listener.assert_called_once_with(1234, "foo", "/foo/bar")
-
-        # Reset everything
-        irods.type_check = _old_type_check
-        irods.getargspec = _old_getargspec
-        irods.datetime = _old_datetime
-
     def test_enqueue_dataobject(self):
-        # Bypass type checking for listeners
-        _old_type_check, irods.type_check = irods.type_check, MagicMock()
-        _old_getargspec, irods.getargspec = irods.getargspec, MagicMock()
-        irods.getargspec().args = [1, 2, 3]
-
-        _old_datetime, irods.datetime = irods.datetime, MagicMock()
-        irods.datetime.utcnow = MagicMock(return_value=1234)
+        # Override listener internals
+        self.listener_interals.mock()
 
         # Stop the thread runner
         self.irods._running = False
@@ -152,11 +119,6 @@ class TestiRODS(unittest.TestCase):
         _listener.assert_called_once_with(1234, irods.IGET_QUEUED, "/foo/bar")
         self.assertEqual(len(self.irods._iget_queue), 1)
         self.assertEqual(self.irods._iget_queue.pop(), ("/foo/bar", "/quux/xyzzy"))
-
-        # Reset everything
-        irods.type_check = _old_type_check
-        irods.getargspec = _old_getargspec
-        irods.datetime = _old_datetime
 
     def test_iget_pool(self):
         # Stop the thread runner...
@@ -188,13 +150,8 @@ class TestiRODS(unittest.TestCase):
         irods.Thread = _old_thread
 
     def test_iget_pass(self):
-        # Bypass type checking for listeners
-        _old_type_check, irods.type_check = irods.type_check, MagicMock()
-        _old_getargspec, irods.getargspec = irods.getargspec, MagicMock()
-        irods.getargspec().args = [1, 2, 3]
-
-        _old_datetime, irods.datetime = irods.datetime, MagicMock()
-        irods.datetime.utcnow = MagicMock(return_value=1234)
+        # Override listener internals
+        self.listener_interals.mock()
 
         _listener = MagicMock()
         self.irods.add_listener(_listener)
@@ -206,19 +163,9 @@ class TestiRODS(unittest.TestCase):
             call(1234, irods.IGET_FINISHED, "/foo/bar")
         ])
 
-        # Reset everything
-        irods.type_check = _old_type_check
-        irods.getargspec = _old_getargspec
-        irods.datetime = _old_datetime
-
     def test_iget_fail(self):
-        # Bypass type checking for listeners
-        _old_type_check, irods.type_check = irods.type_check, MagicMock()
-        _old_getargspec, irods.getargspec = irods.getargspec, MagicMock()
-        irods.getargspec().args = [1, 2, 3]
-
-        _old_datetime, irods.datetime = irods.datetime, MagicMock()
-        irods.datetime.utcnow = MagicMock(return_value=1234)
+        # Override listener internals
+        self.listener_interals.mock()
 
         _listener = MagicMock()
         self.irods.add_listener(_listener)
@@ -231,11 +178,6 @@ class TestiRODS(unittest.TestCase):
             call(1234, irods.IGET_STARTED, "/foo/bar"),
             call(1234, irods.IGET_FAILED, "/foo/bar")
         ])
-
-        # Reset everything
-        irods.type_check = _old_type_check
-        irods.getargspec = _old_getargspec
-        irods.datetime = _old_datetime
 
     def test_get_metadata(self):
         avu_metadata, fs_metadata = self.irods.get_metadata("/foo/bar")
