@@ -20,9 +20,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import os.path
 from types import StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_return
 
 
+@type_check_return(StringType)
 def canonical_path(path):
     """
     Canonicalise paths

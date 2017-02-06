@@ -19,11 +19,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from ConfigParser import ParsingError
-from types import StringType
+from types import IntType, StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_return
 
 
+@type_check_return(StringType)
 def _parse_bind_address(bind_address):
     """
     Parse bind address
@@ -101,6 +102,7 @@ def _parse_bind_address(bind_address):
     return ".".join(str(part) for part in parts)
 
 
+@type_check_return(IntType)
 def _parse_listening_port(listen):
     """
     Parse listening port
@@ -132,6 +134,7 @@ class HTTPdConfig(object):
         self._bind_address = _parse_bind_address(bind_address)
         self._listen = _parse_listening_port(listen)
 
+    @type_check_return(StringType)
     def bind_address(self):
         """
         Get bind address
@@ -140,6 +143,7 @@ class HTTPdConfig(object):
         """
         return self._bind_address
 
+    @type_check_return(IntType)
     def listen(self):
         """
         Get listening port

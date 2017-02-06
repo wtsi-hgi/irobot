@@ -21,12 +21,14 @@ import os
 import re
 from ConfigParser import ParsingError
 from datetime import datetime, timedelta
-from types import FloatType, IntType, StringType
+from types import FloatType, IntType, NoneType, StringType
 
 from irobot.common import (add_years, canonical_path, multiply_timedelta,
-                           parse_human_size, type_check)
+                           parse_human_size, type_check,
+                           type_check_return)
 
 
+@type_check_return(StringType)
 def _parse_location(location):
     """
     Parse precache directory location
@@ -37,6 +39,7 @@ def _parse_location(location):
     return canonical_path(location)
 
 
+@type_check_return(StringType)
 def _parse_index(location, index):
     """
     Parse precache tracking database name
@@ -59,6 +62,7 @@ def _parse_index(location, index):
     return os.path.join(canonical_path(dirname), basename)
 
 
+@type_check_return(IntType)
 def _parse_limited_size(size):
     """
     Parse size string := HUMAN-SIZE
@@ -75,6 +79,7 @@ def _parse_limited_size(size):
         raise ParsingError("Could not parse file size configuration")
 
 
+@type_check_return(IntType, NoneType)
 def _parse_unlimited_size(size):
     """
     Parse size string := "unlimited"
@@ -91,6 +96,7 @@ def _parse_unlimited_size(size):
     return _parse_limited_size(size)
 
 
+@type_check_return(NoneType, timedelta, IntType, FloatType)
 def _parse_expiry(expiry):
     """
     Parse expiry string := "unlimited"
@@ -166,6 +172,7 @@ class PrecacheConfig(object):
         self._expiry = _parse_expiry(expiry)
         self._chunk_size = _parse_limited_size(chunk_size)
 
+    @type_check_return(StringType)
     def location(self):
         """
         Get precache directory
@@ -174,6 +181,7 @@ class PrecacheConfig(object):
         """
         return self._location
 
+    @type_check_return(StringType)
     def index(self):
         """
         Get precache tracking database filename
@@ -182,6 +190,7 @@ class PrecacheConfig(object):
         """
         return self._index
 
+    @type_check_return(IntType, NoneType)
     def size(self):
         """
         Get precache size
@@ -190,12 +199,13 @@ class PrecacheConfig(object):
         """
         return self._size
 
+    @type_check_return(NoneType, datetime)
     def expiry(self, from_atime):
         """
         Get file expiration based on lasted access time
 
         @param   from_atime  Basis access time (datetime)
-        @return  Expiry timestamp (datetime)
+        @return  Expiry timestamp (datetime); or None for unlimited
         """
         type_check(from_atime, datetime)
 
@@ -211,6 +221,7 @@ class PrecacheConfig(object):
             # +x years
             return add_years(from_atime, self._expiry)
 
+    @type_check_return(IntType)
     def chunk_size(self):
         """
         Get file chunking size for checksumming

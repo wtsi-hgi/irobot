@@ -19,11 +19,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from ConfigParser import ParsingError
-from types import StringType
+from types import IntType, StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_return
 
 
+@type_check_return(IntType)
 def _parse_log_level(log_level):
     """
     Parse logging level
@@ -58,6 +59,7 @@ class MiscConfig(object):
 
         self._log_level = _parse_log_level(log_level)
 
+    @type_check_return(IntType)
     def log_level(self):
         """
         Get logging level

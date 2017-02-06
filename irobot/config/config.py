@@ -18,9 +18,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from ConfigParser import ConfigParser
-from types import StringType, TypeType
+from types import StringType, TypeType, ObjectType
 
-from irobot.common import canonical_path, type_check, type_check_collection
+from irobot.common import canonical_path, type_check, type_check_collection, type_check_return
 from irobot.config.httpd import HTTPdConfig
 from irobot.config.irods import iRODSConfig
 from irobot.config.misc import MiscConfig
@@ -76,6 +76,7 @@ class Configuration(object):
         # Build miscellaneous configuration
         self.misc = self._build_config(MiscConfig, MISC, MISC_LOG_LEVEL)
 
+    @type_check_return(ObjectType)
     def _build_config(self, constructor, section, *options):
         """
         Build configuration
@@ -86,7 +87,7 @@ class Configuration(object):
 
         @return  Instantiated configuration (object)
         """
-        type_check(constructor, TypeType)
+        type_check(constructor, ObjectType)
         type_check(section, StringType)
         type_check_collection(options, StringType)
 
