@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from functools import wraps
-from types import NoneType, FunctionType, MethodType
+from types import NoneType
 
 
 if __debug__:

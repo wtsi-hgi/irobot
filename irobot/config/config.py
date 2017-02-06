@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from ConfigParser import ConfigParser
-from types import StringType, TypeType, ObjectType
+from types import ObjectType, StringType, TypeType
 
 from irobot.common import canonical_path, type_check, type_check_collection, type_check_return
 from irobot.config.httpd import HTTPdConfig
@@ -87,7 +87,7 @@ class Configuration(object):
 
         @return  Instantiated configuration (object)
         """
-        type_check(constructor, ObjectType)
+        type_check(constructor, TypeType)
         type_check(section, StringType)
         type_check_collection(options, StringType)
 
