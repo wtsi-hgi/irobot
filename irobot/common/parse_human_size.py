@@ -18,11 +18,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-from types import StringType
+from types import IntType, StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_return
 
 
+@type_check_return(IntType)
 def parse_human_size(size):
     """
     Parse human size string := INTEGER ["B"]

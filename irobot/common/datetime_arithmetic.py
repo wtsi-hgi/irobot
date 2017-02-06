@@ -22,9 +22,10 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from types import FloatType, IntType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_return
 
 
+@type_check_return(timedelta)
 def multiply_timedelta(delta, m):
     """
     Multiply a timedelta by m, where m can be decimal
@@ -43,6 +44,7 @@ def multiply_timedelta(delta, m):
     return (delta * frac_m.numerator) / frac_m.denominator
 
 
+@type_check_return(datetime)
 def add_years(timestamp, years):
     """
     Add a number of years (integer or decimal, positive or negative) to

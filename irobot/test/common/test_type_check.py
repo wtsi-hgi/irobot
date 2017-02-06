@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from types import FloatType, IntType, StringType
 
-from irobot.common import type_check, type_check_collection
+from irobot.common import type_check, type_check_collection, type_check_return
 
 
 if __debug__:
@@ -43,11 +43,39 @@ if __debug__:
             self.assertRaises(TypeError, type_check_collection, 1)
             self.assertRaises(TypeError, type_check_collection, [1, 2, 3], StringType)
 
-else:
-    class TestTypeCheck(unittest.TestCase):
-        def test_passthrough(self):
-            self.assertIsNone(type_check())
-            self.assertIsNone(type_check_collection())
+        def test_return(self):
+            @type_check_return()
+            def _return_none_pass():
+                pass
+
+            @type_check_return()
+            def _return_none_fail():
+                return 123
+
+            self.assertIsNone(_return_none_pass())
+            self.assertRaises(TypeError, _return_none_fail)
+
+            @type_check_return(IntType)
+            def _return_int_pass():
+                return 123
+
+            @type_check_return(IntType)
+            def _return_int_fail():
+                return "foo"
+
+            self.assertEqual(_return_int_pass(), 123)
+            self.assertRaises(TypeError, _return_int_fail)
+
+            @type_check_return(StringType)
+            def _return_collection_pass():
+                return ["a", "b", "c"]
+
+            @type_check_return(StringType)
+            def _return_collection_fail():
+                return ["a", "b", "c", 1, 2, 3]
+
+            self.assertEqual(_return_collection_pass(), ["a", "b", "c"])
+            self.assertRaises(TypeError, _return_collection_fail)
 
 
 if __name__ == "__main__":

@@ -18,11 +18,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from ConfigParser import ParsingError
-from types import StringType
+from types import IntType, StringType
 
-from irobot.common import type_check
+from irobot.common import type_check, type_check_return
 
 
+@type_check_return(IntType)
 def _parse_max_connections(max_connections):
     """
     Parse maximum connections
@@ -51,6 +52,7 @@ class iRODSConfig(object):
 
         self._max_connections = _parse_max_connections(max_connections)
 
+    @type_check_return(IntType)
     def max_connections(self):
         """
         Get maximum concurrent connections
