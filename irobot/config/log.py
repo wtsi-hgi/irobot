@@ -25,14 +25,14 @@ from irobot.common import type_check, type_check_return
 
 
 @type_check_return(IntType)
-def _parse_log_level(log_level):
+def _parse_level(level):
     """
     Parse logging level
 
     @param   log_level  Logging level (string)
     @return  Logging level (int)
     """
-    type_check(log_level, StringType)
+    type_check(level, StringType)
 
     try:
         return {
@@ -41,29 +41,29 @@ def _parse_log_level(log_level):
             "warning":  logging.WARNING,
             "error":    logging.ERROR,
             "critical": logging.CRITICAL
-        }[log_level.lower()]
+        }[level.lower()]
 
     except KeyError:
         raise ParsingError("Invalid logging level")
 
 
-class MiscConfig(object):
-    """ Miscellaneous configuration """
-    def __init__(self, log_level):
+class LoggingConfig(object):
+    """ Logging configuration """
+    def __init__(self, level):
         """
-        Parse miscellaneous configuration
+        Parse logging configuration
 
         @param   log_level  Logging level
         """
-        type_check(log_level, StringType)
+        type_check(level, StringType)
 
-        self._log_level = _parse_log_level(log_level)
+        self._level = _parse_level(level)
 
     @type_check_return(IntType)
-    def log_level(self):
+    def level(self):
         """
         Get logging level
 
         @return  Logging level (int)
         """
-        return self._log_level
+        return self._level
