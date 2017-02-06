@@ -53,6 +53,7 @@ class TestConfiguration(unittest.TestCase):
             "listen = 5000",
 
             "[logging]",
+            "output = STDERR",
             "level = warning",
 
             "[foo]",
@@ -90,6 +91,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
         self.assertEqual(config.httpd.listen(), 5000)
 
+        self.assertIsNone(config.logging.output())
         self.assertEqual(config.logging.level(), logging.WARNING)
 
 

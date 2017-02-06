@@ -46,8 +46,13 @@ bind_address = 0.0.0.0
 # containerised application, this should be mapped to a host port.
 listen = 5000
 
-[misc]
+[log]
 
-# Logging level output, to decreasing granularity: debug, info, warning,
-# error or critical
-log_level = warning
+# The destination of all log messages; it should be set to either
+# "STDERR" to stream to standard error, otherwise it will be considered
+# as a filename for appendage
+output = STDERR
+
+# Minimum logging level output, to decreasing granularity: debug, info,
+# warning, error or critical
+level = warning

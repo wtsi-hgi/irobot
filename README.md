@@ -119,10 +119,14 @@ changes without rebuilding. An example configuration can be found in
   listen for requests. When containerised, this port should be exposed
   and mapped to a host port with the `-p` option to `docker run`.
 
-### Miscellaneous
+### Logging
 
-* **`log_level`** The level of logging output by iRobot, which can be
-  set to any of the following in decreasing granularity (in terms of
+* **`output`** The destination of all log messages, which should be set to
+  either `STDERR` to stream to standard eqprror, otherwise it will be
+  considered as a filename for appendage.
+
+* **`level`** The minimum level of logging output by iRobot, which can
+  be set to any of the following in decreasing granularity (in terms of
   output): `debug`, `info`, `warning`, `error` or `critical`.
 
 ## API

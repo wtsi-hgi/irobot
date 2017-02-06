@@ -19,9 +19,24 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from ConfigParser import ParsingError
-from types import IntType, StringType
+from types import IntType, NoneType, StringType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import canonical_path, type_check, type_check_return
+
+
+@type_check_return(NoneType, StringType)
+def _parse_output(output):
+    """
+    Parse logging output destination
+
+    @param   output  Logging destination
+    """
+    type_check(output, StringType)
+
+    if output == "STDERR":
+        return None
+
+    return canonical_path(output)
 
 
 @type_check_return(IntType)
@@ -49,15 +64,27 @@ def _parse_level(level):
 
 class LoggingConfig(object):
     """ Logging configuration """
-    def __init__(self, level):
+    def __init__(self, output, level):
         """
         Parse logging configuration
 
-        @param   log_level  Logging level
+        @param   output  Logging destination
+        @param   level   Logging level
         """
+        type_check(output, StringType)
         type_check(level, StringType)
 
+        self._output = _parse_output(output)
         self._level = _parse_level(level)
+
+    @type_check_return(NoneType, StringType)
+    def output(self):
+        """
+        Get logging output destination
+
+        @return  Logging destination (string or None for stderr)
+        """
+        return self._output
 
     @type_check_return(IntType)
     def level(self):

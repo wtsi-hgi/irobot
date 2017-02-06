@@ -25,6 +25,12 @@ import irobot.config.log as log
 
 
 class TesLoggingConfig(unittest.TestCase):
+    def test_output_parsing(self):
+        parse_output = log._parse_output
+
+        self.assertIsNone(parse_output("STDERR"))
+        self.assertEqual(parse_output("/foo.log"), "/foo.log")
+
     def test_level_parsing(self):
         parse_level = log._parse_level
 
@@ -36,8 +42,9 @@ class TesLoggingConfig(unittest.TestCase):
         self.assertEqual(parse_level("critical"), logging.CRITICAL)
 
     def test_instance(self):
-        config = log.LoggingConfig("debug")
+        config = log.LoggingConfig("/var/log/irobot.log", "debug")
 
+        self.assertEqual(config.output(), "/var/log/irobot.log")
         self.assertEqual(config.level(), logging.DEBUG)
 
 
