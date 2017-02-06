@@ -52,8 +52,8 @@ class TestConfiguration(unittest.TestCase):
             "bind_address = 0.0.0.0",
             "listen = 5000",
 
-            "[misc]",
-            "log_level = warning",
+            "[logging]",
+            "level = warning",
 
             "[foo]",
             "bar = 123",
@@ -90,7 +90,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
         self.assertEqual(config.httpd.listen(), 5000)
 
-        self.assertEqual(config.misc.log_level(), logging.WARNING)
+        self.assertEqual(config.logging.level(), logging.WARNING)
 
 
 if __name__ == "__main__":

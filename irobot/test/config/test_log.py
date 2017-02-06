@@ -21,24 +21,24 @@ import logging
 import unittest
 from ConfigParser import ParsingError
 
-import irobot.config.misc as misc
+import irobot.config.log as log
 
 
-class TestMiscConfig(unittest.TestCase):
-    def test_log_level_parsing(self):
-        parse_log_level = misc._parse_log_level
+class TesLoggingConfig(unittest.TestCase):
+    def test_level_parsing(self):
+        parse_level = log._parse_level
 
-        self.assertRaises(ParsingError, parse_log_level, "foo")
-        self.assertEqual(parse_log_level("debug"),    logging.DEBUG)
-        self.assertEqual(parse_log_level("info"),     logging.INFO)
-        self.assertEqual(parse_log_level("warning"),  logging.WARNING)
-        self.assertEqual(parse_log_level("error"),    logging.ERROR)
-        self.assertEqual(parse_log_level("critical"), logging.CRITICAL)
+        self.assertRaises(ParsingError, parse_level, "foo")
+        self.assertEqual(parse_level("debug"),    logging.DEBUG)
+        self.assertEqual(parse_level("info"),     logging.INFO)
+        self.assertEqual(parse_level("warning"),  logging.WARNING)
+        self.assertEqual(parse_level("error"),    logging.ERROR)
+        self.assertEqual(parse_level("critical"), logging.CRITICAL)
 
     def test_instance(self):
-        config = misc.MiscConfig("debug")
+        config = log.LoggingConfig("debug")
 
-        self.assertEqual(config.log_level(), logging.DEBUG)
+        self.assertEqual(config.level(), logging.DEBUG)
 
 
 if __name__ == "__main__":

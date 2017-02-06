@@ -23,7 +23,7 @@ from types import ObjectType, StringType, TypeType
 from irobot.common import canonical_path, type_check, type_check_collection, type_check_return
 from irobot.config.httpd import HTTPdConfig
 from irobot.config.irods import iRODSConfig
-from irobot.config.misc import MiscConfig
+from irobot.config.log import LoggingConfig
 from irobot.config.precache import PrecacheConfig
 
 
@@ -41,8 +41,8 @@ HTTPD = "httpd"
 HTTPD_BIND_ADDRESS = "bind_address"
 HTTPD_LISTEN = "listen"
 
-MISC = "misc"
-MISC_LOG_LEVEL = "log_level"
+LOGGING = "logging"
+LOGGING_LEVEL = "level"
 
 
 class Configuration(object):
@@ -73,8 +73,8 @@ class Configuration(object):
         self.httpd = self._build_config(HTTPdConfig, HTTPD, HTTPD_BIND_ADDRESS,
                                                             HTTPD_LISTEN)
 
-        # Build miscellaneous configuration
-        self.misc = self._build_config(MiscConfig, MISC, MISC_LOG_LEVEL)
+        # Build logging configuration
+        self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_LEVEL)
 
     @type_check_return(ObjectType)
     def _build_config(self, constructor, section, *options):
