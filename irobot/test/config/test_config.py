@@ -25,7 +25,7 @@ from tempfile import NamedTemporaryFile
 from irobot.config import Configuration
 
 
-class _FooConfig(ConfigType):
+class _FooConfig(object):
     def __init__(self, **kwargs):
         self.kwargs = kwargs
 
