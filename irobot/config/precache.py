@@ -24,8 +24,7 @@ from datetime import datetime, timedelta
 from types import FloatType, IntType, NoneType, StringType
 
 from irobot.common import (add_years, canonical_path, multiply_timedelta,
-                           parse_human_size, type_check,
-                           type_check_return)
+                           parse_human_size, type_check, type_check_return)
 
 
 @type_check_return(StringType)
