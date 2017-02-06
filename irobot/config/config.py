@@ -42,6 +42,7 @@ HTTPD_BIND_ADDRESS = "bind_address"
 HTTPD_LISTEN = "listen"
 
 LOGGING = "logging"
+LOGGING_OUTPUT = "output"
 LOGGING_LEVEL = "level"
 
 
@@ -74,7 +75,8 @@ class Configuration(object):
                                                             HTTPD_LISTEN)
 
         # Build logging configuration
-        self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_LEVEL)
+        self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_OUTPUT,
+                                                                  LOGGING_LEVEL)
 
     @type_check_return(ObjectType)
     def _build_config(self, constructor, section, *options):
