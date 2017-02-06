@@ -41,7 +41,6 @@ def _check_listener(listener):
         if len(argspec.args) != (2 if ismethod(listener) else 1) \
         or argspec.varargs is None \
         or argspec.keywords is None:
-            print argspec
             raise TypeError("Listener should accept a timestamp, varargs and keywords")
 
 
