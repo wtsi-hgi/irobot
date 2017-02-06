@@ -23,7 +23,6 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile
 
 from irobot.config import Configuration
-from irobot.config._base import ConfigType
 
 
 class _FooConfig(ConfigType):
