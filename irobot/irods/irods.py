@@ -18,13 +18,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from collections import deque
-from datetime import datetime
-from inspect import getargspec, ismethod
 from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
-from types import FunctionType, MethodType, StringType
+from types import StringType
 
-from irobot.common import type_check
+from irobot.common import Listener, type_check
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 
@@ -49,7 +47,7 @@ def _exists(irods_path):
         raise IOError("Data object \"%s\" inaccessible" % irods_path)
 
 
-class iRODS(object):
+class iRODS(Listener):
     """ High level iRODS interface with iget pool management """
     def __init__(self, irods_config):
         """
@@ -60,10 +58,10 @@ class iRODS(object):
         type_check(irods_config, iRODSConfig)
         self._config = irods_config
 
+        super(iRODS, self).__init__()
+
         self._iget_queue = deque()  # n.b., collections.deque is thread-safe
         self._iget_pool = BoundedSemaphore(self._config.max_connections())
-
-        self._listeners = []
 
         self._running = True
         self._runner = Thread(target=self._thread_runner)
@@ -82,35 +80,6 @@ class iRODS(object):
         """ Stop thread runner on GC """
         self._running = False
 
-    def add_listener(self, listener):
-        """
-        Add a listener for broadcast messages
-
-        @param   listener  Listener (function of three arguments)
-        """
-        type_check(listener, FunctionType, MethodType)
-
-        # Methods include the "self" argument
-        arg_len = 4 if ismethod(listener) else 3
-        if __debug__ and len(getargspec(listener).args) != arg_len:
-            raise TypeError("Listener doesn't take 3 arguments")
-
-        self._listeners.append(listener)
-
-    def _broadcast(self, status, irods_path):
-        """
-        Broadcast a message to all the listeners
-
-        @param   status      Message status (string)
-        @param   irods_path  Path to data object on iRODS (string)
-        """
-        type_check(status, StringType)
-        type_check(irods_path, StringType)
-
-        broadcast_time = datetime.utcnow()
-        for listener in self._listeners:
-            listener(broadcast_time, status, irods_path)
-
     def get_dataobject(self, irods_path, local_path):
         """
         Enqueue retrieval of data object from iRODS and store it in the
@@ -124,7 +93,7 @@ class iRODS(object):
 
         _exists(irods_path)
         self._iget_queue.append((irods_path, local_path))
-        self._broadcast(IGET_QUEUED, irods_path)
+        self.broadcast(IGET_QUEUED, irods_path)
 
     def _iget(self, irods_path, local_path):
         """
@@ -136,12 +105,12 @@ class iRODS(object):
         @param   local_path  Local filesystem target file (string)
         """
         try:
-            self._broadcast(IGET_STARTED, irods_path)
+            self.broadcast(IGET_STARTED, irods_path)
             iget(irods_path, local_path)
-            self._broadcast(IGET_FINISHED, irods_path)
+            self.broadcast(IGET_FINISHED, irods_path)
 
         except CalledProcessError:
-            self._broadcast(IGET_FAILED, irods_path)
+            self.broadcast(IGET_FAILED, irods_path)
 
     @staticmethod
     def get_metadata(irods_path):
