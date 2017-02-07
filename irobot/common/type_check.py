@@ -17,12 +17,15 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import inspect
 from functools import wraps
 from types import NoneType
 
 
 if __debug__:
-    from collections import Iterable
+    from collections import Iterable, Mapping, namedtuple
+
+    _ArgVals = namedtuple("ArgVals", ["args", "varargs", "keywords"])
 
     def type_check(var, *types):
         """
@@ -45,13 +48,50 @@ if __debug__:
         type_check(collection, Iterable)
         assert len(types) > 0, "Expecting at least one type to check against"
 
+        if isinstance(collection, Mapping):
+            collection = collection.values()
+
         for item in collection:
             type_check(item, *types)
 
-    # TODO type_check_arguments decorator
-    # I haven't quite worked out how to do this; inspect.getcallargs
-    # looks promising, but the wrapper in the decorator will necessarily
-    # lose the decorated function's argument spec...
+    def type_check_arguments(**typespec):
+        """
+        Type checking decorator for function arguments
+
+        @note    This decorator must be applied to the function first
+
+        @param   *typespec  Mapping of function arguments to types
+        """
+        def decorator(fn):
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                # Map wrapper arguments to function signature
+                argspec = inspect.getargspec(fn)
+                posargs = len(argspec.args)
+                argvals = _ArgVals(
+                            args=(args[:posargs] + (argspec.defaults or ()))[:posargs],
+                            varargs=args[posargs:],
+                            keywords=kwargs
+                          )
+
+                # Type check positional arguments
+                for i, arg in enumerate(argspec.args):
+                    if arg in typespec:
+                        type_check(argvals.args[i], typespec[arg])
+
+                # Type check varargs
+                if argspec.varargs and argspec.varargs in typespec:
+                    type_check_collection(argvals.varargs, typespec[argspec.varargs])
+
+                # Type check keywords
+                if argspec.keywords and argspec.keywords in typespec:
+                    type_check_collection(argvals.keywords, typespec[argspec.keywords])
+
+                return fn(*args, **kwargs)
+
+            return wrapper
+
+        return decorator
 
     def type_check_return(*types):
         """
@@ -88,9 +128,10 @@ else:
         """ Pass-through """
         pass
 
+    def type_check_arguments(*args, **kwargs):
+        """ Pass-through """
+        return lambda fn: fn
+
     def type_check_return(*args, **kwargs):
         """ Pass-through """
-        def decorator(fn):
-            return fn
-
-        return decorator
+        return lambda fn: fn

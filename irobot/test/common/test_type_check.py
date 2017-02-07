@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from types import FloatType, IntType, StringType
 
-from irobot.common import type_check, type_check_collection, type_check_return
+from irobot.common import type_check, type_check_collection, type_check_arguments, type_check_return
 
 
 if __debug__:
@@ -35,13 +35,18 @@ if __debug__:
 
         def test_union(self):
             self.assertIsNone(type_check(1, IntType, StringType))
-            self.assertRaises(TypeError, type_check, 'foo', IntType, FloatType)
+            self.assertRaises(TypeError, type_check, "foo", IntType, FloatType)
 
         def test_collection(self):
             self.assertIsNone(type_check_collection([1, 2, 3], IntType))
             self.assertIsNone(type_check_collection([1, 2.3, 4.56], IntType, FloatType))
             self.assertRaises(TypeError, type_check_collection, 1)
             self.assertRaises(TypeError, type_check_collection, [1, 2, 3], StringType)
+
+        def test_collection_mapping(self):
+            self.assertIsNone(type_check_collection({"foo": 1, "bar": 2}, IntType))
+            self.assertIsNone(type_check_collection({"foo": 1, "bar": 2.3}, IntType, FloatType))
+            self.assertRaises(TypeError, type_check_collection, {"foo": 1, "bar": "quux"}, IntType)
 
         def test_return(self):
             @type_check_return()
@@ -76,6 +81,52 @@ if __debug__:
 
             self.assertEqual(_return_collection_pass(), ["a", "b", "c"])
             self.assertRaises(TypeError, _return_collection_fail)
+
+        def test_arguments(self):
+            @type_check_arguments()
+            def _no_check(a, b=123, *c, **d):
+                pass
+
+            self.assertIsNone(_no_check("foo", "bar", 123, 456, quux="xyzzy"))
+
+            @type_check_arguments(a=IntType)
+            def _simple(a):
+                pass
+
+            self.assertRaises(TypeError, _simple, "foo")
+            self.assertIsNone(_simple(123))
+
+            @type_check_arguments(a=(IntType, StringType))
+            def _simple_union(a):
+                pass
+
+            self.assertRaises(TypeError, _simple_union, 1.1)
+            self.assertIsNone(_simple_union(123))
+            self.assertIsNone(_simple_union("foo"))
+
+            @type_check_arguments(a=IntType, b=StringType)
+            def _default(a, b="foo"):
+                pass
+
+            self.assertRaises(TypeError, _default, 123, 456)
+            self.assertIsNone(_default(123))
+            self.assertIsNone(_default(123, "bar"))
+
+            @type_check_arguments(args=StringType)
+            def _varargs(*args):
+                pass
+
+            self.assertRaises(TypeError, _varargs, 1, 2, 3)
+            self.assertRaises(TypeError, _varargs, 1, "foo", 3)
+            self.assertIsNone(_varargs("foo", "bar", "baz"))
+
+            @type_check_arguments(kwargs=IntType)
+            def _kwargs(**kwargs):
+                pass
+
+            self.assertRaises(TypeError, _kwargs, foo="bar")
+            self.assertRaises(TypeError, _kwargs, foo=1, bar="quux")
+            self.assertIsNone(_kwargs(foo=1, bar=2))
 
 
 if __name__ == "__main__":
