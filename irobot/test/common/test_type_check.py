@@ -128,6 +128,13 @@ if __debug__:
             self.assertRaises(TypeError, _kwargs, foo=1, bar="quux")
             self.assertIsNone(_kwargs(foo=1, bar=2))
 
+            @type_check_arguments(foo=IntType)
+            def _positional_as_kw(foo):
+                pass
+
+            self.assertRaises(TypeError, _positional_as_kw, foo="bar")
+            self.assertIsNone(_positional_as_kw(foo=1))
+
 
 if __name__ == "__main__":
     unittest.main()
