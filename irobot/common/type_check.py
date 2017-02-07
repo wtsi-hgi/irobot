@@ -25,8 +25,6 @@ from types import NoneType
 if __debug__:
     from collections import Iterable, Mapping, namedtuple
 
-    _ArgVals = namedtuple("ArgVals", ["args", "varargs", "keywords"])
-
     def type_check(var, *types):
         """
         Poor man's type checking
@@ -66,26 +64,45 @@ if __debug__:
             @wraps(fn)
             def wrapper(*args, **kwargs):
                 # Map wrapper arguments to function signature
+                # Note that positional values can be provided via
+                # keyword values, so we have to extract them first
                 argspec = inspect.getargspec(fn)
-                posargs = len(argspec.args)
-                argvals = _ArgVals(
-                            args=(args[:posargs] + (argspec.defaults or ()))[:posargs],
-                            varargs=args[posargs:],
-                            keywords=kwargs
-                          )
+
+                pos_values = []
+                kw_veto = []
+                arg_p = 0
+                def_p = 0
+                for arg in argspec.args:
+                    if arg in kwargs:
+                        pos_values.append(kwargs[arg])
+                        kw_veto.append(arg)
+
+                    else:
+                        if arg_p < len(args):
+                            pos_values.append(args[arg_p])
+                            arg_p += 1
+
+                        else:
+                            pos_values.append(argspec.defaults[def_p])
+                            def_p += 1
+
+                assert len(pos_values) == len(argspec.args)
+
+                var_values = args[len(argspec.args):]
+                kw_values = {k:v for k, v in kwargs.items() if k not in kw_veto}
 
                 # Type check positional arguments
                 for i, arg in enumerate(argspec.args):
                     if arg in typespec:
-                        type_check(argvals.args[i], typespec[arg])
+                        type_check(pos_values[i], typespec[arg])
 
                 # Type check varargs
                 if argspec.varargs and argspec.varargs in typespec:
-                    type_check_collection(argvals.varargs, typespec[argspec.varargs])
+                    type_check_collection(var_values, typespec[argspec.varargs])
 
                 # Type check keywords
                 if argspec.keywords and argspec.keywords in typespec:
-                    type_check_collection(argvals.keywords, typespec[argspec.keywords])
+                    type_check_collection(kw_values, typespec[argspec.keywords])
 
                 return fn(*args, **kwargs)
 
