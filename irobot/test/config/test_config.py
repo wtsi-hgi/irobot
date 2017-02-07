@@ -51,6 +51,7 @@ class TestConfiguration(unittest.TestCase):
             "[httpd]",
             "bind_address = 0.0.0.0",
             "listen = 5000",
+            "timeout = 500",
 
             "[logging]",
             "output = STDERR",
@@ -90,6 +91,7 @@ class TestConfiguration(unittest.TestCase):
 
         self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
         self.assertEqual(config.httpd.listen(), 5000)
+        self.assertEqual(config.httpd.timeout(), 500)
 
         self.assertIsNone(config.logging.output())
         self.assertEqual(config.logging.level(), logging.WARNING)

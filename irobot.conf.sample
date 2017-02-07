@@ -46,6 +46,12 @@ bind_address = 0.0.0.0
 # containerised application, this should be mapped to a host port.
 listen = 5000
 
+# Response timeout: it can be set to "unlimited" to keep responses alive
+# until their content is available (not recommended), or to a specific
+# number of milliseconds (with an optional "ms" suffix) or seconds (with
+# a mandatory "s" suffix).
+timeout = 500
+
 [log]
 
 # The destination of all log messages; it should be set to either
