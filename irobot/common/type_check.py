@@ -91,9 +91,6 @@ else:
     def type_check_return(*args, **kwargs):
         """ Pass-through """
         def decorator(fn):
-            @wraps(fn)
-            def wrapper(*fn_args, **fn_kwargs):
-                return fn(*fn_args, **fn_kwargs)
-            return wrapper
+            return fn
 
         return decorator
