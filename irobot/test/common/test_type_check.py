@@ -135,6 +135,12 @@ if __debug__:
             self.assertRaises(TypeError, _positional_as_kw, foo="bar")
             self.assertIsNone(_positional_as_kw(foo=1))
 
+            @type_check_arguments(a=IntType, b=IntType, c=IntType)
+            def _skip_default_with_kw(a, b=2, c=2):
+                return a, b, c
+
+            self.assertEqual(_skip_default_with_kw(1, c=4), (1, 2, 4))
+
 
 if __name__ == "__main__":
     unittest.main()

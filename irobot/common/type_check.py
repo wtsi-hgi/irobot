@@ -34,7 +34,7 @@ if __debug__:
         """
         assert len(types) > 0, "Expecting at least one type to check against"
         if not any(isinstance(var, t) for t in types):
-            raise TypeError("Expecting one of %s, not %s" % (types, type(var)))
+            raise TypeError("Expecting type of %s, not %s" % (types, type(var)))
 
     def type_check_collection(collection, *types):
         """
@@ -82,11 +82,14 @@ if __debug__:
                             pos_values.append(args[arg_p])
                             arg_p += 1
 
+                            if len(args) - arg_p > len(argspec.defaults or ()):
+                                def_p += 1
+
                         else:
                             pos_values.append(argspec.defaults[def_p])
                             def_p += 1
 
-                assert len(pos_values) == len(argspec.args)
+                assert len(pos_values) == len(argspec.args), "Error mapping values to function signature"
 
                 var_values = args[len(argspec.args):]
                 kw_values = {k:v for k, v in kwargs.items() if k not in kw_veto}
