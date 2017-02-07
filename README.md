@@ -119,6 +119,12 @@ changes without rebuilding. An example configuration can be found in
   listen for requests. When containerised, this port should be exposed
   and mapped to a host port with the `-p` option to `docker run`.
 
+* **`timeout`** The timeout for responses, which can be set to
+  `unlimited` to keep the connection alive until the response content is
+  available (not recommended), or to a specific number of milliseconds
+  (with an optional `ms` suffix) or seconds (with a mandatory `s`
+  suffix).
+
 ### Logging
 
 * **`output`** The destination of all log messages, which should be set to

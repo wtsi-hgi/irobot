@@ -45,11 +45,27 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertRaises(ParsingError, parse_listening_port, "65536")
         self.assertEqual(parse_listening_port("1234"), 1234)
 
+    def test_timeout_parsing(self):
+        parse_timeout = httpd._parse_timeout
+
+        self.assertRaises(ParsingError, parse_timeout, "foo")
+        self.assertRaises(ParsingError, parse_timeout, "-1")
+        self.assertEqual(parse_timeout("1000"), 1000)
+        self.assertEqual(parse_timeout("1000ms"), 1000)
+        self.assertEqual(parse_timeout("1000 ms"), 1000)
+        self.assertEqual(parse_timeout("1s"), 1000)
+        self.assertEqual(parse_timeout("1.1 s"), 1100)
+        self.assertIsNone(parse_timeout("0"))
+        self.assertIsNone(parse_timeout("0ms"))
+        self.assertIsNone(parse_timeout("0s"))
+        self.assertIsNone(parse_timeout("unlimited"))
+
     def test_instance(self):
-        config = httpd.HTTPdConfig("0.0.0.0", "5000")
+        config = httpd.HTTPdConfig("0.0.0.0", "5000", "1000ms")
 
         self.assertEqual(config.bind_address(), "0.0.0.0")
         self.assertEqual(config.listen(), 5000)
+        self.assertEqual(config.timeout(), 1000)
 
 
 if __name__ == "__main__":

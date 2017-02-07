@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from ConfigParser import ParsingError
-from types import IntType, StringType
+from types import IntType, NoneType, StringType
 
 from irobot.common import type_check, type_check_return
 
@@ -119,20 +119,67 @@ def _parse_listening_port(listen):
     return port
 
 
+@type_check_return(IntType, NoneType)
+def _parse_timeout(timeout):
+    """
+    Parse response timeout := "unlimited"
+                            | INTEGER ["ms"]
+                            | NUMBER "s"
+
+    @param   timeout  Response timeout (string)
+    @return  Response timeout in milliseconds (int); or None (for unlimited)
+    """
+    type_check(timeout, StringType)
+
+    if timeout.lower() == "unlimited":
+        return None
+
+    match = re.match(r"""
+        ^(?:
+            (?:
+                (?P<milliseconds> \d+ )
+                (?: \s* ms)?
+            )
+            |
+            (?:
+                (?P<seconds>
+                    \d+
+                    (?: \. \d+)?
+                )
+                \s* s
+            )
+        )$
+    """, timeout, re.VERBOSE)
+
+    if not match:
+        raise ParsingError("Invalid timeout")
+
+    if match.group("milliseconds"):
+        output = int(match.group("milliseconds"))
+
+    if match.group("seconds"):
+        output = int(float(match.group("seconds")) * 1000)
+
+    # 0 timeout is alias for unlimited
+    return output or None
+
+
 class HTTPdConfig(object):
     """ HTTPd configuration """
-    def __init__(self, bind_address, listen):
+    def __init__(self, bind_address, listen, timeout):
         """
         Parse HTTPd configuration
 
         @param   bind_address  IPv4 bind address (string)
         @param   listen        Listening port (string)
+        @param   timeout       Response timeout (string)
         """
         type_check(bind_address, StringType)
         type_check(listen, StringType)
 
         self._bind_address = _parse_bind_address(bind_address)
         self._listen = _parse_listening_port(listen)
+        self._timeout = _parse_timeout(timeout)
 
     @type_check_return(StringType)
     def bind_address(self):
@@ -151,3 +198,12 @@ class HTTPdConfig(object):
         @return  Listening port (int)
         """
         return self._listen
+
+    @type_check_return(IntType, NoneType)
+    def timeout(self):
+        """
+        Get response timeout
+
+        @return  Response timout in milliseconds (int)
+        """
+        return self._timeout

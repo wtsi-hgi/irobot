@@ -40,6 +40,7 @@ IRODS_MAX_CONNECTIONS = "max_connections"
 HTTPD = "httpd"
 HTTPD_BIND_ADDRESS = "bind_address"
 HTTPD_LISTEN = "listen"
+HTTPD_TIMEOUT = "timeout"
 
 LOGGING = "logging"
 LOGGING_OUTPUT = "output"
@@ -72,8 +73,8 @@ class Configuration(object):
 
         # Build HTTPd configuration
         self.httpd = self._build_config(HTTPdConfig, HTTPD, HTTPD_BIND_ADDRESS,
-                                                            HTTPD_LISTEN)
-
+                                                            HTTPD_LISTEN,
+                                                            HTTPD_TIMEOUT)
         # Build logging configuration
         self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_OUTPUT,
                                                                   LOGGING_LEVEL)
