@@ -20,10 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import re
 from types import IntType, StringType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import type_check_arguments, type_check_return
 
 
 @type_check_return(IntType)
+@type_check_arguments(size=StringType)
 def parse_human_size(size):
     """
     Parse human size string := INTEGER ["B"]
@@ -32,8 +33,6 @@ def parse_human_size(size):
     @param   size  File size with optional suffix (string)
     @return  size in bytes (int)
     """
-    type_check(size, StringType)
-
     match = re.match(r"""
         ^(?:                       # Anchor to start of string
             (?:

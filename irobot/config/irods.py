@@ -20,10 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import ParsingError
 from types import IntType, StringType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import type_check_arguments, type_check_return
 
 
 @type_check_return(IntType)
+@type_check_arguments(max_connections=StringType)
 def _parse_max_connections(max_connections):
     """
     Parse maximum connections
@@ -31,7 +32,6 @@ def _parse_max_connections(max_connections):
     @param   max_connections  Maximum concurrent connections (string)
     @return  Maximum concurrent connections (int)
     """
-    type_check(max_connections, StringType)
     value = int(max_connections)
 
     if value <= 0:
@@ -42,14 +42,13 @@ def _parse_max_connections(max_connections):
 
 class iRODSConfig(object):
     """ iRODS configuration """
+    @type_check_arguments(max_connections=StringType)
     def __init__(self, max_connections):
         """
         Parse iRODS configuration
 
         @param   max_connections  Maximum concurrent connections (string)
         """
-        type_check(max_connections, StringType)
-
         self._max_connections = _parse_max_connections(max_connections)
 
     @type_check_return(IntType)

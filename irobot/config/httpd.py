@@ -21,10 +21,11 @@ import re
 from ConfigParser import ParsingError
 from types import IntType, NoneType, StringType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import type_check_arguments, type_check_return
 
 
 @type_check_return(StringType)
+@type_check_arguments(bind_address=StringType)
 def _parse_bind_address(bind_address):
     """
     Parse bind address
@@ -32,8 +33,6 @@ def _parse_bind_address(bind_address):
     @param   bind_address  IPv4 bind address (string)
     @return  IPv4 bind address in dotted decimal (string)
     """
-    type_check(bind_address, StringType)
-
     match = re.match(r"""
         ^(?:
             (?P<dotted_dec>                 # e.g., 222.173.190.239
@@ -103,6 +102,7 @@ def _parse_bind_address(bind_address):
 
 
 @type_check_return(IntType)
+@type_check_arguments(listen=StringType)
 def _parse_listening_port(listen):
     """
     Parse listening port
@@ -110,7 +110,6 @@ def _parse_listening_port(listen):
     @param   listen  Listening port (string)
     @return  Listening port (int)
     """
-    type_check(listen, StringType)
     port = int(listen)
 
     if not 0 <= port < 2**16:
@@ -120,6 +119,7 @@ def _parse_listening_port(listen):
 
 
 @type_check_return(IntType, NoneType)
+@type_check_arguments(timeout=StringType)
 def _parse_timeout(timeout):
     """
     Parse response timeout := "unlimited"
@@ -129,8 +129,6 @@ def _parse_timeout(timeout):
     @param   timeout  Response timeout (string)
     @return  Response timeout in milliseconds (int); or None (for unlimited)
     """
-    type_check(timeout, StringType)
-
     if timeout.lower() == "unlimited":
         return None
 
@@ -166,6 +164,7 @@ def _parse_timeout(timeout):
 
 class HTTPdConfig(object):
     """ HTTPd configuration """
+    @type_check_arguments(bind_address=StringType, listen=StringType, timeout=StringType)
     def __init__(self, bind_address, listen, timeout):
         """
         Parse HTTPd configuration
@@ -174,9 +173,6 @@ class HTTPdConfig(object):
         @param   listen        Listening port (string)
         @param   timeout       Response timeout (string)
         """
-        type_check(bind_address, StringType)
-        type_check(listen, StringType)
-
         self._bind_address = _parse_bind_address(bind_address)
         self._listen = _parse_listening_port(listen)
         self._timeout = _parse_timeout(timeout)

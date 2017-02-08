@@ -20,21 +20,22 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from logging import Logger
 from types import IntType, NoneType, StringType
 
-from irobot.common import type_check
+from irobot.common import type_check_arguments
 
 
 class LogWriter(object):
     """ Logging base class """
+    @type_check_arguments(logger=(NoneType, Logger))
     def __init__(self, logger=None, *args, **kwargs):
         """
         Constructor
 
         @param   logger  Logging instance
         """
-        type_check(logger, NoneType, Logger)
         super(LogWriter, self).__init__(*args, **kwargs)
         self._logger = logger
 
+    @type_check_arguments(level=IntType, message=StringType)
     def log(self, level, message, *args, **kwargs):
         """
         Write to log
@@ -43,6 +44,4 @@ class LogWriter(object):
         @param   message  Log message (string)
         """
         if self._logger:
-            type_check(level, IntType)
-            type_check(message, StringType)
             self._logger.log(level, message, *args, **kwargs)

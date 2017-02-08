@@ -24,21 +24,22 @@ from datetime import datetime, timedelta
 from types import FloatType, IntType, NoneType, StringType
 
 from irobot.common import (add_years, canonical_path, multiply_timedelta,
-                           parse_human_size, type_check, type_check_return)
+                           parse_human_size, type_check_arguments, type_check_return)
 
 
 @type_check_return(StringType)
+@type_check_arguments(location=StringType)
 def _parse_location(location):
     """
     Parse precache directory location
     @param   location  Precache directory (string)
     @return  Absolute precache directory path (string)
     """
-    type_check(location, StringType)
     return canonical_path(location)
 
 
 @type_check_return(StringType)
+@type_check_arguments(location=StringType, index=StringType)
 def _parse_index(location, index):
     """
     Parse precache tracking database name
@@ -47,9 +48,6 @@ def _parse_index(location, index):
     @param   index     Tracking database filename (string)
     @return  Absolute tracking database path (string)
     """
-    type_check(location, StringType)
-    type_check(index, StringType)
-
     dirname, basename = os.path.split(index)
 
     if basename == "":
@@ -62,6 +60,7 @@ def _parse_index(location, index):
 
 
 @type_check_return(IntType)
+@type_check_arguments(size=StringType)
 def _parse_limited_size(size):
     """
     Parse size string := HUMAN-SIZE
@@ -69,8 +68,6 @@ def _parse_limited_size(size):
     @param   size  File size, optionally suffixed (string)
     @return  Size in bytes (int)
     """
-    type_check(size, StringType)
-
     try:
         return parse_human_size(size)
 
@@ -79,6 +76,7 @@ def _parse_limited_size(size):
 
 
 @type_check_return(IntType, NoneType)
+@type_check_arguments(size=StringType)
 def _parse_unlimited_size(size):
     """
     Parse size string := "unlimited"
@@ -87,8 +85,6 @@ def _parse_unlimited_size(size):
     @param   size  File size, optionally suffixed (string)
     @return  Size in bytes (int); or None for unlimited
     """
-    type_check(size, StringType)
-
     if size.lower() == "unlimited":
         return None
 
@@ -96,6 +92,7 @@ def _parse_unlimited_size(size):
 
 
 @type_check_return(NoneType, timedelta, IntType, FloatType)
+@type_check_arguments(expiry=StringType)
 def _parse_expiry(expiry):
     """
     Parse expiry string := "unlimited"
@@ -108,8 +105,6 @@ def _parse_expiry(expiry):
     @return  None for unlimited; an absolute difference (timedelta); or
              a number of years (numeric)
     """
-    type_check(expiry, StringType)
-
     if expiry.lower() == "unlimited":
         return None
 
@@ -149,6 +144,7 @@ def _parse_expiry(expiry):
 
 class PrecacheConfig(object):
     """ Precache configuration """
+    @type_check_arguments(location=StringType, index=StringType, size=StringType, expiry=StringType, chunk_size=StringType)
     def __init__(self, location, index, size, expiry, chunk_size):
         """
         Parse precache configuration
@@ -159,12 +155,6 @@ class PrecacheConfig(object):
         @param   expiry      Maximum file age (string)
         @param   chunk_size  File block size for checksumming (string)
         """
-        type_check(location, StringType)
-        type_check(index, StringType)
-        type_check(size, StringType)
-        type_check(expiry, StringType)
-        type_check(chunk_size, StringType)
-
         self._location = _parse_location(location)
         self._index = _parse_index(self._location, index)
         self._size = _parse_unlimited_size(size)
@@ -199,6 +189,7 @@ class PrecacheConfig(object):
         return self._size
 
     @type_check_return(NoneType, datetime)
+    @type_check_arguments(from_atime=datetime)
     def expiry(self, from_atime):
         """
         Get file expiration based on lasted access time
@@ -206,8 +197,6 @@ class PrecacheConfig(object):
         @param   from_atime  Basis access time (datetime)
         @return  Expiry timestamp (datetime); or None for unlimited
         """
-        type_check(from_atime, datetime)
-
         if not self._expiry:
             # Unlimited
             return None

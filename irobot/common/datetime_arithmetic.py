@@ -22,10 +22,11 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from types import FloatType, IntType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import type_check_arguments, type_check_return
 
 
 @type_check_return(timedelta)
+@type_check_arguments(delta=timedelta, m=(IntType, FloatType))
 def multiply_timedelta(delta, m):
     """
     Multiply a timedelta by m, where m can be decimal
@@ -37,14 +38,12 @@ def multiply_timedelta(delta, m):
     @param   m      Multiplier (numeric)
     @return  Multiplied timedelta (timedelta)
     """
-    type_check(delta, timedelta)
-    type_check(m, IntType, FloatType)
-
     frac_m = Fraction(m).limit_denominator(1000)
     return (delta * frac_m.numerator) / frac_m.denominator
 
 
 @type_check_return(datetime)
+@type_check_arguments(timestamp=datetime, years=(IntType, FloatType))
 def add_years(timestamp, years):
     """
     Add a number of years (integer or decimal, positive or negative) to
@@ -54,9 +53,6 @@ def add_years(timestamp, years):
     @param   years      Years to add (numeric)
     @return  Shifted timestamp in UTC (datetime)
     """
-    type_check(timestamp, datetime)
-    type_check(years, IntType, FloatType)
-
     if years == 0:
         return timestamp
 
