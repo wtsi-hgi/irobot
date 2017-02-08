@@ -17,10 +17,12 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import logging
 from ConfigParser import ConfigParser
-from types import ObjectType, StringType, TypeType
+from types import NoneType, ObjectType, StringType, TypeType
 
-from irobot.common import canonical_path, type_check_arguments, type_check_return
+from irobot.common import LogWriter, canonical_path, type_check_arguments, type_check_return
+from irobot.config._base import BaseConfig
 from irobot.config.httpd import HTTPdConfig
 from irobot.config.irods import iRODSConfig
 from irobot.config.log import LoggingConfig
@@ -47,15 +49,17 @@ LOGGING_OUTPUT = "output"
 LOGGING_LEVEL = "level"
 
 
-class Configuration(object):
+class Configuration(LogWriter):
     """ iRobot configuration """
-    @type_check_arguments(config_file=StringType)
-    def __init__(self, config_file):
+    @type_check_arguments(config_file=StringType, logger=(NoneType, logging.Logger))
+    def __init__(self, config_file, logger=None, *args, **kwargs):
         """
         Open and parse configuration from file
 
         @param   config_file  Configuration filename
+        @param   logger       Logging instance
         """
+        super(Configuration, self).__init__(logger=logger)
         self.config = ConfigParser()
 
         with open(canonical_path(config_file), "r") as fp:
@@ -78,17 +82,21 @@ class Configuration(object):
         self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_OUTPUT,
                                                                   LOGGING_LEVEL)
 
-    @type_check_return(ObjectType)
-    @type_check_arguments(constructor=TypeType, section=StringType)
+        self.log(logging.INFO, "Configuration loaded")
+        for section in ["precache", "irods", "httpd", "logging"]:
+            self.log(logging.INFO, "%s = %s" % (section, getattr(self, section)))
+
+    @type_check_return(BaseConfig)
+    @type_check_arguments(constructor=BaseConfig.__class__, section=StringType)
     def _build_config(self, constructor, section, *options):
         """
         Build configuration
 
-        @param   constructor  Configuration class (class)
+        @param   constructor  Configuration class (class inheriting BaseConfig)
         @param   section      Section (string)
         @param   *options     Options (strings)
 
-        @return  Instantiated configuration (object)
+        @return  Instantiated configuration (object inheriting BaseConfig)
         """
         return constructor(**{
             k:self.config.get(section, k)

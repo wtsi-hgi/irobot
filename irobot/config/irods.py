@@ -21,6 +21,7 @@ from ConfigParser import ParsingError
 from types import IntType, StringType
 
 from irobot.common import type_check_arguments, type_check_return
+from irobot.config._base import BaseConfig
 
 
 @type_check_return(IntType)
@@ -40,7 +41,7 @@ def _parse_max_connections(max_connections):
     return value
 
 
-class iRODSConfig(object):
+class iRODSConfig(BaseConfig):
     """ iRODS configuration """
     @type_check_arguments(max_connections=StringType)
     def __init__(self, max_connections):

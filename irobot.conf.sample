@@ -52,7 +52,7 @@ listen = 5000
 # a mandatory "s" suffix).
 timeout = 500
 
-[log]
+[logging]
 
 # The destination of all log messages; it should be set to either
 # "STDERR" to stream to standard error, otherwise it will be considered
