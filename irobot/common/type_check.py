@@ -17,13 +17,12 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import inspect
-from functools import wraps
-from types import NoneType
-
-
 if __debug__:
+    import inspect
+    import sys
     from collections import Iterable, Mapping
+    from functools import wraps
+    from types import NoneType, TupleType
 
     def type_check(var, *types):
         """
@@ -118,8 +117,8 @@ if __debug__:
         """
         Type checking decorator for function return value
 
-        @param   *types  Union of types to check against (types)
-                         (Defaults to NoneType if none given)
+        @param   *types  Types to check against (types; defaults to
+                         NoneType if none provided)
         """
         expected = types or (NoneType,)
 
@@ -133,6 +132,36 @@ if __debug__:
                           else type_check
 
                 checker(output, *expected)
+                return output
+
+            return wrapper
+
+        return decorator
+
+    def type_check_return_tuple(*types):
+        """
+        Type checking decorator for functions that return tuples
+
+        @param   @types  The type signature of the tuple (types)
+        """
+        def decorator(fn):
+            @wraps(fn)
+            def wrapper(*args, **kwargs):
+                output = fn(*args, **kwargs)
+
+                type_check(output, TupleType)
+                error_msg = "Expecting tuple of %s, not %s" % (types, tuple(type(i) for i in output))
+
+                if len(output) != len(types):
+                    raise TypeError(error_msg)
+
+                for i, _ in enumerate(output):
+                    try:
+                        type_check(output[i], types[i])
+
+                    except TypeError:
+                        raise TypeError(error_msg)
+
                 return output
 
             return wrapper
@@ -154,5 +183,9 @@ else:
         return lambda fn: fn
 
     def type_check_return(*args, **kwargs):
+        """ Pass-through """
+        return lambda fn: fn
+
+    def type_check_return_tuple(*args, **kwargs):
         """ Pass-through """
         return lambda fn: fn
