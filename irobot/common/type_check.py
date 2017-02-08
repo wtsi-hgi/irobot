@@ -23,7 +23,7 @@ from types import NoneType
 
 
 if __debug__:
-    from collections import Iterable, Mapping, namedtuple
+    from collections import Iterable, Mapping
 
     def type_check(var, *types):
         """
@@ -68,10 +68,14 @@ if __debug__:
                 # keyword values, so we have to extract them first
                 argspec = inspect.getargspec(fn)
 
+                defaults_map = {
+                    arg: argspec.defaults[i]
+                    for i, arg in enumerate(argspec.args[-len(argspec.defaults):])
+                } if argspec.defaults else {}
+
                 pos_values = []
                 kw_veto = []
                 arg_p = 0
-                def_p = 0
                 for arg in argspec.args:
                     if arg in kwargs:
                         pos_values.append(kwargs[arg])
@@ -82,12 +86,9 @@ if __debug__:
                             pos_values.append(args[arg_p])
                             arg_p += 1
 
-                            if len(args) - arg_p > len(argspec.defaults or ()):
-                                def_p += 1
-
                         else:
-                            pos_values.append(argspec.defaults[def_p])
-                            def_p += 1
+                            assert arg in defaults_map, "Error mapping defaults to function signature"
+                            pos_values.append(defaults_map[arg])
 
                 assert len(pos_values) == len(argspec.args), "Error mapping values to function signature"
 

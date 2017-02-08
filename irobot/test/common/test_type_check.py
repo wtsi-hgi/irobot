@@ -135,11 +135,13 @@ if __debug__:
             self.assertRaises(TypeError, _positional_as_kw, foo="bar")
             self.assertIsNone(_positional_as_kw(foo=1))
 
-            @type_check_arguments(a=IntType, b=IntType, c=IntType)
-            def _skip_default_with_kw(a, b=2, c=2):
-                return a, b, c
+            @type_check_arguments(a=IntType, b=StringType, c=IntType, d=StringType)
+            def _skip_default_with_kw(a=1, b="foo", c=2, d="bar"):
+                pass
 
-            self.assertEqual(_skip_default_with_kw(1, c=4), (1, 2, 4))
+            self.assertIsNone(_skip_default_with_kw(a=1))
+            self.assertIsNone(_skip_default_with_kw(c=1))
+            self.assertIsNone(_skip_default_with_kw(a=1, c=1))
 
 
 if __name__ == "__main__":
