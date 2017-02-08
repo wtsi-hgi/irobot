@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
+from logging import Logger
 
 from mock import MagicMock
 
@@ -30,15 +31,11 @@ class TestLogWriter(unittest.TestCase):
         self.assertIsNone(l.log(123, "foo"))
 
     def test_logger(self):
-        _orig_type_check, logger.type_check = logger.type_check, MagicMock()
-
-        _logger = MagicMock()
+        _logger = MagicMock(spec=Logger)
         l = logger.LogWriter(_logger)
 
         l.log(123, "foo", "bar", quux="xyzzy")
         _logger.log.assert_called_once_with(123, "foo", "bar", quux="xyzzy")
-
-        logger.type_check = _orig_type_check
 
 
 if __name__ == "__main__":
