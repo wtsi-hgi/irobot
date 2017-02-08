@@ -20,10 +20,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import os.path
 from types import StringType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import type_check_arguments, type_check_return
 
 
 @type_check_return(StringType)
+@type_check_arguments(path=StringType)
 def canonical_path(path):
     """
     Canonicalise paths
@@ -31,8 +32,6 @@ def canonical_path(path):
     @param   path  Path (string)
     @return  Absolute, normalised path (string)
     """
-    type_check(path, StringType)
-
     return os.path.abspath(
                os.path.normpath(
                    os.path.expanduser(path)))

@@ -21,9 +21,9 @@ import logging
 from collections import deque
 from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
-from types import StringType
+from types import NoneType, StringType
 
-from irobot.common import Listener, LogWriter, type_check
+from irobot.common import Listener, LogWriter, type_check_arguments
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 
@@ -50,13 +50,13 @@ def _exists(irods_path):
 
 class iRODS(Listener, LogWriter):
     """ High level iRODS interface with iget pool management """
+    @type_check_arguments(irods_config=iRODSConfig, logger=(logging.Logger, NoneType))
     def __init__(self, irods_config, logger=None):
         """
         Constructor
 
         @param   irods_config  iRODS configuration
         """
-        type_check(irods_config, iRODSConfig)
         self._config = irods_config
 
         # Initialise superclasses (multiple inheritance is a PITA)
@@ -94,6 +94,7 @@ class iRODS(Listener, LogWriter):
         level = logging.WARNING if args[0] == IGET_FAILED else logging.INFO
         self.log(level, "iget: %s %s" % args)
 
+    @type_check_arguments(irods_path=StringType, local_path=StringType)
     def get_dataobject(self, irods_path, local_path):
         """
         Enqueue retrieval of data object from iRODS and store it in the
@@ -102,9 +103,6 @@ class iRODS(Listener, LogWriter):
         @param   irods_path  Path to data object on iRODS (string)
         @param   local_path  Local filesystem target file (string)
         """
-        type_check(irods_path, StringType)
-        type_check(local_path, StringType)
-
         _exists(irods_path)
         self._iget_queue.append((irods_path, local_path))
         self.broadcast(IGET_QUEUED, irods_path)
@@ -126,6 +124,7 @@ class iRODS(Listener, LogWriter):
         except CalledProcessError:
             self.broadcast(IGET_FAILED, irods_path)
 
+    @type_check_arguments(irods_path=StringType)
     def get_metadata(self, irods_path):
         """
         Retrieve AVU and filesystem metadata for data object from iRODS
@@ -133,8 +132,6 @@ class iRODS(Listener, LogWriter):
         @param   irods_path  Path to data object on iRODS (string)
         @return  AVU and filesystem metadata (tuple of list and dictionary)
         """
-        type_check(irods_path, StringType)
-
         _exists(irods_path)
 
         self.log(logging.INFO, "Getting metadata for %s" % irods_path)

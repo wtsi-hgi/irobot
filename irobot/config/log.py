@@ -21,18 +21,17 @@ import logging
 from ConfigParser import ParsingError
 from types import IntType, NoneType, StringType
 
-from irobot.common import canonical_path, type_check, type_check_return
+from irobot.common import canonical_path, type_check_arguments, type_check_return
 
 
 @type_check_return(NoneType, StringType)
+@type_check_arguments(output=StringType)
 def _parse_output(output):
     """
     Parse logging output destination
 
     @param   output  Logging destination
     """
-    type_check(output, StringType)
-
     if output == "STDERR":
         return None
 
@@ -40,6 +39,7 @@ def _parse_output(output):
 
 
 @type_check_return(IntType)
+@type_check_arguments(level=StringType)
 def _parse_level(level):
     """
     Parse logging level
@@ -47,8 +47,6 @@ def _parse_level(level):
     @param   log_level  Logging level (string)
     @return  Logging level (int)
     """
-    type_check(level, StringType)
-
     try:
         return {
             "debug":    logging.DEBUG,
@@ -64,6 +62,7 @@ def _parse_level(level):
 
 class LoggingConfig(object):
     """ Logging configuration """
+    @type_check_arguments(output=StringType, level=StringType)
     def __init__(self, output, level):
         """
         Parse logging configuration
@@ -71,9 +70,6 @@ class LoggingConfig(object):
         @param   output  Logging destination
         @param   level   Logging level
         """
-        type_check(output, StringType)
-        type_check(level, StringType)
-
         self._output = _parse_output(output)
         self._level = _parse_level(level)
 

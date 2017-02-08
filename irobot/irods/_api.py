@@ -24,9 +24,10 @@ from collections import Iterable
 from tempfile import TemporaryFile
 from types import BooleanType, FileType, IntType, NoneType, StringType
 
-from irobot.common import type_check, type_check_collection
+from irobot.common import type_check_arguments
 
 
+@type_check_arguments(command=(StringType, Iterable), stdin=(NoneType, IntType, StringType, FileType), shell=BooleanType)
 def _invoke(command, stdin=None, shell=False):
     """
     Run a command with the provided arguments
@@ -41,12 +42,6 @@ def _invoke(command, stdin=None, shell=False):
     @param   shell    Execute within shell (boolean)
     @return  Exit code, stdout and stderr (tuple of int, string, string)
     """
-    type_check(command, StringType, Iterable)
-    if __debug__ and isinstance(command, Iterable):
-        type_check_collection(command, StringType)
-    type_check(stdin, NoneType, IntType, StringType, FileType)
-    type_check(shell, BooleanType)
-
     # stdin as string...
     if isinstance(stdin, StringType):
         with TemporaryFile() as stdin_file:
@@ -72,14 +67,13 @@ def _invoke(command, stdin=None, shell=False):
     return exit_code, out, err
 
 
+@type_check_arguments(irods_path=StringType)
 def ils(irods_path):
     """
     Wrapper for ils
 
     @param   irods_path  Path to data object on iRODS (string)
     """
-    type_check(irods_path, StringType)
-
     command = ["ils", irods_path]
 
     exit_code, stdout, stderr = _invoke(command)
@@ -88,6 +82,7 @@ def ils(irods_path):
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
+@type_check_arguments(irods_path=StringType, local_path=StringType)
 def iget(irods_path, local_path):
     """
     Wrapper for iget
@@ -95,9 +90,6 @@ def iget(irods_path, local_path):
     @param   irods_path  Path to data object on iRODS (string)
     @param   local_path  Local filesystem target file (string)
     """
-    type_check(irods_path, StringType)
-    type_check(local_path, StringType)
-
     command = ["iget", "-f", irods_path, local_path]
 
     exit_code, stdout, stderr = _invoke(command)
@@ -106,6 +98,7 @@ def iget(irods_path, local_path):
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
+@type_check_arguments(irods_path=StringType)
 def baton(irods_path):
     """
     Wrapper for baton-list
@@ -113,8 +106,6 @@ def baton(irods_path):
     @param   irods_path  Path to data object on iRODS (string)
     @return  Deserialised JSON (various)
     """
-    type_check(irods_path, StringType)
-
     baton_json = "{\"collection\":\"%s\",\"data_object\":\"%s\"}" % os.path.split(irods_path)
     command = ["baton-list", "--avu", "--size", "--checksum", "--acl", "--timestamp"]
 

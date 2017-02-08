@@ -21,9 +21,10 @@ from datetime import datetime
 from inspect import getargspec, ismethod
 from types import FunctionType, MethodType
 
-from irobot.common import type_check, type_check_return
+from irobot.common import type_check_arguments, type_check_return
 
 
+@type_check_arguments(listener=(FunctionType, MethodType))
 def _check_listener(listener):
     """
     Check listener is a function or method with one argument (or two,
@@ -31,9 +32,6 @@ def _check_listener(listener):
 
     @param   listener  Potential listener
     """
-    # Check we've got a function or method
-    type_check(listener, FunctionType, MethodType)
-
     # Check the argument signature
     if __debug__:
         argspec = getargspec(listener)
