@@ -24,9 +24,10 @@ from collections import Iterable
 from tempfile import TemporaryFile
 from types import BooleanType, FileType, IntType, NoneType, StringType
 
-from irobot.common import type_check_arguments
+from irobot.common import type_check_arguments, type_check_return_tuple
 
 
+@type_check_return_tuple(IntType, StringType, StringType)
 @type_check_arguments(command=(StringType, Iterable), stdin=(NoneType, IntType, StringType, FileType), shell=BooleanType)
 def _invoke(command, stdin=None, shell=False):
     """
