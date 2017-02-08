@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from types import FloatType, IntType, StringType
 
-from irobot.common import type_check, type_check_collection, type_check_arguments, type_check_return
+from irobot.common import type_check, type_check_collection, type_check_arguments, type_check_return, type_check_return_tuple
 
 
 if __debug__:
@@ -50,37 +50,43 @@ if __debug__:
 
         def test_return(self):
             @type_check_return()
-            def _return_none_pass():
-                pass
+            def _return_none(out):
+                return out
 
-            @type_check_return()
-            def _return_none_fail():
-                return 123
-
-            self.assertIsNone(_return_none_pass())
-            self.assertRaises(TypeError, _return_none_fail)
+            self.assertIsNone(_return_none(None))
+            self.assertRaises(TypeError, _return_none, 123)
 
             @type_check_return(IntType)
-            def _return_int_pass():
-                return 123
+            def _return_int(out):
+                return out
 
-            @type_check_return(IntType)
-            def _return_int_fail():
-                return "foo"
-
-            self.assertEqual(_return_int_pass(), 123)
-            self.assertRaises(TypeError, _return_int_fail)
+            self.assertEqual(_return_int(123), 123)
+            self.assertRaises(TypeError, _return_int, "foo")
 
             @type_check_return(StringType)
-            def _return_collection_pass():
-                return ["a", "b", "c"]
+            def _return_collection(out):
+                return out
 
-            @type_check_return(StringType)
-            def _return_collection_fail():
-                return ["a", "b", "c", 1, 2, 3]
+            self.assertEqual(_return_collection(["a", "b", "c"]), ["a", "b", "c"])
+            self.assertRaises(TypeError, _return_collection, ["a", "b", "c", 1, 2, 3])
 
-            self.assertEqual(_return_collection_pass(), ["a", "b", "c"])
-            self.assertRaises(TypeError, _return_collection_fail)
+        def test_return_tuple(self):
+            @type_check_return_tuple()
+            def _return_empty_tuple(out):
+                return out
+
+            self.assertEqual(_return_empty_tuple(()), ())
+            self.assertRaises(TypeError, _return_empty_tuple, "foo")
+            self.assertRaises(TypeError, _return_empty_tuple, (1, 2, 3))
+
+            @type_check_return_tuple(IntType, FloatType, StringType)
+            def _return_tuple(out):
+                return out
+
+            self.assertEqual(_return_tuple((1, 2.3, "foo")), (1, 2.3, "foo"))
+            self.assertRaises(TypeError, _return_tuple, (1, 2, 3))
+            self.assertRaises(TypeError, _return_tuple, (1, 2.3))
+
 
         def test_arguments(self):
             @type_check_arguments()
