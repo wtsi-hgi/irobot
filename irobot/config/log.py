@@ -22,6 +22,7 @@ from ConfigParser import ParsingError
 from types import IntType, NoneType, StringType
 
 from irobot.common import canonical_path, type_check_arguments, type_check_return
+from irobot.config._base import BaseConfig
 
 
 @type_check_return(NoneType, StringType)
@@ -60,7 +61,7 @@ def _parse_level(level):
         raise ParsingError("Invalid logging level")
 
 
-class LoggingConfig(object):
+class LoggingConfig(BaseConfig):
     """ Logging configuration """
     @type_check_arguments(output=StringType, level=StringType)
     def __init__(self, output, level):
@@ -72,6 +73,12 @@ class LoggingConfig(object):
         """
         self._output = _parse_output(output)
         self._level = _parse_level(level)
+
+    def __str__(self):
+        return str({
+            "output": self._output or "stderr",
+            "level": ["debug", "info", "warning", "error", "critical"][(self._level / 10) - 1]
+        }).replace("'", "")
 
     @type_check_return(NoneType, StringType)
     def output(self):

@@ -25,6 +25,7 @@ from types import FloatType, IntType, NoneType, StringType
 
 from irobot.common import (add_years, canonical_path, multiply_timedelta,
                            parse_human_size, type_check_arguments, type_check_return)
+from irobot.config._base import BaseConfig
 
 
 @type_check_return(StringType)
@@ -142,7 +143,7 @@ def _parse_expiry(expiry):
     }[unit], val)
 
 
-class PrecacheConfig(object):
+class PrecacheConfig(BaseConfig):
     """ Precache configuration """
     @type_check_arguments(location=StringType, index=StringType, size=StringType, expiry=StringType, chunk_size=StringType)
     def __init__(self, location, index, size, expiry, chunk_size):
@@ -160,6 +161,24 @@ class PrecacheConfig(object):
         self._size = _parse_unlimited_size(size)
         self._expiry = _parse_expiry(expiry)
         self._chunk_size = _parse_limited_size(chunk_size)
+
+    def __str__(self):
+        if self._expiry is None:
+            expiry = "unlimited"
+
+        elif isinstance(self._expiry, timedelta):
+            expiry = str(self._expiry)
+
+        else:
+            expiry = "%s years" % self._expiry
+
+        return str({
+            "location": self._location,
+            "index": self._index,
+            "size": self._size or "unlimited",
+            "expiry": expiry,
+            "chunk_size": self._chunk_size
+        }).replace("'", "")
 
     @type_check_return(StringType)
     def location(self):

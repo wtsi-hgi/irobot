@@ -22,6 +22,7 @@ from ConfigParser import ParsingError
 from types import IntType, NoneType, StringType
 
 from irobot.common import type_check_arguments, type_check_return
+from irobot.config._base import BaseConfig
 
 
 @type_check_return(StringType)
@@ -162,7 +163,7 @@ def _parse_timeout(timeout):
     return output or None
 
 
-class HTTPdConfig(object):
+class HTTPdConfig(BaseConfig):
     """ HTTPd configuration """
     @type_check_arguments(bind_address=StringType, listen=StringType, timeout=StringType)
     def __init__(self, bind_address, listen, timeout):
