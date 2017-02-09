@@ -1,5 +1,6 @@
 [run]
 omit =
-  */__init__.py
   .venv/*
+  */__init__.py
+  irobot/irobot.py
   irobot/test/*
