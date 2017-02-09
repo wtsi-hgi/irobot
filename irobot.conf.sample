@@ -56,7 +56,9 @@ timeout = 500
 
 # The destination of all log messages; it should be set to either
 # "STDERR" to stream to standard error, otherwise it will be considered
-# as a filename for appendage
+# as a filename for appendage. Note that if logging is sent to file
+# while containerised, that file should be within a bind mounted
+# directory so it can be accessed and persist.
 output = STDERR
 
 # Minimum logging level output, to decreasing granularity: debug, info,
