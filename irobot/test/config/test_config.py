@@ -79,6 +79,13 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(foo.get("quux"),  "456")
         self.assertEqual(foo.get("xyzzy"), "789")
 
+    def test_get_config(self):
+        config = Configuration(self.config_file.name)
+
+        configs = config.get_configs()
+        calculated = [c for c in dir(config) if isinstance(c, BaseConfig)]
+        self.assertItemsEqual(configs, calculated)
+
     def test_config(self):
         config = Configuration(self.config_file.name)
 
