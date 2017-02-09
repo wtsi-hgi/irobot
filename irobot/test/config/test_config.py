@@ -82,9 +82,9 @@ class TestConfiguration(unittest.TestCase):
     def test_get_config(self):
         config = Configuration(self.config_file.name)
 
-        configs = config.get_configs()
-        calculated = [c for c in dir(config) if isinstance(c, BaseConfig)]
-        self.assertItemsEqual(configs, calculated)
+        sections = config.get_sections()
+        expected = ["precache", "irods", "httpd", "logging"]
+        self.assertItemsEqual(sections.keys(), expected)
 
     def test_config(self):
         config = Configuration(self.config_file.name)

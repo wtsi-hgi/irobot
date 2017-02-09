@@ -80,13 +80,17 @@ class Configuration(object):
                                                                   LOGGING_LEVEL)
 
     @type_check_return(BaseConfig)
-    def get_configs(self):
+    def get_sections(self):
         """
         Get instantiated configurations
 
-        @return  Configurations (list of objects inheriting BaseConfig)
+        @return  Configurations (dictionary of objects inheriting BaseConfig)
         """
-        return [config for config in dir(self) if isinstance(config, BaseConfig)]
+        return {
+            config: getattr(self, config)
+            for config in dir(self)
+            if isinstance(getattr(self, config), BaseConfig)
+        }
 
     @type_check_return(BaseConfig)
     @type_check_arguments(constructor=BaseConfig.__class__, section=StringType)
