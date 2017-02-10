@@ -23,9 +23,10 @@ from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
 from types import NoneType, StringType
 
-from irobot.common import Listener, LogWriter, type_check_arguments
+from irobot.common import Listener, type_check_arguments
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
+from irobot.logging import LogWriter
 
 
 # Status constants

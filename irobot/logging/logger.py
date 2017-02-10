@@ -20,9 +20,34 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import atexit
 import logging
 import time
+from types import IntType, NoneType, StringType
 
 from irobot.common import type_check_arguments, type_check_return
 from irobot.config.log import LoggingConfig
+
+
+class LogWriter(object):
+    """ Logging base class """
+    @type_check_arguments(logger=(NoneType, logging.Logger))
+    def __init__(self, logger=None, *args, **kwargs):
+        """
+        Constructor
+
+        @param   logger  Logging instance
+        """
+        super(LogWriter, self).__init__(*args, **kwargs)
+        self._logger = logger
+
+    @type_check_arguments(level=IntType, message=StringType)
+    def log(self, level, message, *args, **kwargs):
+        """
+        Write to log
+
+        @param   level    Logging level (int)
+        @param   message  Log message (string)
+        """
+        if self._logger:
+            self._logger.log(level, message, *args, **kwargs)
 
 
 @type_check_return(logging.Logger)

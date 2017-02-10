@@ -1,1 +1,1 @@
-from irobot.logging.logger import create_logger
+from irobot.logging.logger import LogWriter, create_logger
