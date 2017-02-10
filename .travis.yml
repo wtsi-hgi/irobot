@@ -4,13 +4,13 @@ python:
   - 2.7
 
 before_install:
-  - pip install codecov nose2 nose2-cov
+  - pip install green codecov
 
 install:
   - pip install -r requirements.txt
 
 script:
-  - nose2 -F -C -v
+  - green -vvv -f --run-coverage
 
 after_success:
   - codecov
