@@ -1,4 +1,4 @@
-[precache]
+[precache] #############################################################
 
 # The directory that stores the contents of the precache. If using the
 # containerised application, this should be set to the location of the
@@ -32,12 +32,12 @@ expiry = unlimited
 # used with the "B" suffix.
 chunk_size = 64MB
 
-[irods]
+[irods] ################################################################
 
 # Maximum number of concurrent connections to iRODS.
 max_connections = 30
 
-[httpd]
+[httpd] ################################################################
 
 # IPv4 address to which the HTTP API server should bind.
 bind_address = 0.0.0.0
@@ -52,7 +52,24 @@ listen = 5000
 # a mandatory "s" suffix).
 timeout = 500
 
-[logging]
+# Available authentication handlers, set to a comma-separated list of at
+# least one of "basic" and "arvados". Note that the corresponding
+# authentication section must appear for each specified handler.
+authentication = basic, arvados
+
+[basic_auth] ###########################################################
+# This section must appear if using the HTTP basic authentication handler
+
+# The basic authentication handler will make a request to this resource,
+# forwarding the credentials in attempt to validate them
+url = http://example.com
+
+[arvados_auth] #########################################################
+# This section must appear if using the Arvados authentication handler
+
+# TODO
+
+[logging] ##############################################################
 
 # The destination of all log messages; it should be set to either
 # "STDERR" to stream to standard error, otherwise it will be considered
@@ -61,6 +78,6 @@ timeout = 500
 # directory so it can be accessed and persist.
 output = STDERR
 
-# Minimum logging level output, to decreasing granularity: debug, info,
-# warning, error or critical
+# Minimum logging level output, to decreasing granularity: "debug",
+# "info", "warning", "error" or "critical".
 level = warning

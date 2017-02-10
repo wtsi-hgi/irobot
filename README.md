@@ -5,7 +5,7 @@
 [![Test Coverage](https://codecov.io/gh/wtsi-hgi/irobot/branch/develop/graph/badge.svg)](https://codecov.io/gh/wtsi-hgi/irobot)
 
 iRODS data brokerage service: Data objects from iRODS are requested by
-an authorised agent, via HTTP, which are then staged on local disk
+an authenticated agent, via HTTP, which are then staged on local disk
 before being sent out as a response. The service also acts as a
 precache, to presumptively seed upstream systems with data, as well as
 managing a connection pool to iRODS.
@@ -124,6 +124,23 @@ changes without rebuilding. An example configuration can be found in
   (with an optional `ms` suffix) or seconds (with a mandatory `s`
   suffix).
 
+* **`authentication`** The available authentication handlers, which is a
+  comma-separated list of at least one of `basic` and `arvados`, in any
+  order. Note that the corresponding authentication section (eponymously
+  named with an `_auth` suffix) must appear in the configuration file
+  for each specified authentication handler.
+
+### HTTP Basic Authentication
+
+* **`url`** The basic authentication handler will make a request to the
+  resource at this URL, forwarding the credentials received in the
+  response in attempt to validate them (i.e., checking for a `200 OK`
+  response from this validation URL).
+
+### Arvados Authentication
+
+<!-- TODO -->
+
 ### Logging
 
 Log messages are tab-delimited timestamp (ISO8601 UTC), level and
@@ -147,18 +164,23 @@ rather than embedding paths into the URL. If the requested data object
 does not exist in iRODS, then a `404 Not Found` response will be
 returned.
 
-### Authorisation
+### Authentication
 
-All HTTP requests must include the `Authorization` header with the
-following contents:
+All HTTP requests must include the `Authorization` header with a value
+that can be handled by any one of the configured authentication
+handlers. That is:
 
-    Arvados <API Token>
+* `Basic <payload>`, where the payload is the Base64 encoding of
+  `username:password` for basic HTTP authentication.
 
-...where `<API Token>` is the API token provided by Arvados. If the
-token cannot be validated, a `401 Unauthorized` response will be
-returned. If the token can be validated, but the user does not have the
-necessary access to the requested resource, a `403 Forbidden` response
-will be returned.
+* `Arvados <payload>`, where the payload is an API token supplied by
+  Arvados for Arvados authentication.
+
+If the respective authentication handler cannot validate the payload
+it's given (or no `Authorization` header exists), a `401 Unauthorized`
+response will be returned. If the payload can be validated, but the user
+does not have the necessary access to the requested resource, a
+`403 Forbidden` response will be returned.
 
 ### Precache Failure
 
