@@ -4,12 +4,11 @@
 [![Build Status](https://travis-ci.org/wtsi-hgi/irobot.svg?branch=develop)](https://travis-ci.org/wtsi-hgi/irobot)
 [![Test Coverage](https://codecov.io/gh/wtsi-hgi/irobot/branch/develop/graph/badge.svg)](https://codecov.io/gh/wtsi-hgi/irobot)
 
-iRODS-Keep brokerage service: Data from iRODS is requested for Arvados,
-either directly by a job or from a trusted agent (e.g., [Cookie
-Monster](https://github.com/wtsi-hgi/cookie-monster)), which is staged
-on local disk and then pushed into Keep as a job's intermediary data.
-The service also acts as a precache, to seed Arvados with data, as well
-as managing a connection pool to iRODS.
+iRODS data brokerage service: Data objects from iRODS are requested by
+an authorised agent, via HTTP, which are then staged on local disk
+before being sent out as a response. The service also acts as a
+precache, to presumptively seed upstream systems with data, as well as
+managing a connection pool to iRODS.
 
 ## Installation
 
