@@ -127,9 +127,14 @@ changes without rebuilding. An example configuration can be found in
 
 ### Logging
 
-* **`output`** The destination of all log messages, which should be set to
-  either `STDERR` to stream to standard eqprror, otherwise it will be
-  considered as a filename for appendage.
+Log messages are tab-delimited timestamp (ISO8601 UTC), level and
+message records.
+
+* **`output`** The destination of all log messages, which should be set
+  to either `STDERR` to stream to standard error, otherwise it will be
+  considered as a filename for appendage. Note that if logging is sent
+  to file while containerised, that file should be within a bind mounted
+  directory so it can be accessed and persist.
 
 * **`level`** The minimum level of logging output by iRobot, which can
   be set to any of the following in decreasing granularity (in terms of
