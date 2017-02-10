@@ -21,6 +21,7 @@ import os
 import time
 import unittest
 from datetime import datetime
+from logging import Logger
 from tempfile import NamedTemporaryFile
 
 from mock import MagicMock
@@ -36,6 +37,19 @@ logger.time = MagicMock(spec=time)
 @type_check_arguments(t=datetime)
 def _set_log_time(t):
     logger.time.gmtime.return_value = t.replace(tzinfo=utc).timetuple()
+
+
+class TestLogWriter(unittest.TestCase):
+    def test_no_logger(self):
+        l = logger.LogWriter()
+        self.assertIsNone(l.log(123, "foo"))
+
+    def test_logger(self):
+        _logger = MagicMock(spec=Logger)
+        l = logger.LogWriter(_logger)
+
+        l.log(123, "foo", "bar", quux="xyzzy")
+        _logger.log.assert_called_once_with(123, "foo", "bar", quux="xyzzy")
 
 
 class TestLoggerCreation(unittest.TestCase):
