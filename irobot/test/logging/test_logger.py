@@ -73,5 +73,30 @@ class TestLoggerCreation(unittest.TestCase):
             self.assertEqual(logged[1], "1981-09-25T05:55:00Z+00:00\tINFO\tHello World!\n")
 
 
+class TestExceptionHandler(unittest.TestCase):
+    def setUp(self):
+        self.log = MagicMock(spec=Logger)
+        self._old_exit, logger.sys.exit = logger.sys.exit, MagicMock()
+
+        self.handler = logger._exception_handler(self.log)
+
+    def tearDown(self):
+        logger.sys.exit = self._old_exit
+
+    def test_normal_exception(self):
+        exc = Exception("foo")
+        self.handler(exc.__class__, exc, None)
+
+        self.log.critical.assert_called_once_with(exc.message, exc_info=(exc.__class__, exc, None))
+        logger.sys.exit.assert_called_once_with(1)
+
+    def test_keyboard_interrupt(self):
+        exc = KeyboardInterrupt()
+        self.assertIsNone(self.handler(exc.__class__, exc, None))
+
+        self.log.critical.assert_not_called()
+        logger.sys.exit.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
