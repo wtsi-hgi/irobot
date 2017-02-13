@@ -137,6 +137,12 @@ changes without rebuilding. An example configuration can be found in
   response in attempt to validate them (i.e., checking for a `200 OK`
   response from this validation URL).
 
+* **`cache`** How long a correct response from the validation URL should
+  be cached by the handler. It can be set to "never", to validate every
+  request, or a positive, numeric time suffixed with either `s` (`sec`
+  or `second`) or `m` (`min` or `minute`), where spelt units may be
+  pluralised.
+
 ### Arvados Authentication
 
 <!-- TODO -->

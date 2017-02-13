@@ -48,13 +48,14 @@ HTTPD_AUTHENTICATION = "authentication"
 
 AUTH_BASIC = "basic_auth"
 AUTH_BASIC_URL = "url"
+AUTH_BASIC_CACHE = "cache"
 
 AUTH_ARVADOS = "arvados_auth"
 
 AUTH_HANDLERS = {
     AUTH_BASIC: {
         "constructor": BasicAuthConfig,
-        "options": (AUTH_BASIC_URL,)
+        "options": (AUTH_BASIC_URL, AUTH_BASIC_CACHE)
     },
     AUTH_ARVADOS: {
         "constructor": ArvadosAuthConfig,

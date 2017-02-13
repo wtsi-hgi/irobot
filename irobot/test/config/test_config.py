@@ -52,7 +52,8 @@ HTTPD_CONF = [
 
 BASIC_AUTH_CONF = [
     "[basic_auth]",
-    "url = http://example.com"
+    "url = http://example.com",
+    "cache = never"
 ]
 
 ARVADOS_AUTH_CONF = [
