@@ -64,6 +64,11 @@ authentication = basic, arvados
 # forwarding the credentials in attempt to validate them
 url = http://example.com
 
+# How long to cache a correct response from the validation URL; can be
+# set to "never", or a positive, numeric time suffixed with any of the
+# following units: s(ec(ond)(s)), m(in(ute)(s))
+cache = 10 min
+
 [arvados_auth] #########################################################
 # This section must appear if using the Arvados authentication handler
 
