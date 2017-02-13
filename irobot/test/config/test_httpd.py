@@ -60,12 +60,22 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertIsNone(parse_timeout("0s"))
         self.assertIsNone(parse_timeout("unlimited"))
 
+    def test_authentication_parsing(self):
+        parse_auth = httpd._parse_authentication
+
+        self.assertRaises(ParsingError, parse_auth, "")
+        self.assertItemsEqual(parse_auth("foo"), ["foo"])
+        self.assertItemsEqual(parse_auth("foo,bar"), ["foo", "bar"])
+        self.assertItemsEqual(parse_auth("fOo,BaR"), ["foo", "bar"])
+        self.assertItemsEqual(parse_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
+
     def test_instance(self):
-        config = httpd.HTTPdConfig("0.0.0.0", "5000", "1000ms")
+        config = httpd.HTTPdConfig("0.0.0.0", "5000", "1000ms", "basic,foo, bar ,baz")
 
         self.assertEqual(config.bind_address(), "0.0.0.0")
         self.assertEqual(config.listen(), 5000)
         self.assertEqual(config.timeout(), 1000)
+        self.assertItemsEqual(config.authentication(), ["basic", "foo", "bar", "baz"])
 
 
 if __name__ == "__main__":

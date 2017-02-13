@@ -163,20 +163,39 @@ def _parse_timeout(timeout):
     return output or None
 
 
+@type_check_return(StringType)
+@type_check_arguments(authentication=StringType)
+def _parse_authentication(authentication):
+    """
+    Parse authentication methods := comma-delimited string
+
+    @param   authentication  Authentication methods (string)
+    @return  Authentication methods (list of string)
+    """
+    methods = re.split(r"\s*,\s*", authentication.lower())
+
+    if len(methods) == 1 and methods[0] == "":
+        raise ParsingError("Must provide at least one authentication method")
+
+    return methods
+
+
 class HTTPdConfig(BaseConfig):
     """ HTTPd configuration """
-    @type_check_arguments(bind_address=StringType, listen=StringType, timeout=StringType)
-    def __init__(self, bind_address, listen, timeout):
+    @type_check_arguments(bind_address=StringType, listen=StringType, timeout=StringType, authentication=StringType)
+    def __init__(self, bind_address, listen, timeout, authentication):
         """
         Parse HTTPd configuration
 
-        @param   bind_address  IPv4 bind address (string)
-        @param   listen        Listening port (string)
-        @param   timeout       Response timeout (string)
+        @param   bind_address    IPv4 bind address (string)
+        @param   listen          Listening port (string)
+        @param   timeout         Response timeout (string)
+        @param   authentication  Authentication methods (string)
         """
         self._bind_address = _parse_bind_address(bind_address)
         self._listen = _parse_listening_port(listen)
         self._timeout = _parse_timeout(timeout)
+        self._authentication = _parse_authentication(authentication)
 
     @type_check_return(StringType)
     def bind_address(self):
@@ -204,3 +223,12 @@ class HTTPdConfig(BaseConfig):
         @return  Response timout in milliseconds (int)
         """
         return self._timeout
+
+    @type_check_return(StringType)
+    def authentication(self):
+        """
+        Get authentication methods
+
+        @return  Authentication methods (list of strings)
+        """
+        return self._authentication
