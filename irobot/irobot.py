@@ -21,13 +21,23 @@ from .config import Configuration
 from .logging import create_logger
 from .irods import iRODS
 
+
+def _log_config(logger, config):
+    """ Log configuration """
+    logger.info("Configuration loaded from %s", config.file)
+
+    for section_name, section in config.get_sections().items():
+        logger.info("%s = %s", section_name, str(section))
+
+    for handler in config.httpd.authentication():
+        logger.info("%s Authentication = %s", handler, str(getattr(config.authentication, handler)))
+
+
 if __name__ == "__main__":
     config = Configuration("~/irobot.conf")
     logger = create_logger(config.logging)
 
-    logger.info("Configuration loaded")
-    for section_name, section in config.get_sections().items():
-        logger.info("%s = %s", section_name, str(section))
+    _log_config(logger, config)
 
     irods = iRODS(config.irods, logger)
 

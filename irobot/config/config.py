@@ -17,7 +17,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from ConfigParser import ConfigParser
+import re
+from ConfigParser import ConfigParser, ParsingError
 from types import NoneType, ObjectType, StringType, TypeType
 
 from irobot.common import canonical_path, type_check_arguments, type_check_return
@@ -26,6 +27,7 @@ from irobot.config.httpd import HTTPdConfig
 from irobot.config.irods import iRODSConfig
 from irobot.config.log import LoggingConfig
 from irobot.config.precache import PrecacheConfig
+from irobot.config.authentication import ArvadosAuthConfig, BasicAuthConfig
 
 
 PRECACHE = "precache"
@@ -42,10 +44,35 @@ HTTPD = "httpd"
 HTTPD_BIND_ADDRESS = "bind_address"
 HTTPD_LISTEN = "listen"
 HTTPD_TIMEOUT = "timeout"
+HTTPD_AUTHENTICATION = "authentication"
+
+AUTH_BASIC = "basic_auth"
+AUTH_BASIC_URL = "url"
+
+AUTH_ARVADOS = "arvados_auth"
+
+AUTH_HANDLERS = {
+    AUTH_BASIC: {
+        "constructor": BasicAuthConfig,
+        "options": (AUTH_BASIC_URL,)
+    },
+    AUTH_ARVADOS: {
+        "constructor": ArvadosAuthConfig,
+        "options": ()
+    }
+}
 
 LOGGING = "logging"
 LOGGING_OUTPUT = "output"
 LOGGING_LEVEL = "level"
+
+
+class _AuthHandlers(object):
+    """ Authentication handler configuration container """
+    @type_check_arguments(handlers=BaseConfig)
+    def __init__(self, **handlers):
+        for name, handler in handlers.items():
+            setattr(self, name, handler)
 
 
 class Configuration(object):
@@ -58,8 +85,9 @@ class Configuration(object):
         @param   config_file  Configuration filename
         """
         self.config = ConfigParser()
+        self.file = canonical_path(config_file)
 
-        with open(canonical_path(config_file), "r") as fp:
+        with open(self.file, "r") as fp:
             self.config.readfp(fp)
 
         # Build precache configuration
@@ -68,13 +96,31 @@ class Configuration(object):
                                                                      PRECACHE_SIZE,
                                                                      PRECACHE_EXPIRY,
                                                                      PRECACHE_CHUNK_SIZE)
+
         # Build iRODS configuration
         self.irods = self._build_config(iRODSConfig, IRODS, IRODS_MAX_CONNECTIONS)
 
         # Build HTTPd configuration
         self.httpd = self._build_config(HTTPdConfig, HTTPD, HTTPD_BIND_ADDRESS,
                                                             HTTPD_LISTEN,
-                                                            HTTPD_TIMEOUT)
+                                                            HTTPD_TIMEOUT,
+                                                            HTTPD_AUTHENTICATION)
+        
+        # Build authentication handler configurations
+        try:
+            self.authentication = _AuthHandlers(**{
+                handler: self._build_config(
+                    AUTH_HANDLERS["%s_auth" % handler]["constructor"],
+                    "%s_auth" % handler,
+                    *AUTH_HANDLERS["%s_auth" % handler]["options"]
+                )
+                for handler in self.httpd.authentication()
+            })
+
+        except KeyError as e:
+            auth_method = re.search(r"^(\w+)_auth$", e.message).group(1)
+            raise ParsingError("No such authentication method \"%s\"" % auth_method)
+
         # Build logging configuration
         self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_OUTPUT,
                                                                   LOGGING_LEVEL)
