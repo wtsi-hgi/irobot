@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import atexit
 import logging
+import sys
 import time
 from types import IntType, NoneType, StringType
 
@@ -50,6 +51,23 @@ class LogWriter(object):
             self._logger.log(level, message, *args, **kwargs)
 
 
+@type_check_arguments(logger=logging.Logger)
+def _exception_handler(logger):
+    """
+    Create an exception handler that logs uncaught exceptions (except
+    keyboard interrupts) before terminating
+    """
+    def _log_uncaught_exception(exc_class, exc_obj, traceback):
+        if issubclass(exc_class, KeyboardInterrupt):
+            sys.__excepthook__(exc_class, exc_obj, traceback)
+
+        else:
+            logger.critical(exc_obj.message, exc_info=(exc_class, exc_obj, traceback))
+            sys.exit(1)
+
+    return _log_uncaught_exception
+
+
 @type_check_return(logging.Logger)
 @type_check_arguments(config=LoggingConfig)
 def create_logger(config):
@@ -78,5 +96,7 @@ def create_logger(config):
     logger = logging.getLogger("irobot")
     logger.setLevel(config.level())
     logger.addHandler(handler)
+
+    sys.excepthook = _exception_handler(logger)
 
     return logger
