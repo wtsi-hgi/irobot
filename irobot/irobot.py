@@ -17,6 +17,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+
 from .config import Configuration
 from .logging import create_logger
 from .irods import iRODS
@@ -34,7 +36,7 @@ def _log_config(logger, config):
 
 
 if __name__ == "__main__":
-    config = Configuration("~/irobot.conf")
+    config = Configuration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
     logger = create_logger(config.logging)
 
     _log_config(logger, config)
