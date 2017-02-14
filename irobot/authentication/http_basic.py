@@ -127,9 +127,10 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
 
         if r.status_code in [401, 403]:
             self.log(logging.WARNING, "Couldn't authenticate user \"%s\"" % user)
-            return False
+        else:
+            r.raise_for_status()
 
-        r.raise_for_status()
+        return False
 
     @type_check_return(BooleanType)
     @type_check_arguments(auth_header=StringType)
