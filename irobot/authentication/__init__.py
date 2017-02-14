@@ -1,0 +1,1 @@
+from irobot.authentication.http_basic import HTTPBasicAuthHandler
