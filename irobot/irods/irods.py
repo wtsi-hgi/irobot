@@ -57,6 +57,7 @@ class iRODS(Listener, LogWriter):
         Constructor
 
         @param   irods_config  iRODS configuration
+        @param   logger        Logger
         """
         self._config = irods_config
 
