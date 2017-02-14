@@ -19,12 +19,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
+from .authentication import ArvadosAuthHandler, HTTPBasicAuthHandler
 from .config import Configuration
-from .logging import create_logger
 from .irods import iRODS
+from .logging import create_logger
 
 
-def _log_config(logger, config):
+def _log_config(config, logger):
     """ Log configuration """
     logger.info("Configuration loaded from %s", config.file)
 
@@ -35,12 +36,27 @@ def _log_config(logger, config):
         logger.info("%s Authentication = %s", handler, str(getattr(config.authentication, handler)))
 
 
+def _instantiate_authentication_handlers(config, logger):
+    """ Instantiate authentication handlers """
+    handler_mapping = {
+        "arvados": ArvadosAuthHandler,
+        "basic": HTTPBasicAuthHandler
+    }
+
+    return [
+        handler_mapping[handler](getattr(config.authentication, handler), logger)
+        for handler in config.httpd.authentication()
+    ]
+
+
 if __name__ == "__main__":
     config = Configuration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
-    logger = create_logger(config.logging)
 
-    _log_config(logger, config)
+    logger = create_logger(config.logging)
+    _log_config(config, logger)
 
     irods = iRODS(config.irods, logger)
+
+    auth_handlers = _instantiate_authentication_handlers(config, logger)
 
     # TODO Plumb in the precache and HTTP server, when they're ready
