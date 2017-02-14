@@ -85,4 +85,4 @@ output = STDERR
 
 # Minimum logging level output, to decreasing granularity: "debug",
 # "info", "warning", "error" or "critical".
-level = warning
+level = debug
