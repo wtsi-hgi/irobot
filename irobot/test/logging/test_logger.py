@@ -23,8 +23,7 @@ import unittest
 from datetime import datetime
 from logging import Logger
 from tempfile import NamedTemporaryFile
-
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 import irobot.logging.logger as logger
 from irobot.common import type_check_arguments, utc

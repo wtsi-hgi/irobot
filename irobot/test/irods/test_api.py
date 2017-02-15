@@ -21,8 +21,7 @@ import os
 import unittest
 from subprocess import CalledProcessError
 from tempfile import TemporaryFile
-
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 import irobot.irods._api as api
 

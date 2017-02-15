@@ -21,9 +21,9 @@ import unittest
 from base64 import b64encode, b64decode
 from datetime import datetime, timedelta
 from threading import Timer
+from unittest.mock import MagicMock
 
 import requests
-from mock import MagicMock
 
 import irobot.authentication.http_basic as http_basic
 from irobot.config.authentication import BasicAuthConfig
