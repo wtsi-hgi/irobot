@@ -72,7 +72,7 @@ class LoggingConfig(BaseConfig):
     def __str__(self):
         return str({
             "output": self._output or "stderr",
-            "level": ["debug", "info", "warning", "error", "critical"][(self._level / 10) - 1]
+            "level": ["debug", "info", "warning", "error", "critical"][(self._level // 10) - 1]
         }).replace("'", "")
 
     def output(self) -> Optional[str]:
