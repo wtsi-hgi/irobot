@@ -27,17 +27,17 @@ def add_years(timestamp:datetime, years:Union[int, float]):
     Add a number of years (integer or decimal, positive or negative) to
     a given timestamp
 
-    @param   timestamp  Input timestamp in UTC (datetime)
+    @param   timestamp  Input timestamp (datetime)
     @param   years      Years to add (numeric)
-    @return  Shifted timestamp in UTC (datetime)
+    @return  Shifted timestamp (datetime)
     """
     if years == 0:
         return timestamp
 
-    whole_shift = timestamp.replace(year = timestamp.year + int(years))
+    whole_shift = timestamp.replace(year=timestamp.year + int(years))
 
-    over_years = int(math.ceil(years) if cmp(years, 0) == 1 else math.floor(years))
-    over_shift = timestamp.replace(year = timestamp.year + over_years)
+    over_years = int(math.ceil(years) if years > 0 else math.floor(years))
+    over_shift = timestamp.replace(year=timestamp.year + over_years)
 
     frac_delta = abs(years - int(years)) * (over_shift - whole_shift)
 
