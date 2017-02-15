@@ -19,13 +19,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
 from inspect import getargspec, ismethod
-from types import FunctionType, MethodType
-
-from irobot.common import type_check_arguments, type_check_return
+from typing import Callable
 
 
-@type_check_arguments(listener=(FunctionType, MethodType))
-def _check_listener(listener):
+def _check_listener(listener:Callable):
     """
     Check listener is a function or method with one argument (or two,
     for methods, to include self), variable and keyword arguments
@@ -42,8 +39,7 @@ def _check_listener(listener):
             raise TypeError("Listener should accept a timestamp, varargs and keywords")
 
 
-@type_check_return(datetime)
-def _broadcast_time():
+def _broadcast_time() -> datetime:
     """
     Broadcast time
 

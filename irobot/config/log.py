@@ -19,15 +19,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from configparser import ParsingError
-from types import IntType, NoneType, StringType
+from typing import Optional
 
-from irobot.common import canonical_path, type_check_arguments, type_check_return
+from irobot.common import canonical_path
 from irobot.config._base import BaseConfig
 
 
-@type_check_return(NoneType, StringType)
-@type_check_arguments(output=StringType)
-def _parse_output(output):
+def _parse_output(output:str) -> Optional[str]:
     """
     Parse logging output destination
 
@@ -39,9 +37,7 @@ def _parse_output(output):
     return canonical_path(output)
 
 
-@type_check_return(IntType)
-@type_check_arguments(level=StringType)
-def _parse_level(level):
+def _parse_level(level:str) -> int:
     """
     Parse logging level
 
@@ -63,8 +59,7 @@ def _parse_level(level):
 
 class LoggingConfig(BaseConfig):
     """ Logging configuration """
-    @type_check_arguments(output=StringType, level=StringType)
-    def __init__(self, output, level):
+    def __init__(self, output:str, level:str):
         """
         Parse logging configuration
 
@@ -80,8 +75,7 @@ class LoggingConfig(BaseConfig):
             "level": ["debug", "info", "warning", "error", "critical"][(self._level / 10) - 1]
         }).replace("'", "")
 
-    @type_check_return(NoneType, StringType)
-    def output(self):
+    def output(self) -> Optional[str]:
         """
         Get logging output destination
 
@@ -89,8 +83,7 @@ class LoggingConfig(BaseConfig):
         """
         return self._output
 
-    @type_check_return(IntType)
-    def level(self):
+    def level(self) -> int:
         """
         Get logging level
 

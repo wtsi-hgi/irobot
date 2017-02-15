@@ -20,14 +20,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import math
 from datetime import datetime, timedelta
 from fractions import Fraction
-from types import FloatType, IntType
-
-from irobot.common import type_check_arguments, type_check_return
+from typing import Union
 
 
-@type_check_return(timedelta)
-@type_check_arguments(delta=timedelta, m=(IntType, FloatType))
-def multiply_timedelta(delta, m):
+def multiply_timedelta(delta:timedelta, m:Union[int, float]) -> timedelta:
     """
     Multiply a timedelta by m, where m can be decimal
 
@@ -42,9 +38,7 @@ def multiply_timedelta(delta, m):
     return (delta * frac_m.numerator) / frac_m.denominator
 
 
-@type_check_return(datetime)
-@type_check_arguments(timestamp=datetime, years=(IntType, FloatType))
-def add_years(timestamp, years):
+def add_years(timestamp:datetime, years:Union[int, float]):
     """
     Add a number of years (integer or decimal, positive or negative) to
     a given timestamp

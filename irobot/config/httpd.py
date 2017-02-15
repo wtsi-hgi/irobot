@@ -19,15 +19,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ParsingError
-from types import IntType, NoneType, StringType
+from typing import List, Optional
 
-from irobot.common import type_check_arguments, type_check_return
 from irobot.config._base import BaseConfig
 
 
-@type_check_return(StringType)
-@type_check_arguments(bind_address=StringType)
-def _parse_bind_address(bind_address):
+def _parse_bind_address(bind_address:str) -> str:
     """
     Parse bind address
 
@@ -102,9 +99,7 @@ def _parse_bind_address(bind_address):
     return ".".join(str(part) for part in parts)
 
 
-@type_check_return(IntType)
-@type_check_arguments(listen=StringType)
-def _parse_listening_port(listen):
+def _parse_listening_port(listen:str) -> int:
     """
     Parse listening port
 
@@ -119,9 +114,7 @@ def _parse_listening_port(listen):
     return port
 
 
-@type_check_return(IntType, NoneType)
-@type_check_arguments(timeout=StringType)
-def _parse_timeout(timeout):
+def _parse_timeout(timeout:str) -> Optional[int]:
     """
     Parse response timeout := "unlimited"
                             | INTEGER ["ms"]
@@ -163,9 +156,7 @@ def _parse_timeout(timeout):
     return output or None
 
 
-@type_check_return(StringType)
-@type_check_arguments(authentication=StringType)
-def _parse_authentication(authentication):
+def _parse_authentication(authentication:str) -> List[str]:
     """
     Parse authentication methods := comma-delimited string
 
@@ -182,8 +173,7 @@ def _parse_authentication(authentication):
 
 class HTTPdConfig(BaseConfig):
     """ HTTPd configuration """
-    @type_check_arguments(bind_address=StringType, listen=StringType, timeout=StringType, authentication=StringType)
-    def __init__(self, bind_address, listen, timeout, authentication):
+    def __init__(self, bind_address:str, listen:str, timeout:str, authentication:str):
         """
         Parse HTTPd configuration
 
@@ -197,8 +187,7 @@ class HTTPdConfig(BaseConfig):
         self._timeout = _parse_timeout(timeout)
         self._authentication = _parse_authentication(authentication)
 
-    @type_check_return(StringType)
-    def bind_address(self):
+    def bind_address(self) -> str:
         """
         Get bind address
 
@@ -206,8 +195,7 @@ class HTTPdConfig(BaseConfig):
         """
         return self._bind_address
 
-    @type_check_return(IntType)
-    def listen(self):
+    def listen(self) -> int:
         """
         Get listening port
 
@@ -215,8 +203,7 @@ class HTTPdConfig(BaseConfig):
         """
         return self._listen
 
-    @type_check_return(IntType, NoneType)
-    def timeout(self):
+    def timeout(self) -> Optional[int]:
         """
         Get response timeout
 
@@ -224,8 +211,7 @@ class HTTPdConfig(BaseConfig):
         """
         return self._timeout
 
-    @type_check_return(StringType)
-    def authentication(self):
+    def authentication(self) -> str:
         """
         Get authentication methods
 

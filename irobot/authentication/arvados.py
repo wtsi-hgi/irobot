@@ -18,18 +18,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
-from types import BooleanType, NoneType, StringType
+from typing import Optional
 
 from irobot.authentication._base import BaseAuthHandler
-from irobot.common import type_check_arguments, type_check_return
 from irobot.config.authentication import ArvadosAuthConfig
 from irobot.logging import LogWriter
 
 
 class ArvadosAuthHandler(LogWriter, BaseAuthHandler):
     """ Arvados authentication handler """
-    @type_check_arguments(config=ArvadosAuthConfig, logger=(logging.Logger, NoneType))
-    def __init__(self, config, logger=None):
+    def __init__(self, config:ArvadosAuthConfig, logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor
 
@@ -40,10 +38,8 @@ class ArvadosAuthHandler(LogWriter, BaseAuthHandler):
         self._config = config
 
         # TODO
-    
-    @type_check_return(BooleanType)
-    @type_check_arguments(auth_header=StringType)
-    def validate(self, auth_header):
+
+    def validate(self, auth_header:str) -> bool:
         """
         Validate the authorisation header
 

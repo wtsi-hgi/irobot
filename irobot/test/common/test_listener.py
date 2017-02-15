@@ -47,14 +47,12 @@ class TestListenerInternals(unittest.TestCase):
         self.assertIsNone(listener._check_listener(_listener.good))
 
     def test_broadcast_time(self):
-        _orig_type_check_return, listener.type_check_return = listener.type_check_return, MagicMock()
         _orig_datetime, listener.datetime = listener.datetime, MagicMock()
 
         listener._broadcast_time()
         listener.datetime.utcnow.assert_called_once()
 
         listener.datetime = _orig_datetime
-        listener.type_check_return = _orig_type_check_return
 
 
 class TestListener(unittest.TestCase):
