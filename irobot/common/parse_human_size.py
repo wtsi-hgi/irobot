@@ -18,14 +18,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-from types import IntType, StringType
-
-from irobot.common import type_check_arguments, type_check_return
 
 
-@type_check_return(IntType)
-@type_check_arguments(size=StringType)
-def parse_human_size(size):
+def parse_human_size(size:str) -> int:
     """
     Parse human size string := INTEGER ["B"]
                              | NUMBER ("k" | "M" | "G" | "T") ["i"] "B"

@@ -21,16 +21,13 @@ import os
 import re
 from configparser import ParsingError
 from datetime import datetime, timedelta
-from types import FloatType, IntType, NoneType, StringType
+from typing import Optional, Union
 
-from irobot.common import (add_years, canonical_path, multiply_timedelta,
-                           parse_human_size, type_check_arguments, type_check_return)
+from irobot.common import add_years, canonical_path, multiply_timedelta, parse_human_size
 from irobot.config._base import BaseConfig
 
 
-@type_check_return(StringType)
-@type_check_arguments(location=StringType)
-def _parse_location(location):
+def _parse_location(location:str) -> str:
     """
     Parse precache directory location
     @param   location  Precache directory (string)
@@ -39,9 +36,7 @@ def _parse_location(location):
     return canonical_path(location)
 
 
-@type_check_return(StringType)
-@type_check_arguments(location=StringType, index=StringType)
-def _parse_index(location, index):
+def _parse_index(location:str, index:str) -> str:
     """
     Parse precache tracking database name
 
@@ -60,9 +55,7 @@ def _parse_index(location, index):
     return os.path.join(canonical_path(dirname), basename)
 
 
-@type_check_return(IntType)
-@type_check_arguments(size=StringType)
-def _parse_limited_size(size):
+def _parse_limited_size(size:str) -> int:
     """
     Parse size string := HUMAN-SIZE
 
@@ -76,9 +69,7 @@ def _parse_limited_size(size):
         raise ParsingError("Could not parse file size configuration")
 
 
-@type_check_return(IntType, NoneType)
-@type_check_arguments(size=StringType)
-def _parse_unlimited_size(size):
+def _parse_unlimited_size(size:str) -> Optional[int]:
     """
     Parse size string := "unlimited"
                        | HUMAN-SIZE
@@ -92,9 +83,7 @@ def _parse_unlimited_size(size):
     return _parse_limited_size(size)
 
 
-@type_check_return(NoneType, timedelta, IntType, FloatType)
-@type_check_arguments(expiry=StringType)
-def _parse_expiry(expiry):
+def _parse_expiry(expiry:str) -> Union[timedelta, int, float, None]:
     """
     Parse expiry string := "unlimited"
                          | NUMBER ( "h" | "hour" | "hours"
@@ -145,8 +134,7 @@ def _parse_expiry(expiry):
 
 class PrecacheConfig(BaseConfig):
     """ Precache configuration """
-    @type_check_arguments(location=StringType, index=StringType, size=StringType, expiry=StringType, chunk_size=StringType)
-    def __init__(self, location, index, size, expiry, chunk_size):
+    def __init__(self, location:str, index:str, size:str, expiry:str, chunk_size:str):
         """
         Parse precache configuration
 
@@ -180,8 +168,7 @@ class PrecacheConfig(BaseConfig):
             "chunk_size": self._chunk_size
         }).replace("'", "")
 
-    @type_check_return(StringType)
-    def location(self):
+    def location(self) -> str:
         """
         Get precache directory
 
@@ -189,8 +176,7 @@ class PrecacheConfig(BaseConfig):
         """
         return self._location
 
-    @type_check_return(StringType)
-    def index(self):
+    def index(self) -> str:
         """
         Get precache tracking database filename
 
@@ -198,8 +184,7 @@ class PrecacheConfig(BaseConfig):
         """
         return self._index
 
-    @type_check_return(IntType, NoneType)
-    def size(self):
+    def size(self) -> Optional[int]:
         """
         Get precache size
 
@@ -207,9 +192,7 @@ class PrecacheConfig(BaseConfig):
         """
         return self._size
 
-    @type_check_return(NoneType, datetime)
-    @type_check_arguments(from_atime=datetime)
-    def expiry(self, from_atime):
+    def expiry(self, from_atime:datetime) -> Optional[datetime]:
         """
         Get file expiration based on lasted access time
 
@@ -228,8 +211,7 @@ class PrecacheConfig(BaseConfig):
             # +x years
             return add_years(from_atime, self._expiry)
 
-    @type_check_return(IntType)
-    def chunk_size(self):
+    def chunk_size(self) -> int:
         """
         Get file chunking size for checksumming
 

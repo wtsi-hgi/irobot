@@ -22,12 +22,11 @@ import re
 from base64 import b64decode
 from datetime import datetime
 from threading import Lock, Timer
-from types import BooleanType, NoneType, StringType
+from typing import Dict, Optional, Tuple
 
 import requests
 
 from irobot.authentication._base import BaseAuthHandler
-from irobot.common import type_check_arguments, type_check_return, type_check_return_tuple
 from irobot.config.authentication import BasicAuthConfig
 from irobot.logging import LogWriter
 
@@ -40,9 +39,7 @@ BASIC_AUTH_RE = re.compile(r"""
     )$
 """, re.VERBOSE | re.IGNORECASE)
 
-@type_check_return_tuple(StringType, StringType)
-@type_check_arguments(auth_header=StringType)
-def _parse_auth_header(auth_header):
+def _parse_auth_header(auth_header:str) -> Tuple[str, str]:
     """
     Parse the basic authentication authorisation header
 
@@ -54,13 +51,12 @@ def _parse_auth_header(auth_header):
     if not match:
         raise ValueError("Invalid HTTP basic authentication header")
 
-    return tuple(b64decode(match.group(1)).split(":"))
+    return tuple(b64decode(match.group(1)).decode().split(":"))
 
 
 class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
     """ HTTP basic authentication handler """
-    @type_check_arguments(config=BasicAuthConfig, logger=(logging.Logger, NoneType))
-    def __init__(self, config, logger=None):
+    def __init__(self, config:BasicAuthConfig, logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor
 
@@ -72,7 +68,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
 
         if self._config.cache():
             self.log(logging.DEBUG, "Creating HTTP basic authentication cache")
-            self._cache = {}  # Dict of user (string) : validation time (datetime)
+            self._cache:Dict[str, datetime] = {}
             self._cache_lock = Lock()
             self._schedule_cleanup()
 
@@ -87,9 +83,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         self._cleanup_timer.daemon = True
         self._cleanup_timer.start()
 
-    @type_check_return(BooleanType)
-    @type_check_arguments(validation_time=datetime)
-    def _has_expired(self, validation_time):
+    def _has_expired(self, validation_time:datetime) -> bool:
         """
         Whether a validation time was longer ago than the cache expiry
 
@@ -109,9 +103,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
 
         self._schedule_cleanup()
 
-    @type_check_return(BooleanType)
-    @type_check_arguments(user=StringType, password=StringType)
-    def _valid_auth_request(self, user, password):
+    def _valid_auth_request(self, user:str, password:str) -> bool:
         """
         Make an authentication request to check for validity
 
@@ -132,9 +124,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
 
         return False
 
-    @type_check_return(BooleanType)
-    @type_check_arguments(auth_header=StringType)
-    def validate(self, auth_header):
+    def validate(self, auth_header:str) -> bool:
         """
         Validate the authorisation header
 

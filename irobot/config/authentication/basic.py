@@ -19,17 +19,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ParsingError
-from types import IntType, FloatType, NoneType, StringType
+from typing import Optional
 
 import requests
 
-from irobot.common import type_check_arguments, type_check_return
 from irobot.config._base import BaseConfig
 
 
-@type_check_return(StringType)
-@type_check_arguments(url=StringType)
-def _parse_url(url):
+def _parse_url(url:str) -> str:
     """
     Check validation URL is accepting connections
 
@@ -53,9 +50,7 @@ def _parse_url(url):
     return url
 
 
-@type_check_return(FloatType, NoneType)
-@type_check_arguments(cache=StringType)
-def _parse_cache(cache):
+def _parse_cache(cache:str) -> Optional[float]:
     """
     Parse revalidation cache time := "never"
                                    | NUMERIC TIME_UNIT
@@ -93,8 +88,7 @@ def _parse_cache(cache):
 
 class BasicAuthConfig(BaseConfig):
     """ HTTP basic authentication configuration """
-    @type_check_arguments(url=StringType, cache=StringType)
-    def __init__(self, url, cache):
+    def __init__(self, url:str, cache:str) -> None:
         """
         Parse HTTP basic authentication configuration
 
@@ -104,8 +98,7 @@ class BasicAuthConfig(BaseConfig):
         self._url = _parse_url(url)
         self._cache = _parse_cache(cache)
 
-    @type_check_return(StringType)
-    def url(self):
+    def url(self) -> str:
         """
         Get validation URL
 
@@ -113,8 +106,7 @@ class BasicAuthConfig(BaseConfig):
         """
         return self._url
 
-    @type_check_return(FloatType, NoneType)
-    def cache(self):
+    def cache(self) -> Optional[float]:
         """
         Get revalidation time
 

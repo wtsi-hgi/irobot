@@ -21,16 +21,14 @@ import atexit
 import logging
 import sys
 import time
-from types import IntType, NoneType, StringType
+from typing import Callable, Optional
 
-from irobot.common import type_check_arguments, type_check_return
 from irobot.config.log import LoggingConfig
 
 
 class LogWriter(object):
     """ Logging base class """
-    @type_check_arguments(logger=(NoneType, logging.Logger))
-    def __init__(self, logger=None, *args, **kwargs):
+    def __init__(self, logger:Optional[logging.Logger] = None, *args, **kwargs):
         """
         Constructor
 
@@ -39,8 +37,7 @@ class LogWriter(object):
         super(LogWriter, self).__init__(*args, **kwargs)
         self._logger = logger
 
-    @type_check_arguments(level=IntType, message=StringType)
-    def log(self, level, message, *args, **kwargs):
+    def log(self, level:int, message:str, *args, **kwargs):
         """
         Write to log
 
@@ -51,8 +48,7 @@ class LogWriter(object):
             self._logger.log(level, message, *args, **kwargs)
 
 
-@type_check_arguments(logger=logging.Logger)
-def _exception_handler(logger):
+def _exception_handler(logger:logging.Logger) -> Callable:
     """
     Create an exception handler that logs uncaught exceptions (except
     keyboard interrupts) before terminating
@@ -68,9 +64,7 @@ def _exception_handler(logger):
     return _log_uncaught_exception
 
 
-@type_check_return(logging.Logger)
-@type_check_arguments(config=LoggingConfig)
-def create_logger(config):
+def create_logger(config:LoggingConfig) -> logging.Logger:
     """
     Create and configure a logger
 

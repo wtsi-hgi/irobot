@@ -19,9 +19,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ConfigParser, ParsingError
-from types import NoneType, ObjectType, StringType, TypeType
+from typing import ClassVar, Dict, Tuple
 
-from irobot.common import canonical_path, type_check_arguments, type_check_return
+from irobot.common import canonical_path
 from irobot.config._base import BaseConfig
 from irobot.config.httpd import HTTPdConfig
 from irobot.config.irods import iRODSConfig
@@ -70,16 +70,14 @@ LOGGING_LEVEL = "level"
 
 class _AuthHandlers(object):
     """ Authentication handler configuration container """
-    @type_check_arguments(handlers=BaseConfig)
-    def __init__(self, **handlers):
+    def __init__(self, **handlers:Dict[str, BaseConfig]):
         for name, handler in handlers.items():
             setattr(self, name, handler)
 
 
 class Configuration(object):
     """ iRobot configuration """
-    @type_check_arguments(config_file=StringType)
-    def __init__(self, config_file):
+    def __init__(self, config_file:str):
         """
         Open and parse configuration from file
 
@@ -126,8 +124,7 @@ class Configuration(object):
         self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_OUTPUT,
                                                                   LOGGING_LEVEL)
 
-    @type_check_return(BaseConfig)
-    def get_sections(self):
+    def get_sections(self) -> Dict[str, BaseConfig]:
         """
         Get instantiated configurations
 
@@ -139,9 +136,7 @@ class Configuration(object):
             if isinstance(getattr(self, config), BaseConfig)
         }
 
-    @type_check_return(BaseConfig)
-    @type_check_arguments(constructor=BaseConfig.__class__, section=StringType)
-    def _build_config(self, constructor, section, *options):
+    def _build_config(self, constructor:ClassVar[BaseConfig], section:str, *options:Tuple[str, ...]) -> BaseConfig:
         """
         Build configuration
 

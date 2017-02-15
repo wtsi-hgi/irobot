@@ -21,9 +21,9 @@ import logging
 from collections import deque
 from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
-from types import NoneType, StringType
+from typing import Optional
 
-from irobot.common import Listener, type_check_arguments
+from irobot.common import Listener
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 from irobot.logging import LogWriter
@@ -51,8 +51,7 @@ def _exists(irods_path):
 
 class iRODS(Listener, LogWriter):
     """ High level iRODS interface with iget pool management """
-    @type_check_arguments(irods_config=iRODSConfig, logger=(logging.Logger, NoneType))
-    def __init__(self, irods_config, logger=None):
+    def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None):
         """
         Constructor
 
@@ -96,8 +95,7 @@ class iRODS(Listener, LogWriter):
         level = logging.WARNING if args[0] == IGET_FAILED else logging.INFO
         self.log(level, "iget: %s %s" % args)
 
-    @type_check_arguments(irods_path=StringType, local_path=StringType)
-    def get_dataobject(self, irods_path, local_path):
+    def get_dataobject(self, irods_path:str, local_path:str):
         """
         Enqueue retrieval of data object from iRODS and store it in the
         local filesystem, broadcasting retrieval status to listeners
@@ -126,8 +124,7 @@ class iRODS(Listener, LogWriter):
         except CalledProcessError:
             self.broadcast(IGET_FAILED, irods_path)
 
-    @type_check_arguments(irods_path=StringType)
-    def get_metadata(self, irods_path):
+    def get_metadata(self, irods_path:str):
         """
         Retrieve AVU and filesystem metadata for data object from iRODS
 

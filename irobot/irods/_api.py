@@ -22,14 +22,10 @@ import os
 import subprocess
 from collections import Iterable
 from tempfile import TemporaryFile
-from types import BooleanType, FileType, IntType, NoneType, StringType
-
-from irobot.common import type_check_arguments, type_check_return_tuple
+from typing import Sequence, TextIO, Tuple, Union
 
 
-@type_check_return_tuple(IntType, StringType, StringType)
-@type_check_arguments(command=(StringType, Iterable), stdin=(NoneType, IntType, StringType, FileType), shell=BooleanType)
-def _invoke(command, stdin=None, shell=False):
+def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextIO] = None, shell:bool = False):
     """
     Run a command with the provided arguments
 
@@ -44,8 +40,8 @@ def _invoke(command, stdin=None, shell=False):
     @return  Exit code, stdout and stderr (tuple of int, string, string)
     """
     # stdin as string...
-    if isinstance(stdin, StringType):
-        with TemporaryFile() as stdin_file:
+    if isinstance(stdin, str):
+        with TemporaryFile(mode="w+t") as stdin_file:
             stdin_file.write(stdin)
             stdin_file.flush()
             stdin_file.seek(0)
@@ -68,8 +64,7 @@ def _invoke(command, stdin=None, shell=False):
     return exit_code, out, err
 
 
-@type_check_arguments(irods_path=StringType)
-def ils(irods_path):
+def ils(irods_path:str):
     """
     Wrapper for ils
 
@@ -83,8 +78,7 @@ def ils(irods_path):
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
-@type_check_arguments(irods_path=StringType, local_path=StringType)
-def iget(irods_path, local_path):
+def iget(irods_path:str, local_path:str):
     """
     Wrapper for iget
 
@@ -99,8 +93,7 @@ def iget(irods_path, local_path):
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
-@type_check_arguments(irods_path=StringType)
-def baton(irods_path):
+def baton(irods_path:str):
     """
     Wrapper for baton-list
 

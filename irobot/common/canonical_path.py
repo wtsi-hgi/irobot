@@ -18,14 +18,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os.path
-from types import StringType
-
-from irobot.common import type_check_arguments, type_check_return
 
 
-@type_check_return(StringType)
-@type_check_arguments(path=StringType)
-def canonical_path(path):
+def canonical_path(path:str) -> str:
     """
     Canonicalise paths
 

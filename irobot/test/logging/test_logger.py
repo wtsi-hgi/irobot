@@ -26,15 +26,14 @@ from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock
 
 import irobot.logging.logger as logger
-from irobot.common import type_check_arguments, utc
+from irobot.common import utc
 from irobot.config.log import LoggingConfig
 
 
 # Mock logger's timestamper
 logger.time = MagicMock(spec=time)
 
-@type_check_arguments(t=datetime)
-def _set_log_time(t):
+def _set_log_time(t:datetime):
     logger.time.gmtime.return_value = t.replace(tzinfo=utc).timetuple()
 
 
