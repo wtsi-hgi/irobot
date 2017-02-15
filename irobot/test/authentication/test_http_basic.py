@@ -33,7 +33,7 @@ class TestBasicAuthParser(unittest.TestCase):
     def setUp(self):
         self.creds = user, password = ("foo", "bar")
         payload = f"{user}:{password}".encode()
-        self.basic_auth = "Basic %s" % b64encode(payload)
+        self.basic_auth = "Basic {}".format(b64encode(payload).decode())
 
     def test_good_parse(self):
         parse_auth = http_basic._parse_auth_header
@@ -115,7 +115,7 @@ class TestHTTPBasicAuthHandler(unittest.TestCase):
 
         self.assertFalse(auth.validate("foo bar"))
 
-        basic_auth = "Basic %s" % b64encode("foo:bar".encode())
+        basic_auth = "Basic {}".format(b64encode(b"foo:bar").decode())
         validation_time = http_basic.datetime.utcnow.return_value = datetime.utcnow()
         http_basic.requests.get().status_code = 200
         self.assertEqual(auth._cache, {})
