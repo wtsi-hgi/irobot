@@ -18,24 +18,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import math
-from datetime import datetime, timedelta
-from fractions import Fraction
+from datetime import datetime
 from typing import Union
-
-
-def multiply_timedelta(delta:timedelta, m:Union[int, float]) -> timedelta:
-    """
-    Multiply a timedelta by m, where m can be decimal
-
-    @note    Python 2.7 only supports multiplication and division of
-             timedelta by integers
-
-    @param   delta  Input timedelta (timedelta)
-    @param   m      Multiplier (numeric)
-    @return  Multiplied timedelta (timedelta)
-    """
-    frac_m = Fraction(m).limit_denominator(1000)
-    return (delta * frac_m.numerator) / frac_m.denominator
 
 
 def add_years(timestamp:datetime, years:Union[int, float]):
@@ -55,7 +39,6 @@ def add_years(timestamp:datetime, years:Union[int, float]):
     over_years = int(math.ceil(years) if cmp(years, 0) == 1 else math.floor(years))
     over_shift = timestamp.replace(year = timestamp.year + over_years)
 
-    frac_years = abs(years - int(years))
-    frac_delta = multiply_timedelta(over_shift - whole_shift, frac_years)
+    frac_delta = abs(years - int(years)) * (over_shift - whole_shift)
 
     return whole_shift + frac_delta

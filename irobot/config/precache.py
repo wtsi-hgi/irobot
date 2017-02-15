@@ -23,7 +23,7 @@ from configparser import ParsingError
 from datetime import datetime, timedelta
 from typing import Optional, Union
 
-from irobot.common import add_years, canonical_path, multiply_timedelta, parse_human_size
+from irobot.common import add_years, canonical_path, parse_human_size
 from irobot.config._base import BaseConfig
 
 
@@ -125,11 +125,11 @@ def _parse_expiry(expiry:str) -> Union[timedelta, int, float, None]:
         return val
 
     # Hours, Days or Weeks
-    return multiply_timedelta({
+    return val * {
         "h": timedelta(hours = 1),
         "d": timedelta(days  = 1),
         "w": timedelta(weeks = 1)
-    }[unit], val)
+    }[unit]
 
 
 class PrecacheConfig(BaseConfig):
