@@ -20,13 +20,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import os
 import time
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from logging import Logger
 from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock
 
 import irobot.logging.logger as logger
-from irobot.common import utc
 from irobot.config.log import LoggingConfig
 
 
@@ -34,7 +33,7 @@ from irobot.config.log import LoggingConfig
 logger.time = MagicMock(spec=time)
 
 def _set_log_time(t:datetime):
-    logger.time.gmtime.return_value = t.replace(tzinfo=utc).timetuple()
+    logger.time.gmtime.return_value = t.replace(tzinfo=timezone.utc).timetuple()
 
 
 class TestLogWriter(unittest.TestCase):
