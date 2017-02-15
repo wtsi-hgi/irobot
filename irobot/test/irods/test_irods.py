@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from subprocess import CalledProcessError
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 import irobot.irods.irods as irods
 import irobot.common.listener as listener
