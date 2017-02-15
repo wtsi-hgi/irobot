@@ -117,7 +117,7 @@ class Configuration(object):
             })
 
         except KeyError as e:
-            auth_method = re.match(r"^(\w+)_auth$", e.message).group(1)
+            auth_method = re.match(r"^(\w+)_auth$", e.args[0]).group(1)
             raise ParsingError("No such authentication method \"%s\"" % auth_method)
 
         # Build logging configuration
