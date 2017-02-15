@@ -19,9 +19,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from configparser import ParsingError
+from unittest.mock import MagicMock
 
 import requests
-from mock import MagicMock
 
 import irobot.config.authentication.basic as basic_conf
 

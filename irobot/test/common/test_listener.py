@@ -18,8 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-
-from mock import MagicMock
+from unittest.mock import MagicMock
 
 import irobot.common.listener as listener
 
