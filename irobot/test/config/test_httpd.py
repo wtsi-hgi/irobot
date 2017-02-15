@@ -64,10 +64,10 @@ class TestHTTPdConfig(unittest.TestCase):
         parse_auth = httpd._parse_authentication
 
         self.assertRaises(ParsingError, parse_auth, "")
-        self.assertItemsEqual(parse_auth("foo"), ["foo"])
-        self.assertItemsEqual(parse_auth("foo,bar"), ["foo", "bar"])
-        self.assertItemsEqual(parse_auth("fOo,BaR"), ["foo", "bar"])
-        self.assertItemsEqual(parse_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
+        self.assertEqual(parse_auth("foo"), ["foo"])
+        self.assertEqual(parse_auth("foo,bar"), ["foo", "bar"])
+        self.assertEqual(parse_auth("fOo,BaR"), ["foo", "bar"])
+        self.assertEqual(parse_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
 
     def test_instance(self):
         config = httpd.HTTPdConfig("0.0.0.0", "5000", "1000ms", "basic,foo, bar ,baz")
@@ -75,7 +75,7 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertEqual(config.bind_address(), "0.0.0.0")
         self.assertEqual(config.listen(), 5000)
         self.assertEqual(config.timeout(), 1000)
-        self.assertItemsEqual(config.authentication(), ["basic", "foo", "bar", "baz"])
+        self.assertEqual(config.authentication(), ["basic", "foo", "bar", "baz"])
 
 
 if __name__ == "__main__":
