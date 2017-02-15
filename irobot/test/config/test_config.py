@@ -116,9 +116,9 @@ class TestConfiguration(unittest.TestCase):
     def test_get_config(self):
         config = Configuration(self.config_file.name)
 
-        sections = config.get_sections()
+        sections = list(config.get_sections().keys())
         expected = ["precache", "irods", "httpd", "logging"]
-        self.assertItemsEqual(sections.keys(), expected)
+        self.assertEqual(sorted(sections), sorted(expected))
 
     def test_config(self):
         config = Configuration(self.config_file.name)
@@ -136,7 +136,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
         self.assertEqual(config.httpd.listen(), 5000)
         self.assertEqual(config.httpd.timeout(), 500)
-        self.assertItemsEqual(config.httpd.authentication(), ["basic", "arvados"])
+        self.assertEqual(config.httpd.authentication(), ["basic", "arvados"])
 
         self.assertIsNone(config.logging.output())
         self.assertEqual(config.logging.level(), logging.WARNING)
