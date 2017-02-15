@@ -31,8 +31,9 @@ from irobot.config.authentication import BasicAuthConfig
 
 class TestBasicAuthParser(unittest.TestCase):
     def setUp(self):
-        self.creds = ("foo", "bar")
-        self.basic_auth = "Basic %s" % b64encode("{}:{}".format(*self.creds).encode())
+        self.creds = user, password = ("foo", "bar")
+        payload = f"{user}:{password}".encode()
+        self.basic_auth = "Basic %s" % b64encode(payload)
 
     def test_good_parse(self):
         parse_auth = http_basic._parse_auth_header
