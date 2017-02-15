@@ -42,10 +42,10 @@ def _parse_url(url:str) -> str:
         requests.head(url, timeout=0.25)
 
     except requests.Timeout:
-        raise ParsingError("Didn't receive a response from %s in a reasonable amount of time" % url)
+        raise ParsingError(f"Didn't receive a response from {url} in a reasonable amount of time")
 
     except Exception:
-        raise ParsingError("Couldn't connect to %s" % url)
+        raise ParsingError(f"Couldn't connect to {url}")
 
     return url
 

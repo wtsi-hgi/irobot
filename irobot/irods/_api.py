@@ -100,7 +100,7 @@ def baton(irods_path:str):
     @param   irods_path  Path to data object on iRODS (string)
     @return  Deserialised JSON (various)
     """
-    baton_json = "{\"collection\":\"%s\",\"data_object\":\"%s\"}" % os.path.split(irods_path)
+    baton_json = "{{\"collection\":\"{}\",\"data_object\":\"{}\"}}".format(*os.path.split(irods_path))
     command = ["baton-list", "--avu", "--size", "--checksum", "--acl", "--timestamp"]
 
     exit_code, stdout, stderr = _invoke(command, baton_json)

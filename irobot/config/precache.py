@@ -158,7 +158,7 @@ class PrecacheConfig(BaseConfig):
             expiry = str(self._expiry)
 
         else:
-            expiry = "%s years" % self._expiry
+            expiry = f"{self._expiry} years"
 
         return str({
             "location": self._location,

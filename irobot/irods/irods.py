@@ -46,7 +46,7 @@ def _exists(irods_path):
         ils(irods_path)
 
     except CalledProcessError:
-        raise IOError("Data object \"%s\" inaccessible" % irods_path)
+        raise IOError(f"Data object \"{irods_path}\" inaccessible")
 
 
 class iRODS(Listener, LogWriter):
@@ -93,7 +93,7 @@ class iRODS(Listener, LogWriter):
         @note    *args will be a tuple of the status and iRODS path
         """
         level = logging.WARNING if args[0] == IGET_FAILED else logging.INFO
-        self.log(level, "iget: %s %s" % args)
+        self.log(level, "iget: {} {}".format(*args))
 
     def get_dataobject(self, irods_path:str, local_path:str):
         """
@@ -133,7 +133,7 @@ class iRODS(Listener, LogWriter):
         """
         _exists(irods_path)
 
-        self.log(logging.INFO, "Getting metadata for %s" % irods_path)
+        self.log(logging.INFO, f"Getting metadata for {irods_path}")
         baton_output = baton(irods_path)
 
         fs_keys = ["checksum", "size", "access", "timestamps"]
