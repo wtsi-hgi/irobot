@@ -86,7 +86,7 @@ class TestAuthHandlers(unittest.TestCase):
 
 class TestConfiguration(unittest.TestCase):
     def setUp(self):
-        self.config_file = NamedTemporaryFile(delete=True)
+        self.config_file = NamedTemporaryFile(mode="w+t", delete=True)
 
         self.config_file.write("\n".join(
             PRECACHE_CONF +
@@ -142,7 +142,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.logging.level(), logging.WARNING)
 
     def test_unknown_http_auth_method(self):
-        with NamedTemporaryFile() as config_file:
+        with NamedTemporaryFile(mode="w+t") as config_file:
             bad_httpd_conf = [op for op in HTTPD_CONF if not op.startswith("authentication")] \
                            + ["authentication = foo"]
 

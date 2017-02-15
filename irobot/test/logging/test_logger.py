@@ -51,7 +51,7 @@ class TestLogWriter(unittest.TestCase):
 
 class TestLoggerCreation(unittest.TestCase):
     def test_create_logger(self):
-        with NamedTemporaryFile() as log_file:
+        with NamedTemporaryFile(mode="w+t") as log_file:
             config = LoggingConfig(log_file.name, "debug")
             log = logger.create_logger(config)
 
