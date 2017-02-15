@@ -1,2 +1,1 @@
-arvados-python-client==0.1.20170203223449
 requests==2.13.0
