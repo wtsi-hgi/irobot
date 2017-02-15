@@ -49,7 +49,7 @@ def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextI
             return _invoke(command, stdin_file, shell)
 
     # ...otherwise
-    with TemporaryFile() as stdout, TemporaryFile() as stderr:
+    with TemporaryFile(mode="w+t") as stdout, TemporaryFile(mode="w+t") as stderr:
         exit_code = subprocess.call(command, stdin=stdin,
                                              stdout=stdout,
                                              stderr=stderr,

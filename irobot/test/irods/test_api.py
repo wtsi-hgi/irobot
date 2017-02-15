@@ -61,7 +61,7 @@ class TestInvocation(unittest.TestCase):
         self.assertEqual(stderr, "")
 
     def test_stdin_fd(self):
-        with TemporaryFile() as stdin:
+        with TemporaryFile(mode="w+t") as stdin:
             stdin.write("mouse")
             stdin.flush()
             stdin.seek(0)
@@ -72,7 +72,7 @@ class TestInvocation(unittest.TestCase):
             self.assertEqual(stderr, "")
 
     def test_stdin_file(self):
-        with TemporaryFile() as stdin:
+        with TemporaryFile(mode="w+t") as stdin:
             stdin.write("mouse")
             stdin.flush()
             stdin.seek(0)
