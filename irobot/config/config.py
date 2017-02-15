@@ -109,16 +109,16 @@ class Configuration(object):
         try:
             self.authentication = _AuthHandlers(**{
                 handler: self._build_config(
-                    AUTH_HANDLERS["%s_auth" % handler]["constructor"],
-                    "%s_auth" % handler,
-                    *AUTH_HANDLERS["%s_auth" % handler]["options"]
+                    AUTH_HANDLERS[f"{handler}_auth"]["constructor"],
+                    f"{handler}_auth",
+                    *AUTH_HANDLERS[f"{handler}_auth"]["options"]
                 )
                 for handler in self.httpd.authentication()
             })
 
         except KeyError as e:
             auth_method = re.match(r"^(\w+)_auth$", e.args[0]).group(1)
-            raise ParsingError("No such authentication method \"%s\"" % auth_method)
+            raise ParsingError(f"No such authentication method \"{auth_method}\"")
 
         # Build logging configuration
         self.logging = self._build_config(LoggingConfig, LOGGING, LOGGING_OUTPUT,

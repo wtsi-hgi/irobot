@@ -114,11 +114,11 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         r = requests.get(self._config.url(), auth=(user, password))
 
         if 200 <= r.status_code < 300:
-            self.log(logging.DEBUG, "Authenticated user \"%s\"" % user)
+            self.log(logging.DEBUG, f"Authenticated user \"{user}\"")
             return True
 
         if r.status_code in [401, 403]:
-            self.log(logging.WARNING, "Couldn't authenticate user \"%s\"" % user)
+            self.log(logging.WARNING, f"Couldn't authenticate user \"{user}\"")
         else:
             r.raise_for_status()
 
@@ -142,7 +142,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         if self._config.cache():
             with self._cache_lock:
                 if user in self._cache and not self._has_expired(self._cache[user]):
-                    self.log(logging.DEBUG, "Authenticated user \"%s\" from cache" % user)
+                    self.log(logging.DEBUG, f"Authenticated user \"{user}\" from cache")
                     return True
 
                 # Clean up expired users
