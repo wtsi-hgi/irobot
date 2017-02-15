@@ -20,9 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from abc import ABCMeta, abstractmethod
 
 
-class BaseAuthHandler(object):
-    __metaclass__ = ABCMeta
-
+class BaseAuthHandler(object, metaclass=ABCMeta):
     @abstractmethod
     def validate(self, auth_header):
         """

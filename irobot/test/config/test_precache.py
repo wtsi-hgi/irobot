@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import unittest
-from ConfigParser import ParsingError
+from configparser import ParsingError
 from datetime import datetime, timedelta
 
 import irobot.config.precache as precache
@@ -84,15 +84,15 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEqual(config.size(), 123 * (1000**3))
         self.assertIsNone(config.expiry(self.now))
         self.assertEqual(config.chunk_size(), 64 * (1000**2))
-        self.assertRegexpMatches(str(config), r"expiry: unlimited")
+        self.assertRegex(str(config), r"expiry: unlimited")
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks", "64MB")
         self.assertEqual(config.expiry(self.now), self.now + timedelta(weeks = 3))
-        self.assertRegexpMatches(str(config), r"expiry: 21 days")
+        self.assertRegex(str(config), r"expiry: 21 days")
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB")
         self.assertEqual(config.expiry(self.now), add_years(self.now, 1.2))
-        self.assertRegexpMatches(str(config), r"expiry: 1.2 years")
+        self.assertRegex(str(config), r"expiry: 1.2 years")
 
 
 if __name__ == "__main__":
