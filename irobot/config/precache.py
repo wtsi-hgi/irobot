@@ -207,7 +207,7 @@ class PrecacheConfig(BaseConfig):
             # +timedelta
             return from_atime + self._expiry
 
-        if type(self._expiry) in [IntType, FloatType]:
+        if type(self._expiry) in [int, float]:
             # +x years
             return add_years(from_atime, self._expiry)
 
