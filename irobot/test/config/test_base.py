@@ -39,8 +39,8 @@ class TestBaseConfig(unittest.TestCase):
 
     def test_str(self):
         s = str(self.config)
-        self.assertRegexpMatches(s, r"foo: bar")
-        self.assertRegexpMatches(s, r"quux: xyzzy")
+        self.assertRegex(s, r"foo: bar")
+        self.assertRegex(s, r"quux: xyzzy")
         self.assertNotRegexpMatches(s, r"_moo: quack")
 
 

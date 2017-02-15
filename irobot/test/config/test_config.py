@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import unittest
-from ConfigParser import ParsingError
+from configparser import ParsingError
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 

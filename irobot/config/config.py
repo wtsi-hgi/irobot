@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-from ConfigParser import ConfigParser, ParsingError
+from configparser import ConfigParser, ParsingError
 from types import NoneType, ObjectType, StringType, TypeType
 
 from irobot.common import canonical_path, type_check_arguments, type_check_return
