@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from base64 import b64encode, b64decode
+from base64 import b64encode
 from datetime import datetime, timedelta
 from threading import Timer
 from unittest.mock import MagicMock
@@ -32,7 +32,7 @@ from irobot.config.authentication import BasicAuthConfig
 class TestBasicAuthParser(unittest.TestCase):
     def setUp(self):
         self.creds = ("foo", "bar")
-        self.basic_auth = "Basic %s" % b64encode("%s:%s" % self.creds)
+        self.basic_auth = "Basic %s" % b64encode("{}:{}".format(*self.creds).encode())
 
     def test_good_parse(self):
         parse_auth = http_basic._parse_auth_header
@@ -114,7 +114,7 @@ class TestHTTPBasicAuthHandler(unittest.TestCase):
 
         self.assertFalse(auth.validate("foo bar"))
 
-        basic_auth = "Basic %s" % b64encode("%s:%s" % ("foo", "bar"))
+        basic_auth = "Basic %s" % b64encode("foo:bar".encode())
         validation_time = http_basic.datetime.utcnow.return_value = datetime.utcnow()
         http_basic.requests.get().status_code = 200
         self.assertEqual(auth._cache, {})
