@@ -97,7 +97,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         """ Clean up expired entries from the cache """
         with self._cache_lock:
             self.log(logging.DEBUG, "Cleaning HTTP basic authentication cache")
-            for user, validation_time in self._cache.items():
+            for user, validation_time in list(self._cache.items()):
                 if self._has_expired(validation_time):
                     del self._cache[user]
 
