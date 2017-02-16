@@ -11,16 +11,15 @@
 * FROM ubuntu:trusty
 * MAINTAINER Christopher Harrison <ch12@sanger.ac.uk>
 
-# Install Ubuntu system packages
+# Install Python 3.6, build tools and common libraries
 * RUN apt-get update \
-*  && apt-get -y install python \
-*                        python-dev \
-*                        python-pip \
-*                        wget \
-*                        git \
-*                        build-essential \
-*                        cpanminus \
-*                        libssl-dev \
+*  && apt-get -y install curl python software-properties-common \
+*  && add-apt-repository -y ppa:fkrull/deadsnakes \
+*  && apt-get update \
+*  && apt-get -y install python3.6 \
+*  && curl https://bootstrap.pypa.io/get-pip.py | python3.6 \
+*  && apt-get -y install build-essential git cpanminus \
+*  && apt-get -y install libssl-dev \
 *                        libcurl4-openssl-dev \
 *                        libjansson4 \
 *                        libjansson-dev \
@@ -32,10 +31,10 @@ K                        libkrb5-dev
 
 # Download and install iRODS client, shared objects and development
 # headers and Kerberos plugin, if needed
-* RUN wget ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-icommands-4.1.10-ubuntu14-x86_64.deb \
-*          ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-runtime-4.1.10-ubuntu14-x86_64.deb \
-*          ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-dev-4.1.10-ubuntu14-x86_64.deb \
-K          ftp://ftp.renci.org/pub/irods/plugins/irods_auth_plugin_krb/1.4/irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
+* RUN curl -O ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-icommands-4.1.10-ubuntu14-x86_64.deb \
+*          -O ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-runtime-4.1.10-ubuntu14-x86_64.deb \
+*          -O ftp://ftp.renci.org/pub/irods/releases/4.1.10/ubuntu14/irods-dev-4.1.10-ubuntu14-x86_64.deb \
+K          -O ftp://ftp.renci.org/pub/irods/plugins/irods_auth_plugin_krb/1.4/irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
 *  && dpkg -i irods-icommands-4.1.10-ubuntu14-x86_64.deb \
 *             irods-runtime-4.1.10-ubuntu14-x86_64.deb \
 *             irods-dev-4.1.10-ubuntu14-x86_64.deb \
@@ -44,14 +43,13 @@ K             irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
 
 # Download and install baton
 * RUN cpanm JSON List::AllUtils \
-*  && wget https://github.com/wtsi-npg/baton/releases/download/0.17.1/baton-0.17.1.tar.gz \
-*  && tar -xf baton-0.17.1.tar.gz \
+*  && curl -L https://github.com/wtsi-npg/baton/releases/download/0.17.1/baton-0.17.1.tar.gz | tar -xz \
 *  && cd baton-0.17.1 \
 *  && ./configure --with-irods \
 *  && make \
 *  && make install \
 *  && cd .. \
-*  && rm -rf baton-0.17.1.tar.gz baton-0.17.1
+*  && rm -rf baton-0.17.1
 * ENV LD_LIBRARY_PATH "/usr/local/lib:/usr/lib:/lib"
 
 # Create sudo user and group, with iRODS environment
