@@ -39,7 +39,7 @@ def _parse_max_connections(max_connections:str) -> int:
 
 class iRODSConfig(BaseConfig):
     """ iRODS configuration """
-    def __init__(self, max_connections:str):
+    def __init__(self, max_connections:str) -> None:
         """
         Parse iRODS configuration
 

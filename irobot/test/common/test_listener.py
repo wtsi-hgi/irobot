@@ -24,28 +24,6 @@ import irobot.common.listener as listener
 
 
 class TestListenerInternals(unittest.TestCase):
-    def test_check_listener(self):
-        class _listeners(object):
-            def bad(self, timestamp, a, b, c):
-                pass
-
-            def good(self, timestamp, *args, **kwargs):
-                pass
-
-        def _listener_bad(a, b):
-            pass
-
-        def _listener_good(timestamp, *args, **kwargs):
-            pass
-
-        _listener = _listeners()
-
-        self.assertRaises(TypeError, listener._check_listener, _listener_bad)
-        self.assertRaises(TypeError, listener._check_listener, _listener.bad)
-
-        self.assertIsNone(listener._check_listener(_listener_good))
-        self.assertIsNone(listener._check_listener(_listener.good))
-
     def test_broadcast_time(self):
         _orig_datetime, listener.datetime = listener.datetime, MagicMock()
 
@@ -57,11 +35,9 @@ class TestListenerInternals(unittest.TestCase):
 
 class TestListener(unittest.TestCase):
     def setUp(self):
-        self._orig_check_listener, listener._check_listener = listener._check_listener, MagicMock()
         self._orig_broadcast_time, listener._broadcast_time = listener._broadcast_time, MagicMock(return_value=1234)
 
     def tearDown(self):
-        listener._check_listener = self._orig_check_listener
         listener._broadcast_time = self._orig_broadcast_time
 
     def test_add_listener(self):

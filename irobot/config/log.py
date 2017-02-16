@@ -59,7 +59,7 @@ def _parse_level(level:str) -> int:
 
 class LoggingConfig(BaseConfig):
     """ Logging configuration """
-    def __init__(self, output:str, level:str):
+    def __init__(self, output:str, level:str) -> None:
         """
         Parse logging configuration
 
@@ -69,7 +69,7 @@ class LoggingConfig(BaseConfig):
         self._output = _parse_output(output)
         self._level = _parse_level(level)
 
-    def __str__(self):
+    def __str__(self) -> None:
         return str({
             "output": self._output or "stderr",
             "level": ["debug", "info", "warning", "error", "critical"][(self._level // 10) - 1]

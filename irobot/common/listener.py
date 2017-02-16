@@ -18,25 +18,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from datetime import datetime
-from inspect import getargspec, ismethod
-from typing import Callable
+from typing import Callable, Dict, List, Tuple, Type, Union
 
 
-def _check_listener(listener:Callable):
-    """
-    Check listener is a function or method with one argument (or two,
-    for methods, to include self), variable and keyword arguments
-
-    @param   listener  Potential listener
-    """
-    # Check the argument signature
-    if __debug__:
-        argspec = getargspec(listener)
-
-        if len(argspec.args) != (2 if ismethod(listener) else 1) \
-        or argspec.varargs is None \
-        or argspec.keywords is None:
-            raise TypeError("Listener should accept a timestamp, varargs and keywords")
+# FIXME? No facility is provided for annotating var- and keyword
+# arguments, so we suck it up with a Tuple and Dict, respectively
+_BaseArgSignature = [datetime, Tuple, Dict]
+_ListenerFunction = Callable[_BaseArgSignature, None]
+_ListenerMethod = Callable[[Type] + _BaseArgSignature, None]
+_ListenerCallable = Union[_ListenerFunction, _ListenerMethod]
 
 
 def _broadcast_time() -> datetime:
@@ -50,20 +40,19 @@ def _broadcast_time() -> datetime:
 
 class Listener(object):
     """ Listener base class """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(Listener, self).__init__(*args, **kwargs)
-        self._listeners = []
+        self._listeners:List[_ListenerCallable] = []
 
-    def add_listener(self, listener):
+    def add_listener(self, listener:_ListenerCallable) -> None:
         """
         Add a listener for broadcast messages
 
         @param   listener  Listener (function taking timestamp, *args and **kwargs)
         """
-        _check_listener(listener)
         self._listeners.append(listener)
 
-    def broadcast(self, *args, **kwargs):
+    def broadcast(self, *args, **kwargs) -> None:
         """ Broadcast a message to all the listeners """
         timestamp = _broadcast_time()
         for listener in self._listeners:

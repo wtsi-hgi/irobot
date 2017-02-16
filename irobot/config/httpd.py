@@ -173,7 +173,7 @@ def _parse_authentication(authentication:str) -> List[str]:
 
 class HTTPdConfig(BaseConfig):
     """ HTTPd configuration """
-    def __init__(self, bind_address:str, listen:str, timeout:str, authentication:str):
+    def __init__(self, bind_address:str, listen:str, timeout:str, authentication:str) -> None:
         """
         Parse HTTPd configuration
 
