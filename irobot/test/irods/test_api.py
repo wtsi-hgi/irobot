@@ -39,13 +39,13 @@ class TestInvocation(unittest.TestCase):
     def test_simple(self):
         exit_code, stdout, stderr = api._invoke("whoami")
         self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, "{}\n".format(os.environ["USER"]))
+        self.assertEqual(stdout, "{USER}\n".format(**os.environ))
         self.assertEqual(stderr, "")
 
     def test_tuple(self):
         exit_code, stdout, stderr = api._invoke(("id", "-un"))
         self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, "{}\n".format(os.environ["USER"]))
+        self.assertEqual(stdout, "{USER}\n".format(**os.environ))
         self.assertEqual(stderr, "")
 
     def test_shell(self):
