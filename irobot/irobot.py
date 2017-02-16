@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
+from typing import List
 
 from .authentication import ArvadosAuthHandler, HTTPBasicAuthHandler
 from .config import Configuration

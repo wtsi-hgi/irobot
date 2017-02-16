@@ -19,10 +19,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import unittest
+from unittest.mock import MagicMock
 from datetime import datetime, timezone
 from logging import Logger
 from tempfile import NamedTemporaryFile
-from unittest.mock import MagicMock
 
 import irobot.logging.logger as logger
 from irobot.config.log import LoggingConfig

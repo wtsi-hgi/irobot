@@ -104,7 +104,7 @@ class Configuration(object):
                                                             HTTPD_LISTEN,
                                                             HTTPD_TIMEOUT,
                                                             HTTPD_AUTHENTICATION)
-        
+
         # Build authentication handler configurations
         try:
             self.authentication = _AuthHandlers(**{

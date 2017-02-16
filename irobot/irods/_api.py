@@ -20,7 +20,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import json
 import os
 import subprocess
-from collections import Iterable
 from tempfile import TemporaryFile
 from typing import Sequence, TextIO, Tuple, Union
 
