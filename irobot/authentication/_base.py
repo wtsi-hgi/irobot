@@ -22,7 +22,7 @@ from abc import ABCMeta, abstractmethod
 
 class BaseAuthHandler(object, metaclass=ABCMeta):
     @abstractmethod
-    def validate(self, auth_header):
+    def validate(self, auth_header:str) -> bool:
         """
         Validate the authorisation header
 

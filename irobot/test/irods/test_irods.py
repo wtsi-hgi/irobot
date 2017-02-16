@@ -54,15 +54,12 @@ irods.iget = MagicMock()
 class ListenerInternals(object):
     def __init__(self, original):
         self._orig = original
-        self._orig_check_listener = original._check_listener
         self._orig_broadcast_time = original._broadcast_time
 
     def mock(self):
-        self._orig._check_listener = MagicMock()
         self._orig._broadcast_time = MagicMock(return_value=1234)
 
     def reset(self):
-        self._orig._check_listener = self._orig_check_listener
         self._orig._broadcast_time = self._orig_broadcast_time
 
 

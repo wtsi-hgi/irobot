@@ -21,14 +21,14 @@ import atexit
 import logging
 import sys
 import time
-from typing import Callable, Optional
+from typing import Callable, ClassVar, Optional
 
 from irobot.config.log import LoggingConfig
 
 
 class LogWriter(object):
     """ Logging base class """
-    def __init__(self, logger:Optional[logging.Logger] = None, *args, **kwargs):
+    def __init__(self, logger:Optional[logging.Logger] = None, *args, **kwargs) -> None:
         """
         Constructor
 
@@ -37,7 +37,7 @@ class LogWriter(object):
         super(LogWriter, self).__init__(*args, **kwargs)
         self._logger = logger
 
-    def log(self, level:int, message:str, *args, **kwargs):
+    def log(self, level:int, message:str, *args, **kwargs) -> None:
         """
         Write to log
 
@@ -53,7 +53,7 @@ def _exception_handler(logger:logging.Logger) -> Callable:
     Create an exception handler that logs uncaught exceptions (except
     keyboard interrupts) before terminating
     """
-    def _log_uncaught_exception(exc_class, exc_obj, traceback):
+    def _log_uncaught_exception(exc_class:ClassVar[Exception], exc_obj:Exception, traceback) -> None:
         if issubclass(exc_class, KeyboardInterrupt):
             sys.__excepthook__(exc_class, exc_obj, traceback)
 

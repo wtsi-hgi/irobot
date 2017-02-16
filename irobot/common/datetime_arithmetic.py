@@ -19,10 +19,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import math
 from datetime import datetime
-from typing import Union
+from numbers import Number
 
 
-def add_years(timestamp:datetime, years:Union[int, float]):
+def add_years(timestamp:datetime, years:Number) -> datetime:
     """
     Add a number of years (integer or decimal, positive or negative) to
     a given timestamp

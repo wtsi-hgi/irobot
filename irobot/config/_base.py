@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 class BaseConfig(object):
-    def __str__(self):
+    def __str__(self) -> None:
         return str({
             k: getattr(self, k)()
             for k in dir(self)

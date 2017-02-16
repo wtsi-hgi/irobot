@@ -72,12 +72,12 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
             self._cache_lock = Lock()
             self._schedule_cleanup()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """ Cancel any running clean up timer on GC """
         if self._config.cache() and self._cleanup_timer.is_alive():
             self._cleanup_timer.cancel()
 
-    def _schedule_cleanup(self):
+    def _schedule_cleanup(self) -> None:
         """ Initialise and start the clean up timer """
         self._cleanup_timer = Timer(self._config.cache(), self._cleanup)
         self._cleanup_timer.daemon = True
@@ -93,7 +93,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         age = datetime.utcnow() - validation_time
         return age.total_seconds() > self._config.cache()
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """ Clean up expired entries from the cache """
         with self._cache_lock:
             self.log(logging.DEBUG, "Cleaning HTTP basic authentication cache")

@@ -21,6 +21,7 @@ import os
 import re
 from configparser import ParsingError
 from datetime import datetime, timedelta
+from numbers import Number
 from typing import Optional, Union
 
 from irobot.common import add_years, canonical_path, parse_human_size
@@ -83,7 +84,7 @@ def _parse_unlimited_size(size:str) -> Optional[int]:
     return _parse_limited_size(size)
 
 
-def _parse_expiry(expiry:str) -> Union[timedelta, int, float, None]:
+def _parse_expiry(expiry:str) -> Union[timedelta, Number, None]:
     """
     Parse expiry string := "unlimited"
                          | NUMBER ( "h" | "hour" | "hours"
@@ -134,7 +135,7 @@ def _parse_expiry(expiry:str) -> Union[timedelta, int, float, None]:
 
 class PrecacheConfig(BaseConfig):
     """ Precache configuration """
-    def __init__(self, location:str, index:str, size:str, expiry:str, chunk_size:str):
+    def __init__(self, location:str, index:str, size:str, expiry:str, chunk_size:str) -> None:
         """
         Parse precache configuration
 
@@ -150,7 +151,7 @@ class PrecacheConfig(BaseConfig):
         self._expiry = _parse_expiry(expiry)
         self._chunk_size = _parse_limited_size(chunk_size)
 
-    def __str__(self):
+    def __str__(self) -> None:
         if self._expiry is None:
             expiry = "unlimited"
 
@@ -207,7 +208,7 @@ class PrecacheConfig(BaseConfig):
             # +timedelta
             return from_atime + self._expiry
 
-        if type(self._expiry) in [int, float]:
+        if isinstance(self._expiry, Number):
             # +x years
             return add_years(from_atime, self._expiry)
 

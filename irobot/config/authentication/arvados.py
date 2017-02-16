@@ -21,6 +21,6 @@ from irobot.config._base import BaseConfig
 
 
 class ArvadosAuthConfig(BaseConfig):
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         # TODO
         pass

@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from collections import deque
+from datetime import datetime
 from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
 from typing import Optional
@@ -36,7 +37,7 @@ IGET_FINISHED = "finished"
 IGET_FAILED = "failed"
 
 
-def _exists(irods_path):
+def _exists(irods_path:str) -> None:
     """
     Check data object exists on iRODS
 
@@ -51,7 +52,7 @@ def _exists(irods_path):
 
 class iRODS(Listener, LogWriter):
     """ High level iRODS interface with iget pool management """
-    def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None):
+    def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor
 
@@ -72,7 +73,7 @@ class iRODS(Listener, LogWriter):
         self._runner.daemon = True
         self._runner.start()
 
-    def _thread_runner(self):
+    def _thread_runner(self) -> None:
         """ Thread runner to invoke igets """
         self.log(logging.DEBUG, "Starting iget pool")
         while self._running:
@@ -81,12 +82,12 @@ class iRODS(Listener, LogWriter):
                 with self._iget_pool:
                     Thread(target=self._iget, args=iget_args).start()
 
-    def __del__(self):
+    def __del__(self) -> None:
         """ Stop thread runner on GC """
         self.log(logging.DEBUG, "Shutting down iget pool")
         self._running = False
 
-    def _broadcast_iget_to_log(self, timestamp, *args, **kwargs):
+    def _broadcast_iget_to_log(self, timestamp:datetime, *args, **kwargs) -> None:
         """
         Log all broadcast iget messages
 
@@ -95,7 +96,7 @@ class iRODS(Listener, LogWriter):
         level = logging.WARNING if args[0] == IGET_FAILED else logging.INFO
         self.log(level, "iget: {} {}".format(*args))
 
-    def get_dataobject(self, irods_path:str, local_path:str):
+    def get_dataobject(self, irods_path:str, local_path:str) -> None:
         """
         Enqueue retrieval of data object from iRODS and store it in the
         local filesystem, broadcasting retrieval status to listeners
@@ -107,7 +108,7 @@ class iRODS(Listener, LogWriter):
         self._iget_queue.append((irods_path, local_path))
         self.broadcast(IGET_QUEUED, irods_path)
 
-    def _iget(self, irods_path, local_path):
+    def _iget(self, irods_path:str, local_path:str) -> None:
         """
         Perform the iget and broadcast status
 
@@ -124,7 +125,7 @@ class iRODS(Listener, LogWriter):
         except CalledProcessError:
             self.broadcast(IGET_FAILED, irods_path)
 
-    def get_metadata(self, irods_path:str):
+    def get_metadata(self, irods_path:str) -> None:
         """
         Retrieve AVU and filesystem metadata for data object from iRODS
 

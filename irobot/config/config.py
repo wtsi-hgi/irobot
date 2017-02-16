@@ -70,14 +70,14 @@ LOGGING_LEVEL = "level"
 
 class _AuthHandlers(object):
     """ Authentication handler configuration container """
-    def __init__(self, **handlers:Dict[str, BaseConfig]):
+    def __init__(self, **handlers:Dict[str, BaseConfig]) -> None:
         for name, handler in handlers.items():
             setattr(self, name, handler)
 
 
 class Configuration(object):
     """ iRobot configuration """
-    def __init__(self, config_file:str):
+    def __init__(self, config_file:str) -> None:
         """
         Open and parse configuration from file
 

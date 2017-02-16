@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import logging
 import os
 
 from .authentication import ArvadosAuthHandler, HTTPBasicAuthHandler
@@ -25,7 +26,7 @@ from .irods import iRODS
 from .logging import create_logger
 
 
-def _log_config(config, logger):
+def _log_config(config:Configuration, logger:logging.Logger) -> None:
     """ Log configuration """
     logger.info("Configuration loaded from %s", config.file)
 
@@ -36,7 +37,7 @@ def _log_config(config, logger):
         logger.info("%s Authentication = %s", handler, str(getattr(config.authentication, handler)))
 
 
-def _instantiate_authentication_handlers(config, logger):
+def _instantiate_authentication_handlers(config:Configuration, logger:logging.Logger) -> List:
     """ Instantiate authentication handlers """
     handler_mapping = {
         "arvados": ArvadosAuthHandler,

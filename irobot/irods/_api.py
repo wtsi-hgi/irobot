@@ -25,7 +25,7 @@ from tempfile import TemporaryFile
 from typing import Sequence, TextIO, Tuple, Union
 
 
-def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextIO] = None, shell:bool = False):
+def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextIO] = None, shell:bool = False) -> Tuple[int, str, str]:
     """
     Run a command with the provided arguments
 
@@ -64,7 +64,7 @@ def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextI
     return exit_code, out, err
 
 
-def ils(irods_path:str):
+def ils(irods_path:str) -> None:
     """
     Wrapper for ils
 
@@ -78,7 +78,7 @@ def ils(irods_path:str):
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
-def iget(irods_path:str, local_path:str):
+def iget(irods_path:str, local_path:str) -> None:
     """
     Wrapper for iget
 
@@ -93,7 +93,7 @@ def iget(irods_path:str, local_path:str):
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
-def baton(irods_path:str):
+def baton(irods_path:str) -> None:
     """
     Wrapper for baton-list
 
