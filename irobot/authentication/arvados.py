@@ -34,7 +34,7 @@ class ArvadosAuthHandler(LogWriter, BaseAuthHandler):
         @param   config  Arvados authentication configuration
         @param   logger  Logger
         """
-        super(ArvadosAuthHandler, self).__init__(logger=logger)
+        super().__init__(logger=logger)
         self._config = config
 
         # TODO

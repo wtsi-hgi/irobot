@@ -41,7 +41,7 @@ def _broadcast_time() -> datetime:
 class Listener(object):
     """ Listener base class """
     def __init__(self, *args, **kwargs) -> None:
-        super(Listener, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._listeners:List[_ListenerCallable] = []
 
     def add_listener(self, listener:_ListenerCallable) -> None:

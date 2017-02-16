@@ -63,7 +63,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         @param   config  HTTP basic authentication configuration
         @param   logger  Logger
         """
-        super(HTTPBasicAuthHandler, self).__init__(logger=logger)
+        super().__init__(logger=logger)
         self._config = config
 
         if self._config.cache():

@@ -34,7 +34,7 @@ class LogWriter(object):
 
         @param   logger  Logging instance
         """
-        super(LogWriter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._logger = logger
 
     def log(self, level:int, message:str, *args, **kwargs) -> None:

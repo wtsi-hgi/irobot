@@ -62,7 +62,7 @@ class iRODS(Listener, LogWriter):
         self._config = irods_config
 
         # Initialise superclasses (multiple inheritance is a PITA)
-        super(iRODS, self).__init__(logger=logger)
+        super().__init__(logger=logger)
         self.add_listener(self._broadcast_iget_to_log)
 
         self._iget_queue = deque()  # n.b., collections.deque is thread-safe
