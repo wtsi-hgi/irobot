@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ParsingError
+from datetime import timedelta
 from typing import List, Optional
 
 from irobot.config._base import BaseConfig
@@ -114,14 +115,14 @@ def _parse_listening_port(listen:str) -> int:
     return port
 
 
-def _parse_timeout(timeout:str) -> Optional[int]:
+def _parse_timeout(timeout:str) -> Optional[timedelta]:
     """
     Parse response timeout := "unlimited"
                             | INTEGER ["ms"]
                             | NUMBER "s"
 
     @param   timeout  Response timeout (string)
-    @return  Response timeout in milliseconds (int); or None (for unlimited)
+    @return  Response timeout (timedelta); or None (for unlimited)
     """
     if timeout.lower() == "unlimited":
         return None
@@ -147,10 +148,10 @@ def _parse_timeout(timeout:str) -> Optional[int]:
         raise ParsingError("Invalid timeout")
 
     if match.group("milliseconds"):
-        output = int(match.group("milliseconds"))
+        output = timedelta(milliseconds=int(match.group("milliseconds")))
 
     if match.group("seconds"):
-        output = int(float(match.group("seconds")) * 1000)
+        output = timedelta(seconds=float(match.group("seconds")))
 
     # 0 timeout is alias for unlimited
     return output or None

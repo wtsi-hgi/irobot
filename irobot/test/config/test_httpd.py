@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from configparser import ParsingError
+from datetime import timedelta
 
 import irobot.config.httpd as httpd
 
@@ -50,11 +51,11 @@ class TestHTTPdConfig(unittest.TestCase):
 
         self.assertRaises(ParsingError, parse_timeout, "foo")
         self.assertRaises(ParsingError, parse_timeout, "-1")
-        self.assertEqual(parse_timeout("1000"), 1000)
-        self.assertEqual(parse_timeout("1000ms"), 1000)
-        self.assertEqual(parse_timeout("1000 ms"), 1000)
-        self.assertEqual(parse_timeout("1s"), 1000)
-        self.assertEqual(parse_timeout("1.1 s"), 1100)
+        self.assertEqual(parse_timeout("1000"), timedelta(milliseconds=1000))
+        self.assertEqual(parse_timeout("1000ms"), timedelta(milliseconds=1000))
+        self.assertEqual(parse_timeout("1000 ms"), timedelta(milliseconds=1000))
+        self.assertEqual(parse_timeout("1s"), timedelta(milliseconds=1000))
+        self.assertEqual(parse_timeout("1.1 s"), timedelta(milliseconds=1100))
         self.assertIsNone(parse_timeout("0"))
         self.assertIsNone(parse_timeout("0ms"))
         self.assertIsNone(parse_timeout("0s"))
@@ -74,7 +75,7 @@ class TestHTTPdConfig(unittest.TestCase):
 
         self.assertEqual(config.bind_address(), "0.0.0.0")
         self.assertEqual(config.listen(), 5000)
-        self.assertEqual(config.timeout(), 1000)
+        self.assertEqual(config.timeout(), timedelta(milliseconds=1000))
         self.assertEqual(config.authentication(), ["basic", "foo", "bar", "baz"])
 
 
