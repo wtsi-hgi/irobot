@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import logging
 import unittest
 from configparser import ParsingError
-from datetime import datetime
+from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 
 from irobot.config import Configuration
@@ -135,7 +135,7 @@ class TestConfiguration(unittest.TestCase):
 
         self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
         self.assertEqual(config.httpd.listen(), 5000)
-        self.assertEqual(config.httpd.timeout(), 500)
+        self.assertEqual(config.httpd.timeout(), timedelta(milliseconds=500))
         self.assertEqual(config.httpd.authentication(), ["basic", "arvados"])
 
         self.assertIsNone(config.logging.output())

@@ -18,6 +18,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
+from datetime import timedelta
+from typing import Optional
 
 
 def parse_human_size(size:str) -> int:
@@ -70,3 +72,40 @@ def parse_human_size(size:str) -> int:
         }
 
         return int(size * multipliers[match.group('multiplier')])
+
+
+def parse_duration(duration:str) -> Optional[timedelta]:
+    """
+    Parse short duration string := "never"
+                                 | NUMERIC ( "s" | "sec" ["ond"] ["s"]
+                                           | "m" | "min" ["ute"] ["s"] )
+
+    @param   duration  Duration (string)
+    @return  Parsed duration (timedelta); None for zero duration
+    """
+    if duration.lower() == "never":
+        return None
+
+    match = re.match(r"""
+        ^(?:
+            (?P<value>
+                \d+
+                (?: \. \d+ )?
+            )
+            \s*
+            (?P<unit>
+                (?: s (ec (ond)? s?)? )  # s / sec(s) / second(s)
+                |
+                (?: m (in (ute)? s?)? )  # m / min(s) / minute(s)
+            )
+        )$
+    """, duration, re.VERBOSE | re.IGNORECASE)
+
+    if not match:
+        raise ValueError("Could not parse duration")
+
+    unit = match.group("unit").lower()[0]
+    value = {{"m": "minutes", "s": "seconds"}[unit]: float(match.group("value"))}
+
+    # n.b., Zero duration is the same as "never"
+    return timedelta(**value) or None

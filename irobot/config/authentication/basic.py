@@ -19,10 +19,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ParsingError
+from datetime import timedelta
 from typing import Optional
 
 import requests
 
+from irobot.common import parse_duration
 from irobot.config._base import BaseConfig
 
 
@@ -50,42 +52,6 @@ def _parse_url(url:str) -> str:
     return url
 
 
-def _parse_cache(cache:str) -> Optional[float]:
-    """
-    Parse revalidation cache time := "never"
-                                   | NUMERIC TIME_UNIT
-
-    @param   cache  Cache time (string)
-    @return  Cache time in seconds (numeric); None for no caching
-    """
-    if cache.lower() == "never":
-        return None
-
-    match = re.match(r"""
-        ^(?:
-            (?P<value>
-                \d+
-                (?: \. \d+ )?
-            )
-            \s*
-            (?P<unit>
-                (?: s (ec (ond)? s?)? )  # s / sec(s) / second(s)
-                |
-                (?: m (in (ute)? s?)? )  # m / min(s) / minute(s)
-            )
-        )$
-    """, cache, re.VERBOSE | re.IGNORECASE)
-
-    if not match:
-        raise ParsingError("Invalid revalidation cache time")
-
-    multiplier = 60 if match.group("unit").startswith("m") else 1
-    value = float(match.group("value")) * multiplier
-
-    # n.b., Zero seconds is the same as "never"
-    return value or None
-
-
 class BasicAuthConfig(BaseConfig):
     """ HTTP basic authentication configuration """
     def __init__(self, url:str, cache:str) -> None:
@@ -96,7 +62,11 @@ class BasicAuthConfig(BaseConfig):
         @param   cache  Cache time for correct validation response (string)
         """
         self._url = _parse_url(url)
-        self._cache = _parse_cache(cache)
+
+        try:
+            self._cache = parse_duration(cache)
+        except ValueError:
+            raise ParsingError("Couldn't parse cache invalidation time")
 
     def url(self) -> str:
         """
@@ -106,10 +76,10 @@ class BasicAuthConfig(BaseConfig):
         """
         return self._url
 
-    def cache(self) -> Optional[float]:
+    def cache(self) -> Optional[timedelta]:
         """
-        Get revalidation time
+        Get invalidation time
 
-        @return  Cache time in seconds (numeric); None for no caching
+        @return  Cache timeout (timedelta); None for no caching
         """
         return self._cache

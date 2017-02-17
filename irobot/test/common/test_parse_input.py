@@ -18,8 +18,33 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
+from datetime import timedelta
 
-from irobot.common import parse_human_size
+from irobot.common import parse_duration, parse_human_size
+
+
+class TestParseDuration(unittest.TestCase):
+    def test_parse_duration(self):
+        self.assertRaises(ValueError, parse_duration, "foo")
+        
+        self.assertIsNone(parse_duration("never"))
+        self.assertIsNone(parse_duration("0s"))
+
+        self.assertEqual(parse_duration("1s"),        timedelta(seconds=1))
+        self.assertEqual(parse_duration("1.2 s"),     timedelta(seconds=1.2))
+        self.assertEqual(parse_duration("1 sec"),     timedelta(seconds=1.0))
+        self.assertEqual(parse_duration("2 secs"),    timedelta(seconds=2.0))
+        self.assertEqual(parse_duration("3 second"),  timedelta(seconds=3.0))
+        self.assertEqual(parse_duration("4 seconds"), timedelta(seconds=4.0))
+        self.assertEqual(parse_duration("5 SeCoNdS"), timedelta(seconds=5.0))
+
+        self.assertEqual(parse_duration("1m"),        timedelta(minutes=1))
+        self.assertEqual(parse_duration("1.2 m"),     timedelta(minutes=1.2))
+        self.assertEqual(parse_duration("1 min"),     timedelta(minutes=1.0))
+        self.assertEqual(parse_duration("2 mins"),    timedelta(minutes=2.0))
+        self.assertEqual(parse_duration("3 minute"),  timedelta(minutes=3.0))
+        self.assertEqual(parse_duration("4 minutes"), timedelta(minutes=4.0))
+        self.assertEqual(parse_duration("5 MiNuTeS"), timedelta(minutes=5.0))
 
 
 class TestParseHumanSize(unittest.TestCase):

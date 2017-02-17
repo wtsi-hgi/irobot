@@ -49,24 +49,8 @@ class TestBasicAuthConfig(unittest.TestCase):
         self.assertEqual(parse_url("http://www.sanger.ac.uk"), "http://www.sanger.ac.uk")
         self.assertEqual(parse_url("sanger.ac.uk"), "http://sanger.ac.uk")
 
-    def test_parse_cache(self):
-        parse_cache = basic_conf._parse_cache
-
-        self.assertRaises(ParsingError, parse_cache, "foo")
-        self.assertIsNone(parse_cache("never"))
-        self.assertIsNone(parse_cache("0s"))
-        self.assertEqual(parse_cache("1s"), 1.0)
-        self.assertEqual(parse_cache("1.2 s"), 1.2)
-        self.assertEqual(parse_cache("1 sec"), 1.0)
-        self.assertEqual(parse_cache("2 secs"), 2.0)
-        self.assertEqual(parse_cache("3 second"), 3.0)
-        self.assertEqual(parse_cache("4 seconds"), 4.0)
-        self.assertEqual(parse_cache("1m"), 60.0)
-        self.assertEqual(parse_cache("1.2 m"), 72.0)
-        self.assertEqual(parse_cache("1 min"), 60.0)
-        self.assertEqual(parse_cache("2 mins"), 120.0)
-        self.assertEqual(parse_cache("3 minute"), 180.0)
-        self.assertEqual(parse_cache("4 minutes"), 240.0)
+    def test_bad_duration(self):
+        self.assertRaises(ParsingError, basic_conf.BasicAuthConfig, "sanger.ac.uk", "foo")
 
     def test_instance(self):
         config = basic_conf.BasicAuthConfig("sanger.ac.uk", "never")

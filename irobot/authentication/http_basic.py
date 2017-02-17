@@ -91,7 +91,7 @@ class HTTPBasicAuthHandler(LogWriter, BaseAuthHandler):
         @return  Expiry status (boolean)
         """
         age = datetime.utcnow() - validation_time
-        return age.total_seconds() > self._config.cache()
+        return age > self._config.cache()
 
     def _cleanup(self) -> None:
         """ Clean up expired entries from the cache """
