@@ -87,7 +87,7 @@ class Configuration(object):
         self.file = canonical_path(config_file)
 
         with open(self.file, "r") as fp:
-            self.config.readfp(fp)
+            self.config.read_file(fp)
 
         # Build precache configuration
         self.precache = self._build_config(PrecacheConfig, PRECACHE, PRECACHE_LOCATION,
