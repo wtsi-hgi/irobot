@@ -139,6 +139,7 @@ class TestCanonicalDomainName(unittest.TestCase):
         self.assertEqual(canon.domain_name("foo-bar"), "foo-bar")
         self.assertEqual(canon.domain_name("foo.bar"), "foo.bar")
         self.assertEqual(canon.domain_name("foo.bar.quux"), "foo.bar.quux")
+        self.assertEqual(canon.domain_name("SaNgEr.Ac.Uk"), "sanger.ac.uk")
 
 
 if __name__ == "__main__":

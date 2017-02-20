@@ -23,6 +23,81 @@ from datetime import timedelta
 from typing import Optional
 
 
+_RE_HUMAN_SIZE = re.compile(r"""
+    ^(?:                                # Anchor to start of string
+        (?:
+            (?P<bytes> \d+ )            # One or more digits into "bytes" group
+            (?: \s* B )?                # ...optionally followed by suffix
+        )
+        |                               # OR
+        (?:
+            (?P<quantity>
+                \d+                     # Integer or floating point number
+                (?: \. \d+ )?           # into "quantity" group
+            )
+            \s*
+            (?P<multiplier>             # Into "multiplier" group:
+                ki? |                   # * Kilo or kibibytes
+                Mi? |                   # * Mega or mebibytes
+                Gi? |                   # * Giga or gibibytes
+                Ti?                     # * Tera or tibibytes
+            )
+            B
+        )
+    )$                                  # Anchor to end of string
+""", re.VERBOSE)
+
+_RE_DURATION = re.compile(r"""
+    ^(?:
+        (?P<value>
+            \d+
+            (?: \. \d+ )?
+        )
+        \s*
+        (?P<unit>
+            (?: s (ec (ond)? s?)? )     # s / sec(s) / second(s)
+            |
+            (?: m (in (ute)? s?)? )     # m / min(s) / minute(s)
+        )
+    )$
+""", re.VERBOSE | re.IGNORECASE)
+
+_RE_IPV4 = re.compile(r"""
+    ^(?:
+        (?P<dotted_dec>                 # e.g., 222.173.190.239
+            \d{1,3}
+            (?: \. \d{1,3} ){3}
+        )
+        |
+        (?P<decimal>                    # e.g., 3735928559
+            \d +
+        )
+        |
+        (?P<hex>                        # e.g., 0xdeadbeef
+            0x [0-9a-f]+
+        )
+        |
+        (?P<dotted_hex>                 # e.g., 0xde.0xad.0xbe.0xef
+            0x [0-9a-f]{2}
+            (?: \. 0x [0-9a-f]{2} ){3}
+        )
+        |
+        (?P<dotted_oct>                 # e.g., 0336.0255.0276.0357
+            0 [0-7]{3}
+            (?: \. 0 [0-7]{3} ){3}
+        )
+    )$
+""", re.VERBOSE | re.IGNORECASE)
+
+_RE_FQDN_COMPONENT = re.compile(r"""
+    ^                                   # Anchor to start of string
+    (?!-)                               # Can't start with a dash
+    [a-z0-9-] {1,63}                    # 1-63 alphanumeric / dash characters
+    (?<!-)                              # Can't end with a dash
+    $                                   # Anchor to end of string
+""", re.VERBOSE | re.IGNORECASE)
+
+
 def path(p:str) -> str:
     """
     Canonicalise paths
@@ -45,29 +120,7 @@ def human_size(s:str) -> int:
     @param   s  File size with optional suffix (string)
     @return  size in bytes (int)
     """
-    match = re.match(r"""
-        ^(?:                       # Anchor to start of string
-            (?:
-                (?P<bytes> \d+ )   # One or more digits into "bytes" group
-                (?: \s* B )?       # ...optionally followed by suffix
-            )
-            |                      # OR
-            (?:
-                (?P<quantity>
-                    \d+            # Integer or floating point number
-                    (?: \. \d+ )?  # into "quantity" group
-                )
-                \s*
-                (?P<multiplier>    # Into "multiplier" group:
-                    ki? |          # * Kilo or kibibytes
-                    Mi? |          # * Mega or mebibytes
-                    Gi? |          # * Giga or gibibytes
-                    Ti?            # * Tera or tibibytes
-                )
-                B
-            )
-        )$                         # Anchor to end of string
-    """, s, re.VERBOSE)
+    match = _RE_HUMAN_SIZE.match(s)
 
     if not match:
         raise ValueError("Could not parse human size")
@@ -103,20 +156,7 @@ def duration(d:str) -> Optional[timedelta]:
     if d.lower() == "never":
         return None
 
-    match = re.match(r"""
-        ^(?:
-            (?P<value>
-                \d+
-                (?: \. \d+ )?
-            )
-            \s*
-            (?P<unit>
-                (?: s (ec (ond)? s?)? )  # s / sec(s) / second(s)
-                |
-                (?: m (in (ute)? s?)? )  # m / min(s) / minute(s)
-            )
-        )$
-    """, d, re.VERBOSE | re.IGNORECASE)
+    match = _RE_DURATION.match(d)
 
     if not match:
         raise ValueError("Could not parse duration")
@@ -135,32 +175,7 @@ def ipv4(ip:str) -> str:
     @param   ip  IPv4 address (string)
     @return  IPv4 bind address in dotted decimal (string)
     """
-    match = re.match(r"""
-        ^(?:
-            (?P<dotted_dec>                 # e.g., 222.173.190.239
-                \d{1,3}
-                (?: \. \d{1,3} ){3}
-            )
-            |
-            (?P<decimal>                    # e.g., 3735928559
-                \d +
-            )
-            |
-            (?P<hex>                        # e.g., 0xdeadbeef
-                0x [0-9a-f]+
-            )
-            |
-            (?P<dotted_hex>                 # e.g., 0xde.0xad.0xbe.0xef
-                0x [0-9a-f]{2}
-                (?: \. 0x [0-9a-f]{2} ){3}
-            )
-            |
-            (?P<dotted_oct>                 # e.g., 0336.0255.0276.0357
-                0 [0-7]{3}
-                (?: \. 0 [0-7]{3} ){3}
-            )
-        )$
-    """, ip, re.VERBOSE | re.IGNORECASE)
+    match = _RE_IPV4.match(ip)
 
     if not match:
         raise ValueError("Invalid IPv4 address")
@@ -214,7 +229,7 @@ def domain_name(n:str) -> str:
     if n.endswith("."):
         n = n[:-1]
 
-    if all(re.match(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$", x, re.IGNORECASE) for x in n.split(".")):
-        return n
+    if all(_RE_FQDN_COMPONENT.match(component) for component in n.split(".")):
+        return n.lower()
 
     raise ValueError("Invalid domain name")
