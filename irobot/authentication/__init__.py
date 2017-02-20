@@ -1,2 +1,2 @@
-from irobot.authentication.http_basic import HTTPBasicAuthHandler
+from irobot.authentication.basic import HTTPBasicAuthHandler
 from irobot.authentication.arvados import ArvadosAuthHandler

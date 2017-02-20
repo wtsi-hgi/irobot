@@ -18,14 +18,41 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from abc import ABCMeta, abstractmethod
+from datetime import datetime, timedelta
+from typing import Optional
 
 
-class BaseAuthHandler(object, metaclass=ABCMeta):
+class AuthenticatedUser(object):
+    """ Authenticated user """
+    def __init__(self, user:str) -> None:
+        self._user = user
+        self._authenticated = datetime.utcnow()
+
+    @property
+    def user(self) -> str:
+        return self._user
+
+    @property
+    def authenticated(self) -> datetime:
+        return self._authenticated
+
+    def valid(self, invalidation_time:Optional[timedelta]) -> bool:
+        """
+        Whether a user's authentication has been temporally invalidated
+
+        @param   invalidation_time  Cache invalidation duration (timedelta; None for no caching)
+        @return  Validity status (boolean)
+        """
+        age = datetime.utcnow() - self._authenticated
+        return age <= (invalidation_time or timedelta(0))
+
+
+class BaseAuthHandler(metaclass=ABCMeta):
     @abstractmethod
-    def validate(self, auth_header:str) -> bool:
+    def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
         """
         Validate the authorisation header
 
         @param   auth_header  Contents of the "Authorization" header (string)
-        @return  Validation success (boolean)
+        @return  Authenticated user (AuthenticatedUser); None on validation failure
         """
