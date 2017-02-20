@@ -17,17 +17,32 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import re
 from datetime import timedelta
 from typing import Optional
 
 
-def parse_human_size(size:str) -> int:
+def path(p:str) -> str:
     """
-    Parse human size string := INTEGER ["B"]
-                             | NUMBER ("k" | "M" | "G" | "T") ["i"] "B"
+    Canonicalise paths
 
-    @param   size  File size with optional suffix (string)
+    @param   p  Path (string)
+    @return  Absolute, normalised path (string)
+    """
+    return os.path.abspath(
+               os.path.normpath(
+                   os.path.expanduser(p)))
+
+
+def human_size(s:str) -> int:
+    """
+    Canonicalise human size string to integer bytes
+
+    HUMAN_SIZE := INTEGER ["B"]
+                | NUMBER ("k" | "M" | "G" | "T") ["i"] "B"
+
+    @param   s  File size with optional suffix (string)
     @return  size in bytes (int)
     """
     match = re.match(r"""
@@ -52,7 +67,7 @@ def parse_human_size(size:str) -> int:
                 B
             )
         )$                         # Anchor to end of string
-    """, size, re.VERBOSE)
+    """, s, re.VERBOSE)
 
     if not match:
         raise ValueError("Could not parse human size")
@@ -74,16 +89,18 @@ def parse_human_size(size:str) -> int:
         return int(size * multipliers[match.group('multiplier')])
 
 
-def parse_duration(duration:str) -> Optional[timedelta]:
+def duration(d:str) -> Optional[timedelta]:
     """
-    Parse short duration string := "never"
-                                 | NUMERIC ( "s" | "sec" ["ond"] ["s"]
-                                           | "m" | "min" ["ute"] ["s"] )
+    Canonicalise short temporal duration string  to timedelta
 
-    @param   duration  Duration (string)
+    DURATION := "never"
+              | NUMERIC ( "s" | "sec" ["ond"] ["s"]
+                        | "m" | "min" ["ute"] ["s"] )
+
+    @param   d  Duration (string)
     @return  Parsed duration (timedelta); None for zero duration
     """
-    if duration.lower() == "never":
+    if d.lower() == "never":
         return None
 
     match = re.match(r"""
@@ -99,7 +116,7 @@ def parse_duration(duration:str) -> Optional[timedelta]:
                 (?: m (in (ute)? s?)? )  # m / min(s) / minute(s)
             )
         )$
-    """, duration, re.VERBOSE | re.IGNORECASE)
+    """, d, re.VERBOSE | re.IGNORECASE)
 
     if not match:
         raise ValueError("Could not parse duration")
@@ -111,11 +128,11 @@ def parse_duration(duration:str) -> Optional[timedelta]:
     return timedelta(**value) or None
 
 
-def parse_ipv4(ipv4:str) -> str:
+def ipv4(ip:str) -> str:
     """
-    Parse IPv4 address
+    Canonicalise IPv4 address to dotted decimal
 
-    @param   ipv4  IPv4 bind address (string)
+    @param   ip  IPv4 address (string)
     @return  IPv4 bind address in dotted decimal (string)
     """
     match = re.match(r"""
@@ -143,7 +160,7 @@ def parse_ipv4(ipv4:str) -> str:
                 (?: \. 0 [0-7]{3} ){3}
             )
         )$
-    """, ipv4, re.VERBOSE | re.IGNORECASE)
+    """, ip, re.VERBOSE | re.IGNORECASE)
 
     if not match:
         raise ValueError("Invalid IPv4 address")
