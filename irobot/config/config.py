@@ -21,7 +21,7 @@ import re
 from configparser import ConfigParser, ParsingError
 from typing import ClassVar, Dict, Tuple
 
-from irobot.common import canonical_path
+import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
 from irobot.config.httpd import HTTPdConfig
 from irobot.config.irods import iRODSConfig
@@ -86,7 +86,7 @@ class Configuration(object):
         @param   config_file  Configuration filename
         """
         self.config = ConfigParser()
-        self.file = canonical_path(config_file)
+        self.file = canon.path(config_file)
 
         with open(self.file, "r") as fp:
             self.config.read_file(fp)

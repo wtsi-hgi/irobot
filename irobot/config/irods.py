@@ -22,9 +22,9 @@ from configparser import ParsingError
 from irobot.config._base import BaseConfig
 
 
-def _parse_max_connections(max_connections:str) -> int:
+def _canon_max_connections(max_connections:str) -> int:
     """
-    Parse maximum connections
+    Canonicalise maximum connections
 
     @param   max_connections  Maximum concurrent connections (string)
     @return  Maximum concurrent connections (int)
@@ -45,7 +45,7 @@ class iRODSConfig(BaseConfig):
 
         @param   max_connections  Maximum concurrent connections (string)
         """
-        self._max_connections = _parse_max_connections(max_connections)
+        self._max_connections = _canon_max_connections(max_connections)
 
     def max_connections(self) -> int:
         """

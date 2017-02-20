@@ -33,21 +33,21 @@ class TestBasicAuthConfig(unittest.TestCase):
     def tearDown(self):
         basic_conf.requests.head = self._old_requests_head
 
-    def test_parse_bad_url(self):
-        parse_url = basic_conf._parse_url
+    def test_bad_url(self):
+        canon_url = basic_conf._canon_url
         basic_conf.requests.head = self._old_requests_head
-        self.assertRaises(ParsingError, parse_url, "foo")
+        self.assertRaises(ParsingError, canon_url, "foo")
 
-    def test_parse_timeout_url(self):
-        parse_url = basic_conf._parse_url
+    def test_timeout_url(self):
+        canon_url = basic_conf._canon_url
         basic_conf.requests.head.side_effect = requests.Timeout
-        self.assertRaises(ParsingError, parse_url, "foo")
+        self.assertRaises(ParsingError, canon_url, "foo")
 
-    def test_parse_good_url(self):
-        parse_url = basic_conf._parse_url
+    def test_good_url(self):
+        canon_url = basic_conf._canon_url
 
-        self.assertEqual(parse_url("http://www.sanger.ac.uk"), "http://www.sanger.ac.uk")
-        self.assertEqual(parse_url("sanger.ac.uk"), "http://sanger.ac.uk")
+        self.assertEqual(canon_url("http://www.sanger.ac.uk"), "http://www.sanger.ac.uk")
+        self.assertEqual(canon_url("sanger.ac.uk"), "http://sanger.ac.uk")
 
     def test_bad_duration(self):
         self.assertRaises(ParsingError, basic_conf.BasicAuthConfig, "sanger.ac.uk", "foo")

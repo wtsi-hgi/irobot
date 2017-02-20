@@ -24,11 +24,11 @@ from typing import Optional
 
 import requests
 
-from irobot.common import parse_duration
+import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
 
 
-def _parse_url(url:str) -> str:
+def _canon_url(url:str) -> str:
     """
     Check validation URL is accepting connections
 
@@ -61,10 +61,10 @@ class BasicAuthConfig(BaseConfig):
         @param   url    Validation URL (string)
         @param   cache  Cache invalidation time (string)
         """
-        self._url = _parse_url(url)
+        self._url = _canon_url(url)
 
         try:
-            self._cache = parse_duration(cache)
+            self._cache = canon.duration(cache)
         except ValueError:
             raise ParsingError("Couldn't parse cache invalidation time")
 

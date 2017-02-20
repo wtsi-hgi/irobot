@@ -24,22 +24,24 @@ from datetime import datetime, timedelta
 from numbers import Number
 from typing import Optional, Union
 
-from irobot.common import add_years, canonical_path, parse_human_size
+import irobot.common.canon as canon
+from irobot.common import add_years
 from irobot.config._base import BaseConfig
 
 
-def _parse_location(location:str) -> str:
+def _canon_location(location:str) -> str:
     """
-    Parse precache directory location
+    Canonicalise precache directory location
+
     @param   location  Precache directory (string)
     @return  Absolute precache directory path (string)
     """
-    return canonical_path(location)
+    return canon.path(location)
 
 
-def _parse_index(location:str, index:str) -> str:
+def _canon_index(location:str, index:str) -> str:
     """
-    Parse precache tracking database name
+    Canonicalise precache tracking database name
 
     @param   location  Precache directory (string)
     @param   index     Tracking database filename (string)
@@ -53,27 +55,26 @@ def _parse_index(location:str, index:str) -> str:
     if dirname == "" and basename == index:
         return os.path.join(location, index)
 
-    return os.path.join(canonical_path(dirname), basename)
+    return os.path.join(canon.path(dirname), basename)
 
 
-def _parse_limited_size(size:str) -> int:
+def _canon_limited_size(size:str) -> int:
     """
-    Parse size string := HUMAN-SIZE
+    Canonicalise human size string to bytes
 
     @param   size  File size, optionally suffixed (string)
     @return  Size in bytes (int)
     """
     try:
-        return parse_human_size(size)
+        return canon.human_size(size)
 
     except ValueError:
         raise ParsingError("Could not parse file size configuration")
 
 
-def _parse_unlimited_size(size:str) -> Optional[int]:
+def _canon_unlimited_size(size:str) -> Optional[int]:
     """
-    Parse size string := "unlimited"
-                       | HUMAN-SIZE
+    Canonicalise optionally unlimited human size string to bytes
 
     @param   size  File size, optionally suffixed (string)
     @return  Size in bytes (int); or None for unlimited
@@ -81,16 +82,18 @@ def _parse_unlimited_size(size:str) -> Optional[int]:
     if size.lower() == "unlimited":
         return None
 
-    return _parse_limited_size(size)
+    return _canon_limited_size(size)
 
 
-def _parse_expiry(expiry:str) -> Union[timedelta, Number, None]:
+def _canon_expiry(expiry:str) -> Union[timedelta, Number, None]:
     """
-    Parse expiry string := "unlimited"
-                         | NUMBER ( "h" | "hour" | "hours"
-                                  | "d" | "day"  | "days"
-                                  | "w" | "week" | "weeks"
-                                  | "y" | "year" | "years" )
+    Canonicalise cache invalidation expiry string
+
+    EXPIRY := "unlimited"
+            | NUMBER ( "h" | "hour" ["s"]
+                     | "d" | "day"  ["s"]
+                     | "w" | "week" ["s"]
+                     | "y" | "year" ["s"] )
 
     @param   expiry  Maximum file age (string)
     @return  None for unlimited; an absolute difference (timedelta); or
@@ -145,11 +148,11 @@ class PrecacheConfig(BaseConfig):
         @param   expiry      Maximum file age (string)
         @param   chunk_size  File block size for checksumming (string)
         """
-        self._location = _parse_location(location)
-        self._index = _parse_index(self._location, index)
-        self._size = _parse_unlimited_size(size)
-        self._expiry = _parse_expiry(expiry)
-        self._chunk_size = _parse_limited_size(chunk_size)
+        self._location = _canon_location(location)
+        self._index = _canon_index(self._location, index)
+        self._size = _canon_unlimited_size(size)
+        self._expiry = _canon_expiry(expiry)
+        self._chunk_size = _canon_limited_size(chunk_size)
 
     def __str__(self) -> None:
         if self._expiry is None:
