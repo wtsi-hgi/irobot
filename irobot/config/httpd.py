@@ -22,82 +22,8 @@ from configparser import ParsingError
 from datetime import timedelta
 from typing import List, Optional
 
+from irobot.common import parse_ipv4
 from irobot.config._base import BaseConfig
-
-
-def _parse_bind_address(bind_address:str) -> str:
-    """
-    Parse bind address
-
-    @param   bind_address  IPv4 bind address (string)
-    @return  IPv4 bind address in dotted decimal (string)
-    """
-    match = re.match(r"""
-        ^(?:
-            (?P<dotted_dec>                 # e.g., 222.173.190.239
-                \d{1,3}
-                (?: \. \d{1,3} ){3}
-            )
-            |
-            (?P<decimal>                    # e.g., 3735928559
-                \d +
-            )
-            |
-            (?P<hex>                        # e.g., 0xdeadbeef
-                0x [0-9a-f]+
-            )
-            |
-            (?P<dotted_hex>                 # e.g., 0xde.0xad.0xbe.0xef
-                0x [0-9a-f]{2}
-                (?: \. 0x [0-9a-f]{2} ){3}
-            )
-            |
-            (?P<dotted_oct>                 # e.g., 0336.0255.0276.0357
-                0 [0-7]{3}
-                (?: \. 0 [0-7]{3} ){3}
-            )
-        )$
-    """, bind_address, re.VERBOSE | re.IGNORECASE)
-
-    if not match:
-        raise ParsingError("Invalid IPv4 address")
-
-    # Dotted address
-    if match.group("dotted_dec") or match.group("dotted_hex") or match.group("dotted_oct"):
-        parts = []
-
-        address = match.group("dotted_dec") or \
-                  match.group("dotted_hex") or \
-                  match.group("dotted_oct")
-
-        base = 10 if match.group("dotted_dec") else \
-               16 if match.group("dotted_hex") else \
-                8
-
-        for part in address.split("."):
-            int_part = int(part, base)
-
-            if not 0 <= int_part < 256:
-                raise ParsingError("Invalid IPv4 address")
-
-            parts.append(int_part)
-
-    # Plain address
-    if match.group("decimal") or match.group("hex"):
-        base = 10 if match.group("decimal") else 16
-        value = int(match.group("decimal") or match.group("hex"), base)
-
-        if not 0 <= value < 2**32:
-            raise ParsingError("IPv4 address out of range")
-
-        parts = [
-            (value & 0xff000000) >> 24,
-            (value & 0xff0000) >> 16,
-            (value & 0xff00) >> 8,
-            value & 0xff
-        ]
-
-    return ".".join(str(part) for part in parts)
 
 
 def _parse_listening_port(listen:str) -> int:
@@ -183,7 +109,11 @@ class HTTPdConfig(BaseConfig):
         @param   timeout         Response timeout (string)
         @param   authentication  Authentication methods (string)
         """
-        self._bind_address = _parse_bind_address(bind_address)
+        try:
+            self._bind_address = parse_ipv4(bind_address)
+        except ValueError:
+            raise ParsingError("Couldn't parse bind address")
+
         self._listen = _parse_listening_port(listen)
         self._timeout = _parse_timeout(timeout)
         self._authentication = _parse_authentication(authentication)

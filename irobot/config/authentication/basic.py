@@ -59,7 +59,7 @@ class BasicAuthConfig(BaseConfig):
         Parse HTTP basic authentication configuration
 
         @param   url    Validation URL (string)
-        @param   cache  Cache time for correct validation response (string)
+        @param   cache  Cache invalidation time (string)
         """
         self._url = _parse_url(url)
 

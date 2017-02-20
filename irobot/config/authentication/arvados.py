@@ -17,10 +17,47 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import re
+from configparser import ParsingError
+from datetime import timedelta
+from typing import Optional
+
+from irobot.common import parse_duration
 from irobot.config._base import BaseConfig
 
 
+def _parse_hostname(hostname:str) -> str:
+    return "foo"
+
+
 class ArvadosAuthConfig(BaseConfig):
-    def __init__(self, *args, **kwargs) -> None:
-        # TODO
-        pass
+    """ Arvados authentication configuration """
+    def __init__(self, api_host:str, cache:str) -> None:
+        """
+        Parse Arvados authentication configuration
+
+        @param   api_host  Arvados API host
+        @param   cache     Cache invalidation time (string)
+        """
+        self._api_host = _parse_hostname(api_host)
+
+        try:
+            self._cache = parse_duration(cache)
+        except ValueError:
+            raise ParsingError("Couldn't parse cache invalidation time")
+
+    def api_host(self) -> str:
+        """
+        Get Arvados API host
+
+        @return  Arvados API host (string)
+        """
+        return self._api_host
+
+    def cache(self) -> Optional[timedelta]:
+        """
+        Get invalidation time
+
+        @return  Cache timeout (timedelta); None for no caching
+        """
+        return self._cache
