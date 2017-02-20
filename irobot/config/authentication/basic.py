@@ -21,8 +21,7 @@ import re
 from configparser import ParsingError
 from datetime import timedelta
 from typing import Optional
-
-import requests
+from urllib.parse import urlparse
 
 import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
@@ -30,24 +29,26 @@ from irobot.config._base import BaseConfig
 
 def _canon_url(url:str) -> str:
     """
-    Check validation URL is accepting connections
+    Canonicalise URL
 
     @param   url  Validation URL (string)
     @return  Validation URL (string)
     """
+    # Prepend http:// if no scheme is specified
+    if not re.match(r"^https?://", url):
+        url = f"http://{url}"
+
+    components = urlparse(url)
+
     try:
-        # Prepend "http://" if it doesn't exist
-        if not re.match(r"^https?://", url):
-            url = "http://" + url
+        _ = canon.ipv4(components.hostname)
 
-        # FIXME? Is this a reasonable thing to do?
-        requests.head(url, timeout=0.25)
+    except ValueError:
+        try:
+            _ = canon.domain_name(components.hostname)
 
-    except requests.Timeout:
-        raise ParsingError(f"Didn't receive a response from {url} in a reasonable amount of time")
-
-    except Exception:
-        raise ParsingError(f"Couldn't connect to {url}")
+        except ValueError:
+            raise ParsingError("Couldn't parse validation URL")
 
     return url
 

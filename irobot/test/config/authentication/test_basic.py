@@ -19,35 +19,17 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from configparser import ParsingError
-from unittest.mock import MagicMock
-
-import requests
 
 import irobot.config.authentication.basic as basic_conf
 
 
 class TestBasicAuthConfig(unittest.TestCase):
-    def setUp(self):
-        self._old_requests_head, basic_conf.requests.head = basic_conf.requests.head, MagicMock()
+    def test_url(self):
+        get_url = lambda x: basic_conf.BasicAuthConfig(x, "never").url()
 
-    def tearDown(self):
-        basic_conf.requests.head = self._old_requests_head
-
-    def test_bad_url(self):
-        canon_url = basic_conf._canon_url
-        basic_conf.requests.head = self._old_requests_head
-        self.assertRaises(ParsingError, canon_url, "foo")
-
-    def test_timeout_url(self):
-        canon_url = basic_conf._canon_url
-        basic_conf.requests.head.side_effect = requests.Timeout
-        self.assertRaises(ParsingError, canon_url, "foo")
-
-    def test_good_url(self):
-        canon_url = basic_conf._canon_url
-
-        self.assertEqual(canon_url("http://www.sanger.ac.uk"), "http://www.sanger.ac.uk")
-        self.assertEqual(canon_url("sanger.ac.uk"), "http://sanger.ac.uk")
+        self.assertEqual(get_url("127.0.0.1:5000/foo/bar"), "http://127.0.0.1:5000/foo/bar")
+        self.assertEqual(get_url("https://foo.bar/quux"), "https://foo.bar/quux")
+        self.assertRaises(ParsingError, get_url, "-not-cool")
 
     def test_bad_duration(self):
         self.assertRaises(ParsingError, basic_conf.BasicAuthConfig, "sanger.ac.uk", "foo")
