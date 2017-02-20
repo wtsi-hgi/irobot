@@ -128,5 +128,18 @@ class TestCanonicaliseIPv4(unittest.TestCase):
         self.assertEqual(canon.ipv4("0336.0255.0276.0357"), "222.173.190.239")
 
 
+class TestCanonicalDomainName(unittest.TestCase):
+    def test(self):
+        self.assertRaises(ValueError, canon.domain_name, "-foo")
+        self.assertRaises(ValueError, canon.domain_name, "foo-")
+        self.assertRaises(ValueError, canon.domain_name, "foo..bar")
+        self.assertRaises(ValueError, canon.domain_name, "1234567890123456789012345678901234567890123456789012345678901234")
+        self.assertEqual(canon.domain_name("foo"), "foo")
+        self.assertEqual(canon.domain_name("foo."), "foo")
+        self.assertEqual(canon.domain_name("foo-bar"), "foo-bar")
+        self.assertEqual(canon.domain_name("foo.bar"), "foo.bar")
+        self.assertEqual(canon.domain_name("foo.bar.quux"), "foo.bar.quux")
+
+
 if __name__ == "__main__":
     unittest.main()

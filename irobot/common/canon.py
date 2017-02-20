@@ -201,3 +201,20 @@ def ipv4(ip:str) -> str:
         ]
 
     return ".".join(str(part) for part in parts)
+
+
+def domain_name(n:str) -> str:
+    """
+    Canonicalise a domain name to (almost) fully qualified (i.e.,
+    omitting the root separator)
+
+    @param   n  Domain name (string)
+    @return  Fully qualified domain name (string)
+    """
+    if n.endswith("."):
+        n = n[:-1]
+
+    if all(re.match(r"^(?!-)[a-z0-9-]{1,63}(?<!-)$", x, re.IGNORECASE) for x in n.split(".")):
+        return n
+
+    raise ValueError("Invalid domain name")
