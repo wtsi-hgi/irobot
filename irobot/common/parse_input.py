@@ -109,3 +109,78 @@ def parse_duration(duration:str) -> Optional[timedelta]:
 
     # n.b., Zero duration is the same as "never"
     return timedelta(**value) or None
+
+
+def parse_ipv4(ipv4:str) -> str:
+    """
+    Parse IPv4 address
+
+    @param   ipv4  IPv4 bind address (string)
+    @return  IPv4 bind address in dotted decimal (string)
+    """
+    match = re.match(r"""
+        ^(?:
+            (?P<dotted_dec>                 # e.g., 222.173.190.239
+                \d{1,3}
+                (?: \. \d{1,3} ){3}
+            )
+            |
+            (?P<decimal>                    # e.g., 3735928559
+                \d +
+            )
+            |
+            (?P<hex>                        # e.g., 0xdeadbeef
+                0x [0-9a-f]+
+            )
+            |
+            (?P<dotted_hex>                 # e.g., 0xde.0xad.0xbe.0xef
+                0x [0-9a-f]{2}
+                (?: \. 0x [0-9a-f]{2} ){3}
+            )
+            |
+            (?P<dotted_oct>                 # e.g., 0336.0255.0276.0357
+                0 [0-7]{3}
+                (?: \. 0 [0-7]{3} ){3}
+            )
+        )$
+    """, ipv4, re.VERBOSE | re.IGNORECASE)
+
+    if not match:
+        raise ValueError("Invalid IPv4 address")
+
+    # Dotted address
+    if match.group("dotted_dec") or match.group("dotted_hex") or match.group("dotted_oct"):
+        parts = []
+
+        address = match.group("dotted_dec") or \
+                  match.group("dotted_hex") or \
+                  match.group("dotted_oct")
+
+        base = 10 if match.group("dotted_dec") else \
+               16 if match.group("dotted_hex") else \
+                8
+
+        for part in address.split("."):
+            int_part = int(part, base)
+
+            if not 0 <= int_part < 256:
+                raise ValueError("Invalid IPv4 address")
+
+            parts.append(int_part)
+
+    # Plain address
+    if match.group("decimal") or match.group("hex"):
+        base = 10 if match.group("decimal") else 16
+        value = int(match.group("decimal") or match.group("hex"), base)
+
+        if not 0 <= value < 2**32:
+            raise ValueError("IPv4 address out of range")
+
+        parts = [
+            (value & 0xff000000) >> 24,
+            (value & 0xff0000) >> 16,
+            (value & 0xff00) >> 8,
+            value & 0xff
+        ]
+
+    return ".".join(str(part) for part in parts)

@@ -51,6 +51,8 @@ AUTH_BASIC_URL = "url"
 AUTH_BASIC_CACHE = "cache"
 
 AUTH_ARVADOS = "arvados_auth"
+AUTH_ARVADOS_API_HOST = "api_host"
+AUTH_ARVADOS_CACHE = "cache"
 
 AUTH_HANDLERS = {
     AUTH_BASIC: {
@@ -59,7 +61,7 @@ AUTH_HANDLERS = {
     },
     AUTH_ARVADOS: {
         "constructor": ArvadosAuthConfig,
-        "options": ()
+        "options": (AUTH_ARVADOS_API_HOST, AUTH_ARVADOS_CACHE)
     }
 }
 

@@ -57,7 +57,9 @@ BASIC_AUTH_CONF = [
 ]
 
 ARVADOS_AUTH_CONF = [
-    "[arvados_auth]"
+    "[arvados_auth]",
+    "api_host = api.arvados.example.com",
+    "cache = never"
 ]
 
 LOGGING_CONF = [
@@ -137,6 +139,12 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.httpd.listen(), 5000)
         self.assertEqual(config.httpd.timeout(), timedelta(milliseconds=500))
         self.assertEqual(config.httpd.authentication(), ["basic", "arvados"])
+
+        self.assertEqual(config.authentication.basic.url(), "http://example.com")
+        self.assertIsNone(config.authentication.basic.cache())
+
+        self.assertEqual(config.authentication.arvados.api_host(), "api.arvados.example.com")
+        self.assertIsNone(config.authentication.arvados.cache())
 
         self.assertIsNone(config.logging.output())
         self.assertEqual(config.logging.level(), logging.WARNING)

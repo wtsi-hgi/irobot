@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from datetime import timedelta
 
-from irobot.common import parse_duration, parse_human_size
+from irobot.common import parse_duration, parse_human_size, parse_ipv4
 
 
 class TestParseDuration(unittest.TestCase):
@@ -93,6 +93,19 @@ class TestParseHumanSize(unittest.TestCase):
         self.assertEqual(parse_human_size("1TiB"),      1024**4)
         self.assertEqual(parse_human_size("1.2TiB"),    int(1.2 * (1024**4)))
         self.assertEqual(parse_human_size("1.23 TiB"),  int(1.23 * (1024**4)))
+
+
+class TestParseIPv4(unittest.TestCase):
+    def test_parse_ipv4(self):
+        self.assertRaises(ValueError, parse_ipv4, "foo")
+        self.assertRaises(ValueError, parse_ipv4, "999.999.999.999")
+        self.assertRaises(ValueError, parse_ipv4, "0777.0777.0777.0777")
+        self.assertRaises(ValueError, parse_ipv4, str(2**32))
+        self.assertEqual(parse_ipv4("222.173.190.239"), "222.173.190.239")
+        self.assertEqual(parse_ipv4("3735928559"), "222.173.190.239")
+        self.assertEqual(parse_ipv4("0xdeadbeef"), "222.173.190.239")
+        self.assertEqual(parse_ipv4("0xDE.0xAD.0xBE.0xEF"), "222.173.190.239")
+        self.assertEqual(parse_ipv4("0336.0255.0276.0357"), "222.173.190.239")
 
 
 if __name__ == "__main__":

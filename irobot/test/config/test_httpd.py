@@ -25,19 +25,6 @@ import irobot.config.httpd as httpd
 
 
 class TestHTTPdConfig(unittest.TestCase):
-    def test_bind_address_parsing(self):
-        parse_bind_address = httpd._parse_bind_address
-
-        self.assertRaises(ParsingError, parse_bind_address, "foo")
-        self.assertRaises(ParsingError, parse_bind_address, "999.999.999.999")
-        self.assertRaises(ParsingError, parse_bind_address, "0777.0777.0777.0777")
-        self.assertRaises(ParsingError, parse_bind_address, str(2**32))
-        self.assertEqual(parse_bind_address("222.173.190.239"), "222.173.190.239")
-        self.assertEqual(parse_bind_address("3735928559"), "222.173.190.239")
-        self.assertEqual(parse_bind_address("0xdeadbeef"), "222.173.190.239")
-        self.assertEqual(parse_bind_address("0xDE.0xAD.0xBE.0xEF"), "222.173.190.239")
-        self.assertEqual(parse_bind_address("0336.0255.0276.0357"), "222.173.190.239")
-
     def test_listening_port_parsing(self):
         parse_listening_port = httpd._parse_listening_port
 
@@ -69,6 +56,9 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertEqual(parse_auth("foo,bar"), ["foo", "bar"])
         self.assertEqual(parse_auth("fOo,BaR"), ["foo", "bar"])
         self.assertEqual(parse_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
+
+    def test_bad_bind_address(self):
+        self.assertRaises(ParsingError, httpd.HTTPdConfig, "foo", "5000", "1000ms", "basic")
 
     def test_instance(self):
         config = httpd.HTTPdConfig("0.0.0.0", "5000", "1000ms", "basic,foo, bar ,baz")
