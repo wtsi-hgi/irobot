@@ -26,8 +26,22 @@ import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
 
 
-def _canon_hostname(hostname:str) -> str:
-    return "foo"
+def _canon_hostname(api_host:str) -> str:
+    """
+    Canonicalise API hostname
+
+    @param   api_host  Arvados API host
+    @return  Canonicalised hostname
+    """
+    try:
+        return canon.ipv4(api_host)
+
+    except ValueError:
+        try:
+            return canon.domain_name(api_host)
+
+        except ValueError:
+            raise ParsingError("Couldn't parse API host")
 
 
 class ArvadosAuthConfig(BaseConfig):
