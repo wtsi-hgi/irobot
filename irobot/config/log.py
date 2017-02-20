@@ -21,25 +21,25 @@ import logging
 from configparser import ParsingError
 from typing import Optional
 
-from irobot.common import canonical_path
+import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
 
 
-def _parse_output(output:str) -> Optional[str]:
+def _canon_output(output:str) -> Optional[str]:
     """
-    Parse logging output destination
+    Canonicalise logging output destination
 
     @param   output  Logging destination
     """
     if output == "STDERR":
         return None
 
-    return canonical_path(output)
+    return canon.path(output)
 
 
-def _parse_level(level:str) -> int:
+def _canon_level(level:str) -> int:
     """
-    Parse logging level
+    Canonicalise logging level
 
     @param   log_level  Logging level (string)
     @return  Logging level (int)
@@ -66,8 +66,8 @@ class LoggingConfig(BaseConfig):
         @param   output  Logging destination
         @param   level   Logging level
         """
-        self._output = _parse_output(output)
-        self._level = _parse_level(level)
+        self._output = _canon_output(output)
+        self._level = _canon_level(level)
 
     def __str__(self) -> None:
         return str({

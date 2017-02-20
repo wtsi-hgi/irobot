@@ -26,36 +26,36 @@ import irobot.config.httpd as httpd
 
 class TestHTTPdConfig(unittest.TestCase):
     def test_listening_port_parsing(self):
-        parse_listening_port = httpd._parse_listening_port
+        canon_listening_port = httpd._canon_listening_port
 
-        self.assertRaises(ValueError, parse_listening_port, "foo")
-        self.assertRaises(ParsingError, parse_listening_port, "-1")
-        self.assertRaises(ParsingError, parse_listening_port, "65536")
-        self.assertEqual(parse_listening_port("1234"), 1234)
+        self.assertRaises(ValueError, canon_listening_port, "foo")
+        self.assertRaises(ParsingError, canon_listening_port, "-1")
+        self.assertRaises(ParsingError, canon_listening_port, "65536")
+        self.assertEqual(canon_listening_port("1234"), 1234)
 
     def test_timeout_parsing(self):
-        parse_timeout = httpd._parse_timeout
+        canon_timeout = httpd._canon_timeout
 
-        self.assertRaises(ParsingError, parse_timeout, "foo")
-        self.assertRaises(ParsingError, parse_timeout, "-1")
-        self.assertEqual(parse_timeout("1000"), timedelta(milliseconds=1000))
-        self.assertEqual(parse_timeout("1000ms"), timedelta(milliseconds=1000))
-        self.assertEqual(parse_timeout("1000 ms"), timedelta(milliseconds=1000))
-        self.assertEqual(parse_timeout("1s"), timedelta(milliseconds=1000))
-        self.assertEqual(parse_timeout("1.1 s"), timedelta(milliseconds=1100))
-        self.assertIsNone(parse_timeout("0"))
-        self.assertIsNone(parse_timeout("0ms"))
-        self.assertIsNone(parse_timeout("0s"))
-        self.assertIsNone(parse_timeout("unlimited"))
+        self.assertRaises(ParsingError, canon_timeout, "foo")
+        self.assertRaises(ParsingError, canon_timeout, "-1")
+        self.assertEqual(canon_timeout("1000"), timedelta(milliseconds=1000))
+        self.assertEqual(canon_timeout("1000ms"), timedelta(milliseconds=1000))
+        self.assertEqual(canon_timeout("1000 ms"), timedelta(milliseconds=1000))
+        self.assertEqual(canon_timeout("1s"), timedelta(milliseconds=1000))
+        self.assertEqual(canon_timeout("1.1 s"), timedelta(milliseconds=1100))
+        self.assertIsNone(canon_timeout("0"))
+        self.assertIsNone(canon_timeout("0ms"))
+        self.assertIsNone(canon_timeout("0s"))
+        self.assertIsNone(canon_timeout("unlimited"))
 
     def test_authentication_parsing(self):
-        parse_auth = httpd._parse_authentication
+        canon_auth = httpd._canon_authentication
 
-        self.assertRaises(ParsingError, parse_auth, "")
-        self.assertEqual(parse_auth("foo"), ["foo"])
-        self.assertEqual(parse_auth("foo,bar"), ["foo", "bar"])
-        self.assertEqual(parse_auth("fOo,BaR"), ["foo", "bar"])
-        self.assertEqual(parse_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
+        self.assertRaises(ParsingError, canon_auth, "")
+        self.assertEqual(canon_auth("foo"), ["foo"])
+        self.assertEqual(canon_auth("foo,bar"), ["foo", "bar"])
+        self.assertEqual(canon_auth("fOo,BaR"), ["foo", "bar"])
+        self.assertEqual(canon_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
 
     def test_bad_bind_address(self):
         self.assertRaises(ParsingError, httpd.HTTPdConfig, "foo", "5000", "1000ms", "basic")

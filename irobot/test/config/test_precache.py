@@ -33,49 +33,49 @@ class TestPrecacheConfig(unittest.TestCase):
         self.homedir = os.path.expanduser("~")
 
     def test_location_parsing(self):
-        parse_location = precache._parse_location
+        canon_location = precache._canon_location
 
-        self.assertEqual(parse_location("/foo"), "/foo")
-        self.assertEqual(parse_location("~/foo"), os.path.join(self.homedir, "foo"))
-        self.assertEqual(parse_location("foo"), os.path.join(self.cwd, "foo"))
+        self.assertEqual(canon_location("/foo"), "/foo")
+        self.assertEqual(canon_location("~/foo"), os.path.join(self.homedir, "foo"))
+        self.assertEqual(canon_location("foo"), os.path.join(self.cwd, "foo"))
 
     def test_index_parsing(self):
-        parse_index = precache._parse_index
+        canon_index = precache._canon_index
 
-        self.assertRaises(ParsingError, parse_index, "", "foo/")
-        self.assertEqual(parse_index("", "foo"), "foo")
-        self.assertEqual(parse_index("foo", "bar"), "foo/bar")
-        self.assertEqual(parse_index("", "/foo/bar"), "/foo/bar")
+        self.assertRaises(ParsingError, canon_index, "", "foo/")
+        self.assertEqual(canon_index("", "foo"), "foo")
+        self.assertEqual(canon_index("foo", "bar"), "foo/bar")
+        self.assertEqual(canon_index("", "/foo/bar"), "/foo/bar")
 
     def test_size_parsing(self):
-        parse_limited_size = precache._parse_limited_size
-        parse_unlimited_size = precache._parse_unlimited_size
+        canon_limited_size = precache._canon_limited_size
+        canon_unlimited_size = precache._canon_unlimited_size
 
-        self.assertRaises(ParsingError, parse_limited_size, "foo")
-        self.assertRaises(ParsingError, parse_limited_size, "unlimited")
-        self.assertRaises(ParsingError, parse_limited_size, "1.23 B")
-        self.assertRaises(ParsingError, parse_unlimited_size, "foo")
+        self.assertRaises(ParsingError, canon_limited_size, "foo")
+        self.assertRaises(ParsingError, canon_limited_size, "unlimited")
+        self.assertRaises(ParsingError, canon_limited_size, "1.23 B")
+        self.assertRaises(ParsingError, canon_unlimited_size, "foo")
 
-        self.assertIsNone(parse_unlimited_size("unlimited"))
-        self.assertEqual(parse_limited_size("123"), 123)
+        self.assertIsNone(canon_unlimited_size("unlimited"))
+        self.assertEqual(canon_limited_size("123"), 123)
 
     def test_expiry_parsing(self):
-        parse_expiry = precache._parse_expiry
+        canon_expiry = precache._canon_expiry
 
-        self.assertRaises(ParsingError, parse_expiry, "foo")
-        self.assertIsNone(parse_expiry("unlimited"))
-        self.assertEqual(parse_expiry("1h"), timedelta(hours = 1))
-        self.assertEqual(parse_expiry("1 hour"), timedelta(hours = 1))
-        self.assertEqual(parse_expiry("1.2 hours"), timedelta(hours = 1.2))
-        self.assertEqual(parse_expiry("1d"), timedelta(days = 1))
-        self.assertEqual(parse_expiry("1 day"), timedelta(days = 1))
-        self.assertEqual(parse_expiry("1.2 days"), timedelta(days = 1.2))
-        self.assertEqual(parse_expiry("1w"), timedelta(weeks = 1))
-        self.assertEqual(parse_expiry("1 week"), timedelta(weeks = 1))
-        self.assertEqual(parse_expiry("1.2 weeks"), timedelta(weeks = 1.2))
-        self.assertEqual(parse_expiry("1y"), 1)
-        self.assertEqual(parse_expiry("1 year"), 1)
-        self.assertEqual(parse_expiry("1.2 years"), 1.2)
+        self.assertRaises(ParsingError, canon_expiry, "foo")
+        self.assertIsNone(canon_expiry("unlimited"))
+        self.assertEqual(canon_expiry("1h"), timedelta(hours = 1))
+        self.assertEqual(canon_expiry("1 hour"), timedelta(hours = 1))
+        self.assertEqual(canon_expiry("1.2 hours"), timedelta(hours = 1.2))
+        self.assertEqual(canon_expiry("1d"), timedelta(days = 1))
+        self.assertEqual(canon_expiry("1 day"), timedelta(days = 1))
+        self.assertEqual(canon_expiry("1.2 days"), timedelta(days = 1.2))
+        self.assertEqual(canon_expiry("1w"), timedelta(weeks = 1))
+        self.assertEqual(canon_expiry("1 week"), timedelta(weeks = 1))
+        self.assertEqual(canon_expiry("1.2 weeks"), timedelta(weeks = 1.2))
+        self.assertEqual(canon_expiry("1y"), 1)
+        self.assertEqual(canon_expiry("1 year"), 1)
+        self.assertEqual(canon_expiry("1.2 years"), 1.2)
 
     def test_instance(self):
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited", "64MB")

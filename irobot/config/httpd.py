@@ -22,13 +22,13 @@ from configparser import ParsingError
 from datetime import timedelta
 from typing import List, Optional
 
-from irobot.common import parse_ipv4
+import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
 
 
-def _parse_listening_port(listen:str) -> int:
+def _canon_listening_port(listen:str) -> int:
     """
-    Parse listening port
+    Canonicalise listening port
 
     @param   listen  Listening port (string)
     @return  Listening port (int)
@@ -41,11 +41,13 @@ def _parse_listening_port(listen:str) -> int:
     return port
 
 
-def _parse_timeout(timeout:str) -> Optional[timedelta]:
+def _canon_timeout(timeout:str) -> Optional[timedelta]:
     """
-    Parse response timeout := "unlimited"
-                            | INTEGER ["ms"]
-                            | NUMBER "s"
+    Canonicalise response timeout string into timedelta
+
+    TIMOUT := "unlimited"
+            | INTEGER ["ms"]
+            | NUMBER "s"
 
     @param   timeout  Response timeout (string)
     @return  Response timeout (timedelta); or None (for unlimited)
@@ -83,9 +85,9 @@ def _parse_timeout(timeout:str) -> Optional[timedelta]:
     return output or None
 
 
-def _parse_authentication(authentication:str) -> List[str]:
+def _canon_authentication(authentication:str) -> List[str]:
     """
-    Parse authentication methods := comma-delimited string
+    Canonicalise comma-delimited authentication methods into list
 
     @param   authentication  Authentication methods (string)
     @return  Authentication methods (list of string)
@@ -110,13 +112,13 @@ class HTTPdConfig(BaseConfig):
         @param   authentication  Authentication methods (string)
         """
         try:
-            self._bind_address = parse_ipv4(bind_address)
+            self._bind_address = canon.ipv4(bind_address)
         except ValueError:
             raise ParsingError("Couldn't parse bind address")
 
-        self._listen = _parse_listening_port(listen)
-        self._timeout = _parse_timeout(timeout)
-        self._authentication = _parse_authentication(authentication)
+        self._listen = _canon_listening_port(listen)
+        self._timeout = _canon_timeout(timeout)
+        self._authentication = _canon_authentication(authentication)
 
     def bind_address(self) -> str:
         """

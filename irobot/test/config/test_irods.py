@@ -25,11 +25,11 @@ import irobot.config.irods as irods
 
 class TestiRODSConfig(unittest.TestCase):
     def test_max_connection_parsing(self):
-        parse_max_connections = irods._parse_max_connections
+        canon_max_connections = irods._canon_max_connections
 
-        self.assertEqual(parse_max_connections("10"), 10)
-        self.assertRaises(ParsingError, parse_max_connections, "0")
-        self.assertRaises(ParsingError, parse_max_connections, "-5")
+        self.assertEqual(canon_max_connections("10"), 10)
+        self.assertRaises(ParsingError, canon_max_connections, "0")
+        self.assertRaises(ParsingError, canon_max_connections, "-5")
 
     def test_instance(self):
         config = irods.iRODSConfig("123")

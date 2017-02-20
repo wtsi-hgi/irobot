@@ -26,20 +26,20 @@ import irobot.config.log as log
 
 class TesLoggingConfig(unittest.TestCase):
     def test_output_parsing(self):
-        parse_output = log._parse_output
+        canon_output = log._canon_output
 
-        self.assertIsNone(parse_output("STDERR"))
-        self.assertEqual(parse_output("/foo.log"), "/foo.log")
+        self.assertIsNone(canon_output("STDERR"))
+        self.assertEqual(canon_output("/foo.log"), "/foo.log")
 
     def test_level_parsing(self):
-        parse_level = log._parse_level
+        canon_level = log._canon_level
 
-        self.assertRaises(ParsingError, parse_level, "foo")
-        self.assertEqual(parse_level("debug"),    logging.DEBUG)
-        self.assertEqual(parse_level("info"),     logging.INFO)
-        self.assertEqual(parse_level("warning"),  logging.WARNING)
-        self.assertEqual(parse_level("error"),    logging.ERROR)
-        self.assertEqual(parse_level("critical"), logging.CRITICAL)
+        self.assertRaises(ParsingError, canon_level, "foo")
+        self.assertEqual(canon_level("debug"),    logging.DEBUG)
+        self.assertEqual(canon_level("info"),     logging.INFO)
+        self.assertEqual(canon_level("warning"),  logging.WARNING)
+        self.assertEqual(canon_level("error"),    logging.ERROR)
+        self.assertEqual(canon_level("critical"), logging.CRITICAL)
 
     def test_instance(self):
         config = log.LoggingConfig("/var/log/irobot.log", "debug")

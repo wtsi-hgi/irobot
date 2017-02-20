@@ -22,11 +22,11 @@ from configparser import ParsingError
 from datetime import timedelta
 from typing import Optional
 
-from irobot.common import parse_duration
+import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
 
 
-def _parse_hostname(hostname:str) -> str:
+def _canon_hostname(hostname:str) -> str:
     return "foo"
 
 
@@ -39,10 +39,10 @@ class ArvadosAuthConfig(BaseConfig):
         @param   api_host  Arvados API host
         @param   cache     Cache invalidation time (string)
         """
-        self._api_host = _parse_hostname(api_host)
+        self._api_host = _canon_hostname(api_host)
 
         try:
-            self._cache = parse_duration(cache)
+            self._cache = canon.duration(cache)
         except ValueError:
             raise ParsingError("Couldn't parse cache invalidation time")
 
