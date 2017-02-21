@@ -44,6 +44,21 @@ def _canon_hostname(api_host:str) -> str:
             raise ParsingError("Couldn't parse API host")
 
 
+def _canon_version(api_version:str) -> str:
+    """
+    Canonicalise API version
+
+    @param   api_version  Arvados API version
+    @return  Canonicalised version
+    """
+    allowed = ["v1"]
+
+    if api_version in allowed:
+        return api_version
+
+    raise ParsingError("Unknown Arvados API version")
+
+
 class ArvadosAuthConfig(BaseConfig):
     """ Arvados authentication configuration """
     def __init__(self, api_host:str, api_version:str, cache:str) -> None:
@@ -54,7 +69,7 @@ class ArvadosAuthConfig(BaseConfig):
         @param   cache     Cache invalidation time (string)
         """
         self._api_host = _canon_hostname(api_host)
-        self._api_version = api_version
+        self._api_version = _canon_version(api_version)
 
         try:
             self._cache = canon.duration(cache)
@@ -78,6 +93,16 @@ class ArvadosAuthConfig(BaseConfig):
         @return  Arvados API version (string)
         """
         return self._api_version
+
+    @property
+    def api_base_url(self) -> str:
+        """
+        Get the Arvados API base URL
+
+        @return  Arvados API base URL (string)
+        """
+        if self._api_version == "v1":
+            return f"https://{self._api_host}/arvados/v1/"
 
     @property
     def cache(self) -> Optional[timedelta]:

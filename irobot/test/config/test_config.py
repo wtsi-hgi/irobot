@@ -146,6 +146,7 @@ class TestConfiguration(unittest.TestCase):
 
         self.assertEqual(config.authentication.arvados.api_host, "api.arvados.example.com")
         self.assertEqual(config.authentication.arvados.api_version, "v1")
+        self.assertEqual(config.authentication.arvados.api_base_url, "https://api.arvados.example.com/arvados/v1/")
         self.assertIsNone(config.authentication.arvados.cache)
 
         self.assertIsNone(config.logging.output)
