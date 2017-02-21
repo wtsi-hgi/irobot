@@ -21,7 +21,6 @@ import logging
 from abc import abstractmethod
 from threading import Lock, Timer
 from typing import Any, Dict, Optional, Tuple
-from typing.re import Pattern
 
 from requests import Response, Request, Session
 
@@ -91,7 +90,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         """ Cancel any running clean up timer on GC """
         if self._config.cache and self._cleanup_timer.is_alive():
             self._cleanup_timer.cancel()
-    
+
     def _cleanup(self) -> None:
         """ Clean up expired entries from the cache """
         with self._cache_lock:
@@ -102,26 +101,26 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
 
         self._schedule_cleanup()
 
-    def _validate_request(self, req:Request) -> bool:
+    def _validate_request(self, req:Request) -> Optional[Response]:
         """
         Make an authentication request to check for validity
 
         @param   req  Authentication request (requests.Request)
-        @return  Validation success (boolean)
+        @return  Authentication response (requests.Response; None on failure)
         """
         session = Session()
         res = session.send(req.prepare())
 
         if 200 <= res.status_code < 300:
             self.log(logging.DEBUG, "Authenticated")
-            return True
+            return res
 
         if res.status_code in [401, 403]:
             self.log(logging.WARNING, "Couldn't authenticate")
         else:
             res.raise_for_status()
 
-        return False
+        return None
 
     def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
         """
