@@ -34,7 +34,7 @@ def _log_config(config:Configuration, logger:logging.Logger) -> None:
     for section_name, section in config.get_sections().items():
         logger.info("%s = %s", section_name, str(section))
 
-    for handler in config.httpd.authentication():
+    for handler in config.httpd.authentication:
         logger.info("%s Authentication = %s", handler, str(getattr(config.authentication, handler)))
 
 
@@ -47,7 +47,7 @@ def _instantiate_authentication_handlers(config:Configuration, logger:logging.Lo
 
     return [
         handler_mapping[handler](getattr(config.authentication, handler), logger)
-        for handler in config.httpd.authentication()
+        for handler in config.httpd.authentication
     ]
 
 

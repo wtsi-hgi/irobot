@@ -20,8 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 class BaseConfig(object):
     def __str__(self) -> None:
         return str({
-            k: getattr(self, k)()
+            k: getattr(self, k)
             for k in dir(self)
-            if callable(getattr(self, k))
-            and not k.startswith("_")
+            if not k.startswith("_")
         }).replace("'", "")
