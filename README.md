@@ -60,9 +60,9 @@ rebuild the image.)
 ## Configuration
 
 The `irobot.conf` configuration is not copied into the image and ought
-to be bind mounted at runtime. This allows you to make configuration
-changes without rebuilding. An example configuration can be found in
-`irobot.conf.sample`.
+to be bind mounted at runtime, into `USER`'s home directory. This allows
+you to make configuration changes without rebuilding. An example
+configuration can be found in `irobot.conf.sample`.
 
 ### Precache Policy
 
@@ -201,7 +201,7 @@ does not have the necessary access to the requested resource, a
 
 ### Precache Failure
 
-If the constraints of the precache are impossible to resolve (e.g.,
+If the constraints of the precache are impossible to satisfy (e.g.,
 trying to fetch a data object that's bigger than the precache), then a
 `507 Insufficient Storage` response will be returned.
 
@@ -221,7 +221,7 @@ data object.
 
 Note that if iRobot has yet to fetch the data object (or any specified
 ranges thereof), a `202 Accepted` response will be returned with the
-`text/plain` content of the estimated finish time (per ISO 8601), or
+`text/plain` content of the estimated finish time (per ISO8601), or
 empty content if this estimate cannot be calculated. A data object can
 be forcibly refetched by sending the `Cache-Control: no-cache` request
 header.
@@ -269,6 +269,6 @@ the MD5 checksums of requested byte ranges of the data object.
 
 Note that if iRobot has yet to compute the MD5 sum for the data object,
 a `202 Accepted` response will be returned with the `text/plain` content
-of the estimated finish time (per ISO 8601), or empty content if this
+of the estimated finish time (per ISO8601), or empty content if this
 estimate cannot be calculated. MD5 checksums of range requests will be
 chunked according to the precache chunk size.
