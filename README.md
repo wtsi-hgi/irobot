@@ -149,6 +149,9 @@ changes without rebuilding. An example configuration can be found in
   to the Arvados API host at this hostname with the credentials received
   in the response in attempt to validate them.
 
+* **`api_version`** The version of the Arvados API served by the
+  specified Arvados API host.
+
 * **`cache`** How long an authenticated response from the validation URL
   should be cached by the handler. It can be set to "never", to validate
   every request, or a positive, numeric time suffixed with either `s`

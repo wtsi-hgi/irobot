@@ -77,6 +77,9 @@ cache = 10 min
 # validate them
 api_host = api.arvados.example.com
 
+# The version of the Arvados API served by the above host
+api_version = v1
+
 # How long to cache a authenticated response from the validation URL;
 # can be set to "never", or a positive, numeric time suffixed with any
 # of the following units: s(ec(ond)(s)), m(in(ute)(s))
