@@ -45,7 +45,7 @@ class TestArvadosAuthConfig(unittest.TestCase):
 
         self.assertEqual(config.api_host, "api.arvados.example")
         self.assertEqual(config.api_version, "v1")
-        self.assertEqual(config.api_base_url, "https://api.arvados.example/arvados/v1/")
+        self.assertEqual(config.api_base_url, "https://api.arvados.example/arvados/v1")
         self.assertIsNone(config.cache)
 
 
