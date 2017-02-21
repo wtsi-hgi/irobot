@@ -46,7 +46,7 @@ def _canon_hostname(api_host:str) -> str:
 
 class ArvadosAuthConfig(BaseConfig):
     """ Arvados authentication configuration """
-    def __init__(self, api_host:str, cache:str) -> None:
+    def __init__(self, api_host:str, api_version:str, cache:str) -> None:
         """
         Parse Arvados authentication configuration
 
@@ -54,6 +54,7 @@ class ArvadosAuthConfig(BaseConfig):
         @param   cache     Cache invalidation time (string)
         """
         self._api_host = _canon_hostname(api_host)
+        self._api_version = api_version
 
         try:
             self._cache = canon.duration(cache)
@@ -67,6 +68,14 @@ class ArvadosAuthConfig(BaseConfig):
         @return  Arvados API host (string)
         """
         return self._api_host
+
+    def api_version(self) -> str:
+        """
+        Get Arvados API version
+
+        @return  Arvados API version (string)
+        """
+        return self._api_version
 
     def cache(self) -> Optional[timedelta]:
         """

@@ -59,6 +59,7 @@ BASIC_AUTH_CONF = [
 ARVADOS_AUTH_CONF = [
     "[arvados_auth]",
     "api_host = api.arvados.example.com",
+    "api_version = v1",
     "cache = never"
 ]
 
@@ -144,6 +145,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertIsNone(config.authentication.basic.cache())
 
         self.assertEqual(config.authentication.arvados.api_host(), "api.arvados.example.com")
+        self.assertEqual(config.authentication.arvados.api_version(), "v1")
         self.assertIsNone(config.authentication.arvados.cache())
 
         self.assertIsNone(config.logging.output())

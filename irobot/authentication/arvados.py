@@ -18,28 +18,40 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
+import re
 from typing import Optional
 
-from irobot.authentication._base import BaseAuthHandler
+from irobot.authentication._http import HTTPAuthHandler
 from irobot.config.authentication import ArvadosAuthConfig
-from irobot.logging import LogWriter
 
 
-class ArvadosAuthHandler(LogWriter, BaseAuthHandler):
+_ARV_AUTH_RE =  re.compile(r"""
+    ^Arvados \s
+    ( .+ )$
+""", re.VERBOSE | re.IGNORECASE)
+
+
+class ArvadosAuthHandler(HTTPAuthHandler):
     """ Arvados authentication handler """
     def __init__(self, config:ArvadosAuthConfig, logger:Optional[logging.Logger] = None) -> None:
+        super().__init__(config=config, logger=logger)
+        self._auth_re = _ARV_AUTH_RE
+
+    def parse_auth_header(self, auth_header:str) -> str:
         """
-        Constructor
+        Parse the Arvados authentication authorisation header
 
-        @param   config  Arvados authentication configuration
-        @param   logger  Logger
+        @param   auth_header  Contents of the "Authorization" header (string)
+        @return  Arvados API token (string)
         """
-        super().__init__(logger=logger)
-        self._config = config
+        match = self._auth_re.match(auth_header)
 
-        # TODO
+        if not match:
+            raise ValueError("Invalid Arvados authentication header")
 
-    def validate(self, auth_header:str) -> bool:
+        return match.group(1)
+
+    def authenticate(self, auth_header:str) -> bool:
         """
         Validate the authorisation header
 
