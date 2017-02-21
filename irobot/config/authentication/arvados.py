@@ -102,7 +102,7 @@ class ArvadosAuthConfig(BaseConfig):
         @return  Arvados API base URL (string)
         """
         if self._api_version == "v1":
-            return f"https://{self._api_host}/arvados/v1/"
+            return f"https://{self._api_host}/arvados/v1"
 
     @property
     def cache(self) -> Optional[timedelta]:
