@@ -46,10 +46,7 @@ class _MockHTTPAuthentication(http.HTTPAuthHandler):
 
 class _MockHTTPAuthConfig(BaseConfig):
     def __init__(self, cache):
-        self._cache = cache
-
-    def cache(self):
-        return self._cache
+        self.cache = cache
 
 
 class TestHTTPAuthenticationHandler(unittest.TestCase):
