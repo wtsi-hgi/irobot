@@ -69,8 +69,7 @@ class iRODS(Listener, LogWriter):
         self._iget_pool = BoundedSemaphore(self._config.max_connections)
 
         self._running = True
-        self._runner = Thread(target=self._thread_runner)
-        self._runner.daemon = True
+        self._runner = Thread(target=self._thread_runner, daemon=True)
         self._runner.start()
 
     def _thread_runner(self) -> None:

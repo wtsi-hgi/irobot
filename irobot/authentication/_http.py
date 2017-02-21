@@ -83,7 +83,8 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
 
     def _schedule_cleanup(self) -> None:
         """ Initialise and start the clean up timer """
-        self._cleanup_timer = Timer(self._config.cache, self._cleanup, daemon=True)
+        self._cleanup_timer = Timer(self._config.cache.total_seconds(), self._cleanup)
+        self._cleanup_timer.daemon = True
         self._cleanup_timer.start()
 
     def __del__(self) -> None:
