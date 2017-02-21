@@ -34,7 +34,7 @@ class TestiRODSConfig(unittest.TestCase):
     def test_instance(self):
         config = irods.iRODSConfig("123")
 
-        self.assertEqual(config.max_connections(), 123)
+        self.assertEqual(config.max_connections, 123)
 
 
 if __name__ == "__main__":

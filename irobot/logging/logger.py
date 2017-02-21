@@ -80,15 +80,15 @@ def create_logger(config:LoggingConfig) -> logging.Logger:
     )
     formatter.converter = time.gmtime  # Force to UTC
 
-    out = config.output()
+    out = config.output
     handler = logging.FileHandler(out) if out else logging.StreamHandler()
     atexit.register(handler.close)
 
-    handler.setLevel(config.level())
+    handler.setLevel(config.level)
     handler.setFormatter(formatter)
 
     logger = logging.getLogger("irobot")
-    logger.setLevel(config.level())
+    logger.setLevel(config.level)
     logger.addHandler(handler)
 
     sys.excepthook = _exception_handler(logger)

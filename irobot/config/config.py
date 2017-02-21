@@ -116,7 +116,7 @@ class Configuration(object):
                     f"{handler}_auth",
                     *AUTH_HANDLERS[f"{handler}_auth"]["options"]
                 )
-                for handler in self.httpd.authentication()
+                for handler in self.httpd.authentication
             })
 
         except KeyError as e:

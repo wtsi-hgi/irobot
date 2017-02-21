@@ -32,12 +32,13 @@ from irobot.config.authentication import BasicAuthConfig
 class TestHTTPBasicAuthHandler(unittest.TestCase):
     def setUp(self):
         self._old_timer, http.Timer = http.Timer, MagicMock(spec=Timer)
+        self.config = MagicMock(spec=BasicAuthConfig)
 
     def tearDown(self):
         http.Timer = self._old_timer
 
     def test_parser(self):
-        auth = basic.HTTPBasicAuthHandler(config=MagicMock())
+        auth = basic.HTTPBasicAuthHandler(self.config)
 
         creds = user, password = ("foo", "bar")
         payload = f"{user}:{password}".encode()
@@ -48,7 +49,7 @@ class TestHTTPBasicAuthHandler(unittest.TestCase):
         self.assertRaises(ValueError, parse_auth, "foo bar")
 
     def test_request(self):
-        auth = basic.HTTPBasicAuthHandler(config=MagicMock())
+        auth = basic.HTTPBasicAuthHandler(self.config)
         req = auth.auth_request("foo", "bar")
 
         self.assertEqual(req.auth, ("foo", "bar"))

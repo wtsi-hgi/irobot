@@ -79,11 +79,11 @@ class TestPrecacheConfig(unittest.TestCase):
 
     def test_instance(self):
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited", "64MB")
-        self.assertEqual(config.location(), "/foo")
-        self.assertEqual(config.index(), "/foo/bar")
-        self.assertEqual(config.size(), 123 * (1000**3))
+        self.assertEqual(config.location, "/foo")
+        self.assertEqual(config.index, "/foo/bar")
+        self.assertEqual(config.size, 123 * (1000**3))
         self.assertIsNone(config.expiry(self.now))
-        self.assertEqual(config.chunk_size(), 64 * (1000**2))
+        self.assertEqual(config.chunk_size, 64 * (1000**2))
         self.assertRegex(str(config), r"expiry: unlimited")
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks", "64MB")
