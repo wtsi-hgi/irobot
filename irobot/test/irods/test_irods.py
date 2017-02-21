@@ -65,8 +65,7 @@ class ListenerInternals(object):
 
 class TestExists(unittest.TestCase):
     def tearDown(self):
-        irods.ils.reset_mock()
-        irods.ils.side_effect = None
+        irods.ils.reset_mock(side_effect=True)
 
     def test_exists_pass(self):
         irods._exists("/foo/bar")
