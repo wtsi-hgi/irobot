@@ -101,10 +101,10 @@ class TestHTTPAuthenticationHandler(unittest.TestCase):
         auth = _MockHTTPAuthentication(self.config_cache)
 
         http.Session().send().status_code = 200
-        self.assertTrue(auth._validate_request(http.Request()))
+        self.assertIsInstance(auth._validate_request(http.Request()), MagicMock)
 
         http.Session().send().status_code = 401
-        self.assertFalse(auth._validate_request(http.Request()))
+        self.assertIsNone(auth._validate_request(http.Request()))
 
         http.Session().send().status_code = 500
         http.Session().send().raise_for_status.side_effect = HTTPError
