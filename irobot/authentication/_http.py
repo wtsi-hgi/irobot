@@ -76,7 +76,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         self._config = config
 
         # Initialise the cache, if required
-        if self._config.cache():
+        if self._config.cache:
             self.log(logging.DEBUG, "Creating authentication cache")
             self._cache:Dict[str, AuthenticatedUser] = {}
             self._cache_lock = Lock()
@@ -84,12 +84,12 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
 
     def _schedule_cleanup(self) -> None:
         """ Initialise and start the clean up timer """
-        self._cleanup_timer = Timer(self._config.cache(), self._cleanup, daemon=True)
+        self._cleanup_timer = Timer(self._config.cache, self._cleanup, daemon=True)
         self._cleanup_timer.start()
 
     def __del__(self) -> None:
         """ Cancel any running clean up timer on GC """
-        if self._config.cache() and self._cleanup_timer.is_alive():
+        if self._config.cache and self._cleanup_timer.is_alive():
             self._cleanup_timer.cancel()
     
     def _cleanup(self) -> None:
@@ -97,7 +97,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         with self._cache_lock:
             self.log(logging.DEBUG, "Cleaning authentication cache")
             for key, user in list(self._cache.items()):
-                if not user.valid(self._config.cache()):
+                if not user.valid(self._config.cache):
                     del self._cache[key]
 
         self._schedule_cleanup()
@@ -138,11 +138,11 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
             return None
 
         # Check the cache
-        if self._config.cache():
+        if self._config.cache:
             with self._cache_lock:
                 if auth_header in self._cache:
                     user = self._cache[auth_header]
-                    if user.valid(self._config.cache()):
+                    if user.valid(self._config.cache):
                         self.log(logging.DEBUG, f"Authenticated user \"{user.user}\" from cache")
                         return True
 
@@ -155,7 +155,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
             user = AuthenticatedUser(self.get_user(req, res))
 
             # Put validated user in the cache
-            if self._config.cache():
+            if self._config.cache:
                 with self._cache_lock:
                     self._cache[auth_header] = user
 

@@ -65,7 +65,7 @@ class HTTPBasicAuthHandler(HTTPAuthHandler):
         @param   password  Password (string)
         @return  Authentication request (requests.Request)
         """
-        return Request("GET", self._config.url(), auth=(user, password))
+        return Request("GET", self._config.url, auth=(user, password))
 
     def get_user(self, req:Request, _:Response) -> str:
         """ Get the user from the authentication request """
