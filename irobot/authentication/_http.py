@@ -35,12 +35,12 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
     ## Implement these #################################################
 
     @abstractmethod
-    def parse_auth_header(self, auth_header:str) -> Any:
+    def parse_auth_header(self, auth_header:str) -> Tuple[str, ...]:
         """
         Parse the authentication header
 
         @param   auth_header  Contents of the "Authorization" header (string)
-        @param   auth_header
+        @return  Parsed contents (tuple of strings)
         """
 
     @abstractmethod
@@ -144,7 +144,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
                     user = self._cache[auth_header]
                     if user.valid(self._config.cache):
                         self.log(logging.DEBUG, f"Authenticated user \"{user.user}\" from cache")
-                        return True
+                        return user
 
                     # Clean up expired users
                     del self._cache[auth_header]

@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import re
-from typing import Optional
+from typing import Optional, Tuple
 
 from requests import Response, Request
 
@@ -39,19 +39,19 @@ class ArvadosAuthHandler(HTTPAuthHandler):
         super().__init__(config=config, logger=logger)
         self._auth_re = _ARV_AUTH_RE
 
-    def parse_auth_header(self, auth_header:str) -> str:
+    def parse_auth_header(self, auth_header:str) -> Tuple[str]:
         """
         Parse the Arvados authentication authorisation header
 
         @param   auth_header  Contents of the "Authorization" header (string)
-        @return  Arvados API token (string)
+        @return  Arvados API token (1-tuple of string)
         """
         match = self._auth_re.match(auth_header)
 
         if not match:
             raise ValueError("Invalid Arvados authentication header")
 
-        return match.group(1)
+        return match.group(1),
 
     def auth_request(self, api_token:str) -> Request:
         """
