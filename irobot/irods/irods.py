@@ -66,7 +66,7 @@ class iRODS(Listener, LogWriter):
         self.add_listener(self._broadcast_iget_to_log)
 
         self._iget_queue = deque()  # n.b., collections.deque is thread-safe
-        self._iget_pool = BoundedSemaphore(self._config.max_connections())
+        self._iget_pool = BoundedSemaphore(self._config.max_connections)
 
         self._running = True
         self._runner = Thread(target=self._thread_runner)

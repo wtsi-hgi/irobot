@@ -25,7 +25,7 @@ import irobot.config.authentication.basic as basic_conf
 
 class TestBasicAuthConfig(unittest.TestCase):
     def test_url(self):
-        get_url = lambda x: basic_conf.BasicAuthConfig(x, "never").url()
+        get_url = lambda x: basic_conf.BasicAuthConfig(x, "never").url
 
         self.assertEqual(get_url("127.0.0.1:5000/foo/bar"), "http://127.0.0.1:5000/foo/bar")
         self.assertEqual(get_url("https://foo.bar/quux"), "https://foo.bar/quux")
@@ -37,8 +37,8 @@ class TestBasicAuthConfig(unittest.TestCase):
     def test_instance(self):
         config = basic_conf.BasicAuthConfig("sanger.ac.uk", "never")
 
-        self.assertEqual(config.url(), "http://sanger.ac.uk")
-        self.assertIsNone(config.cache())
+        self.assertEqual(config.url, "http://sanger.ac.uk")
+        self.assertIsNone(config.cache)
 
 
 if __name__ == "__main__":

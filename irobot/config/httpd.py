@@ -120,6 +120,7 @@ class HTTPdConfig(BaseConfig):
         self._timeout = _canon_timeout(timeout)
         self._authentication = _canon_authentication(authentication)
 
+    @property
     def bind_address(self) -> str:
         """
         Get bind address
@@ -128,6 +129,7 @@ class HTTPdConfig(BaseConfig):
         """
         return self._bind_address
 
+    @property
     def listen(self) -> int:
         """
         Get listening port
@@ -136,6 +138,7 @@ class HTTPdConfig(BaseConfig):
         """
         return self._listen
 
+    @property
     def timeout(self) -> Optional[int]:
         """
         Get response timeout
@@ -144,6 +147,7 @@ class HTTPdConfig(BaseConfig):
         """
         return self._timeout
 
+    @property
     def authentication(self) -> str:
         """
         Get authentication methods

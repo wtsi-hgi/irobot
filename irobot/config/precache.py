@@ -172,6 +172,7 @@ class PrecacheConfig(BaseConfig):
             "chunk_size": self._chunk_size
         }).replace("'", "")
 
+    @property
     def location(self) -> str:
         """
         Get precache directory
@@ -180,6 +181,7 @@ class PrecacheConfig(BaseConfig):
         """
         return self._location
 
+    @property
     def index(self) -> str:
         """
         Get precache tracking database filename
@@ -188,6 +190,7 @@ class PrecacheConfig(BaseConfig):
         """
         return self._index
 
+    @property
     def size(self) -> Optional[int]:
         """
         Get precache size
@@ -215,6 +218,7 @@ class PrecacheConfig(BaseConfig):
             # +x years
             return add_years(from_atime, self._expiry)
 
+    @property
     def chunk_size(self) -> int:
         """
         Get file chunking size for checksumming

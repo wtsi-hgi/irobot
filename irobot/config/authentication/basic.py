@@ -69,6 +69,7 @@ class BasicAuthConfig(BaseConfig):
         except ValueError:
             raise ParsingError("Couldn't parse cache invalidation time")
 
+    @property
     def url(self) -> str:
         """
         Get validation URL
@@ -77,6 +78,7 @@ class BasicAuthConfig(BaseConfig):
         """
         return self._url
 
+    @property
     def cache(self) -> Optional[timedelta]:
         """
         Get invalidation time

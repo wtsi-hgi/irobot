@@ -47,6 +47,7 @@ class iRODSConfig(BaseConfig):
         """
         self._max_connections = _canon_max_connections(max_connections)
 
+    @property
     def max_connections(self) -> int:
         """
         Get maximum concurrent connections

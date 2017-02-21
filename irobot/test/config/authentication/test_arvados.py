@@ -25,7 +25,7 @@ import irobot.config.authentication.arvados as arv_conf
 
 class TestArvadosAuthConfig(unittest.TestCase):
     def test_api_host(self):
-        get_host = lambda x: arv_conf.ArvadosAuthConfig(x, "v1", "never").api_host()
+        get_host = lambda x: arv_conf.ArvadosAuthConfig(x, "v1", "never").api_host
 
         self.assertEqual(get_host("127.0.0.1"), "127.0.0.1")
         self.assertEqual(get_host("foo.bar"), "foo.bar")
@@ -37,9 +37,9 @@ class TestArvadosAuthConfig(unittest.TestCase):
     def test_instance(self):
         config = arv_conf.ArvadosAuthConfig("api.arvados.example", "v1", "never")
 
-        self.assertEqual(config.api_host(), "api.arvados.example")
-        self.assertEqual(config.api_version(), "v1")
-        self.assertIsNone(config.cache())
+        self.assertEqual(config.api_host, "api.arvados.example")
+        self.assertEqual(config.api_version, "v1")
+        self.assertIsNone(config.cache)
 
 
 if __name__ == "__main__":

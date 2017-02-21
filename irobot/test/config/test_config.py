@@ -128,28 +128,28 @@ class TestConfiguration(unittest.TestCase):
 
         self.assertEqual(config.file, self.config_file.name)
 
-        self.assertEqual(config.precache.location(), "/foo")
-        self.assertEqual(config.precache.index(), "/foo/bar")
-        self.assertIsNone(config.precache.size())
+        self.assertEqual(config.precache.location, "/foo")
+        self.assertEqual(config.precache.index, "/foo/bar")
+        self.assertIsNone(config.precache.size)
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
-        self.assertEqual(config.precache.chunk_size(), 64 * (1000**2))
+        self.assertEqual(config.precache.chunk_size, 64 * (1000**2))
 
-        self.assertEqual(config.irods.max_connections(), 30)
+        self.assertEqual(config.irods.max_connections, 30)
 
-        self.assertEqual(config.httpd.bind_address(), "0.0.0.0")
-        self.assertEqual(config.httpd.listen(), 5000)
-        self.assertEqual(config.httpd.timeout(), timedelta(milliseconds=500))
-        self.assertEqual(config.httpd.authentication(), ["basic", "arvados"])
+        self.assertEqual(config.httpd.bind_address, "0.0.0.0")
+        self.assertEqual(config.httpd.listen, 5000)
+        self.assertEqual(config.httpd.timeout, timedelta(milliseconds=500))
+        self.assertEqual(config.httpd.authentication, ["basic", "arvados"])
 
-        self.assertEqual(config.authentication.basic.url(), "http://example.com")
-        self.assertIsNone(config.authentication.basic.cache())
+        self.assertEqual(config.authentication.basic.url, "http://example.com")
+        self.assertIsNone(config.authentication.basic.cache)
 
-        self.assertEqual(config.authentication.arvados.api_host(), "api.arvados.example.com")
-        self.assertEqual(config.authentication.arvados.api_version(), "v1")
-        self.assertIsNone(config.authentication.arvados.cache())
+        self.assertEqual(config.authentication.arvados.api_host, "api.arvados.example.com")
+        self.assertEqual(config.authentication.arvados.api_version, "v1")
+        self.assertIsNone(config.authentication.arvados.cache)
 
-        self.assertIsNone(config.logging.output())
-        self.assertEqual(config.logging.level(), logging.WARNING)
+        self.assertIsNone(config.logging.output)
+        self.assertEqual(config.logging.level, logging.WARNING)
 
     def test_unknown_http_auth_method(self):
         with NamedTemporaryFile(mode="w+t") as config_file:

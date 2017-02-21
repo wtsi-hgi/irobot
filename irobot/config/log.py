@@ -75,6 +75,7 @@ class LoggingConfig(BaseConfig):
             "level": ["debug", "info", "warning", "error", "critical"][(self._level // 10) - 1]
         }).replace("'", "")
 
+    @property
     def output(self) -> Optional[str]:
         """
         Get logging output destination
@@ -83,6 +84,7 @@ class LoggingConfig(BaseConfig):
         """
         return self._output
 
+    @property
     def level(self) -> int:
         """
         Get logging level
