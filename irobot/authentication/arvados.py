@@ -21,6 +21,8 @@ import logging
 import re
 from typing import Optional
 
+from requests import Response, Request
+
 from irobot.authentication._http import HTTPAuthHandler
 from irobot.config.authentication import ArvadosAuthConfig
 
@@ -51,13 +53,22 @@ class ArvadosAuthHandler(HTTPAuthHandler):
 
         return match.group(1)
 
-    def authenticate(self, auth_header:str) -> bool:
+    def auth_request(self, api_token:str) -> Request:
         """
-        Validate the authorisation header
+        Create an authentication request
 
-        @param   auth_header  Contents of the "Authorization" header (string)
-        @return  Validation success (boolean)
+        @param   api_token  Arvados API token (string)
+        @return  Authentication request (requests.Request)
         """
+        if self._config.api_version == "v1":
+            return Request("GET", f"{self._config.api_base_url}/users/current", headers={
+               "Authorization": f"OAuth2 {api_token}",
+               "Accept": "application/json"
+            })
 
-        # TODO
-        pass
+    def get_user(self, _:Request, res:Response) -> str:
+        """ Get the user from the authentication response """
+        if res.status_code == 200:
+            return res.json()["username"]
+
+        raise ValueError("Could not retrieve username from Arvados API host")
