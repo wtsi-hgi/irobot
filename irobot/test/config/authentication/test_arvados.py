@@ -24,12 +24,18 @@ import irobot.config.authentication.arvados as arv_conf
 
 
 class TestArvadosAuthConfig(unittest.TestCase):
-    def test_api_host(self):
-        get_host = lambda x: arv_conf.ArvadosAuthConfig(x, "v1", "never").api_host
+    def test_canon_hostname(self):
+        canon_hostname = arv_conf._canon_hostname
 
-        self.assertEqual(get_host("127.0.0.1"), "127.0.0.1")
-        self.assertEqual(get_host("foo.bar"), "foo.bar")
-        self.assertRaises(ParsingError, get_host, "-not-cool")
+        self.assertEqual(canon_hostname("127.0.0.1"), "127.0.0.1")
+        self.assertEqual(canon_hostname("foo.bar"), "foo.bar")
+        self.assertRaises(ParsingError, canon_hostname, "-not-cool")
+
+    def test_canon_version(self):
+        canon_version = arv_conf._canon_version
+
+        self.assertEqual(canon_version("v1"), "v1")
+        self.assertRaises(ParsingError, canon_version, "foo")
 
     def test_bad_duration(self):
         self.assertRaises(ParsingError, arv_conf.ArvadosAuthConfig, "sanger.ac.uk", "v1", "foo")
@@ -39,6 +45,7 @@ class TestArvadosAuthConfig(unittest.TestCase):
 
         self.assertEqual(config.api_host, "api.arvados.example")
         self.assertEqual(config.api_version, "v1")
+        self.assertEqual(config.api_base_url, "https://api.arvados.example/arvados/v1/")
         self.assertIsNone(config.cache)
 
 

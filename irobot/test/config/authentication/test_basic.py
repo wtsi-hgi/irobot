@@ -24,12 +24,12 @@ import irobot.config.authentication.basic as basic_conf
 
 
 class TestBasicAuthConfig(unittest.TestCase):
-    def test_url(self):
-        get_url = lambda x: basic_conf.BasicAuthConfig(x, "never").url
+    def test_canon_url(self):
+        canon_url = basic_conf._canon_url
 
-        self.assertEqual(get_url("127.0.0.1:5000/foo/bar"), "http://127.0.0.1:5000/foo/bar")
-        self.assertEqual(get_url("https://foo.bar/quux"), "https://foo.bar/quux")
-        self.assertRaises(ParsingError, get_url, "-not-cool")
+        self.assertEqual(canon_url("127.0.0.1:5000/foo/bar"), "http://127.0.0.1:5000/foo/bar")
+        self.assertEqual(canon_url("https://foo.bar/quux"), "https://foo.bar/quux")
+        self.assertRaises(ParsingError, canon_url, "-not-cool")
 
     def test_bad_duration(self):
         self.assertRaises(ParsingError, basic_conf.BasicAuthConfig, "sanger.ac.uk", "foo")
