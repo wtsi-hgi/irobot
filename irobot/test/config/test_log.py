@@ -46,8 +46,8 @@ class TesLoggingConfig(unittest.TestCase):
 
         self.assertEqual(config.output, "/var/log/irobot.log")
         self.assertEqual(config.level, logging.DEBUG)
-        self.assertRegex(str(config), r"output: /var/log/irobot.log")
-        self.assertRegex(str(config), r"level: debug")
+        self.assertRegex(str(config), r"output = /var/log/irobot.log")
+        self.assertRegex(str(config), r"level = debug")
 
 
 if __name__ == "__main__":

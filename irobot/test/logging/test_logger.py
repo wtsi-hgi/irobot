@@ -83,7 +83,7 @@ class TestExceptionHandler(unittest.TestCase):
         exc = Exception("foo")
         self.handler(exc.__class__, exc, None)
 
-        self.log.critical.assert_called_once_with(exc.args[0], exc_info=(exc.__class__, exc, None))
+        self.log.critical.assert_called_once_with(str(exc))
         logger.sys.exit.assert_called_once_with(1)
 
     def test_keyboard_interrupt(self):

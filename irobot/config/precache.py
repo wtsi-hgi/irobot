@@ -164,13 +164,13 @@ class PrecacheConfig(BaseConfig):
         else:
             expiry = f"{self._expiry} years"
 
-        return str({
-            "location": self._location,
-            "index": self._index,
-            "size": self._size or "unlimited",
-            "expiry": expiry,
-            "chunk_size": self._chunk_size
-        }).replace("'", "")
+        return ", ".join([
+            f"location = {self.location}",
+            f"index = {self.index}",
+            "size = {}".format(self.size or "unlimited"),
+            f"expiry = {expiry}",
+            f"chunk_size = {self.chunk_size}"
+        ])
 
     @property
     def location(self) -> str:

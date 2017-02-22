@@ -70,10 +70,10 @@ class LoggingConfig(BaseConfig):
         self._level = _canon_level(level)
 
     def __str__(self) -> None:
-        return str({
-            "output": self._output or "stderr",
-            "level": ["debug", "info", "warning", "error", "critical"][(self._level // 10) - 1]
-        }).replace("'", "")
+        return ", ".join([
+            "output = {}".format(self.output or "stderr"),
+            "level = {}".format(["debug", "info", "warning", "error", "critical"][(self.level // 10) - 1])
+        ])
 
     @property
     def output(self) -> Optional[str]:
