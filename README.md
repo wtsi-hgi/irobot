@@ -130,33 +130,52 @@ configuration can be found in `irobot.conf.sample`.
   named with an `_auth` suffix) must appear in the configuration file
   for each specified authentication handler.
 
+  Note that the order is important; once a handler has successfully
+  authenticated a request, the subsequent handlers will not be called
+  for that request. This allows authentication methods to be
+  prioritised. While not recommended, if no authentication is required,
+  `basic` can be used alone, configured to point at a dummy webserver
+  that always responds with a `200 OK` status.
+
+Note that it is recommended that the HTTP API is *only* served over TLS
+(e.g., using a reverse proxy), to avoid authentication credentials being
+exposed as plain-text over an unencrypted connection.
+
 ### HTTP Basic Authentication
+
+This is only needed if using HTTP basic authentication.
 
 * **`url`** The basic authentication handler will make a request to the
   resource at this URL, forwarding the credentials received in the
-  response in attempt to validate them (i.e., checking for a `200 OK`
-  response from this validation URL).
+  response in attempt to authenticate them (i.e., checking for a
+  `200 OK` response from this URL).
 
-* **`cache`** How long an authenticated response from the validation URL
-  should be cached by the handler. It can be set to "never", to validate
-  every request, or a positive, numeric time suffixed with either `s`
-  (`sec` or `second`) or `m` (`min` or `minute`), where spelt units may
-  be pluralised.
+  Note that it is recommended that an authentication URL served over TLS
+  is used, to avoid the forwarded basic authentication credentials being
+  exposed as plain-text over an unencrypted connection.
+
+* **`cache`** How long an authenticated response from the authentication
+  URL should be cached by the handler. It can be set to "never", to
+  authenticate every request, or a positive, numeric time suffixed with
+  either `s` (`sec` or `second`) or `m` (`min` or `minute`), where spelt
+  units may be pluralised.
 
 ### Arvados Authentication
 
+This is only needed if using Arvados authentication.
+
 * **`api_host`** The Arvados authentication handler will make a request
   to the Arvados API host at this hostname with the credentials received
-  in the response in attempt to validate them.
+  in the response in attempt to authenticate them.
 
 * **`api_version`** The version of the Arvados API served by the
-  specified Arvados API host.
+  specified Arvados API host. (This probably won't need to be changed.)
 
-* **`cache`** How long an authenticated response from the validation URL
-  should be cached by the handler. It can be set to "never", to validate
-  every request, or a positive, numeric time suffixed with either `s`
-  (`sec` or `second`) or `m` (`min` or `minute`), where spelt units may
-  be pluralised.
+* **`cache`** How long an authenticated response from the Arvados API
+  host should be cached by the handler. It can be set to "never", to
+  authenticate every request, or a positive, numeric time suffixed with
+  either `s` (`sec` or `second`) or `m` (`min` or `minute`), where spelt
+  units may be pluralised.
 
 ### Logging
 
@@ -193,10 +212,10 @@ handlers. That is:
 * `Arvados <payload>`, where the payload is an API token supplied by
   Arvados for Arvados authentication.
 
-If the respective authentication handler cannot validate the payload
+If the respective authentication handler cannot authenticate the payload
 it's given (or no `Authorization` header exists), a `401 Unauthorized`
-response will be returned. If the payload can be validated, but the user
-does not have the necessary access to the requested resource, a
+response will be returned. If the payload can be authenticated, but the
+user does not have the necessary access to the requested resource, a
 `403 Forbidden` response will be returned.
 
 ### Precache Failure
