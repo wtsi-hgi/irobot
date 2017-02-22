@@ -23,6 +23,7 @@ from typing import List
 
 from .authentication import ArvadosAuthHandler, HTTPBasicAuthHandler
 from .config import Configuration
+from .config.log import LoggingConfig
 from .irods import iRODS
 from .logging import create_logger
 
@@ -52,8 +53,13 @@ def _instantiate_authentication_handlers(config:Configuration, logger:logging.Lo
 
 
 if __name__ == "__main__":
+    # For the sake of homogeneity, create a logger and exception handler
+    # for bootstrapping the configuration parsing
+    _bootstrap_logger = create_logger(LoggingConfig("STDERR", "critical"))
+
     config = Configuration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
 
+    # Upgrade to configured logging
     logger = create_logger(config.logging)
     _log_config(config, logger)
 
