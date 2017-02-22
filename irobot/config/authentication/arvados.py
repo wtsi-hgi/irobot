@@ -77,24 +77,6 @@ class ArvadosAuthConfig(BaseConfig):
             raise ParsingError("Couldn't parse cache invalidation time")
 
     @property
-    def api_host(self) -> str:
-        """
-        Get Arvados API host
-
-        @return  Arvados API host (string)
-        """
-        return self._api_host
-
-    @property
-    def api_version(self) -> str:
-        """
-        Get Arvados API version
-
-        @return  Arvados API version (string)
-        """
-        return self._api_version
-
-    @property
     def api_base_url(self) -> str:
         """
         Get the Arvados API base URL

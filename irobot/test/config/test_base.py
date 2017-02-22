@@ -23,12 +23,15 @@ from irobot.config._base import BaseConfig
 
 
 class _FooConfig(BaseConfig):
+    @property
     def foo(self):
         return "bar"
 
+    @property
     def quux(self):
         return "xyzzy"
 
+    @property
     def _moo(self):
         return "quack"
 
@@ -39,9 +42,9 @@ class TestBaseConfig(unittest.TestCase):
 
     def test_str(self):
         s = str(self.config)
-        self.assertRegex(s, r"foo: bar")
-        self.assertRegex(s, r"quux: xyzzy")
-        self.assertNotRegexpMatches(s, r"_moo: quack")
+        self.assertRegex(s, r"foo = bar")
+        self.assertRegex(s, r"quux = xyzzy")
+        self.assertNotRegexpMatches(s, r"_moo = quack")
 
 
 if __name__ == "__main__":

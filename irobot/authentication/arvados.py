@@ -60,7 +60,7 @@ class ArvadosAuthHandler(HTTPAuthHandler):
         @param   api_token  Arvados API token (string)
         @return  Authentication request (requests.Request)
         """
-        if self._config.api_version == "v1":
+        if self._config._api_version == "v1":
             return Request("GET", f"{self._config.api_base_url}/users/current", headers={
                "Authorization": f"OAuth2 {api_token}",
                "Accept": "application/json"

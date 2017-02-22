@@ -84,15 +84,15 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEqual(config.size, 123 * (1000**3))
         self.assertIsNone(config.expiry(self.now))
         self.assertEqual(config.chunk_size, 64 * (1000**2))
-        self.assertRegex(str(config), r"expiry: unlimited")
+        self.assertRegex(str(config), r"expiry = unlimited")
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks", "64MB")
         self.assertEqual(config.expiry(self.now), self.now + timedelta(weeks = 3))
-        self.assertRegex(str(config), r"expiry: 21 days")
+        self.assertRegex(str(config), r"expiry = 21 days")
 
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB")
         self.assertEqual(config.expiry(self.now), add_years(self.now, 1.2))
-        self.assertRegex(str(config), r"expiry: 1.2 years")
+        self.assertRegex(str(config), r"expiry = 1.2 years")
 
 
 if __name__ == "__main__":
