@@ -58,7 +58,7 @@ def _exception_handler(logger:logging.Logger) -> Callable:
             sys.__excepthook__(exc_class, exc_obj, traceback)
 
         else:
-            logger.critical(exc_obj.args[0], exc_info=(exc_class, exc_obj, traceback))
+            logger.critical(str(exc_obj))
             sys.exit(1)
 
     return _log_uncaught_exception
