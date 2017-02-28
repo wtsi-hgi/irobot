@@ -182,6 +182,16 @@ class TestThreadSafeConnection(unittest.TestCase):
         self.connection._write_lock.acquire.assert_called_once()
         self.connection._write_lock.release.assert_called_once()
 
+    def test_context_manager(self):
+        conn = _sqlite.connect(":memory:", isolation_level=_sqlite.IsolationLevel.DEFERRED)
+
+        with conn:
+            conn.execute("create table foo(bar)")
+            conn.execute("insert into foo(bar) values (123)")
+
+        conn._write_lock.acquire.assert_called_once()
+        conn._write_lock.release.assert_called_once()
+
 
 class TestThreadSafeWriting(unittest.TestCase):
     def test_multithread_write(self):

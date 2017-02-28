@@ -79,6 +79,7 @@ class _ThreadSafeConnection(sqlite3.Connection):
 
         self._write_lock = Lock()
         self._locked = False
+        self._context_transaction = False
 
         serialise_always = [self.commit, self.executemany]
         serialise_writes = [self.execute, self.executescript]
@@ -113,15 +114,28 @@ class _ThreadSafeConnection(sqlite3.Connection):
 
         @param   sql  SQL statement (string; None for always lock)
         """
-        if sql is None or _potentially_writes(sql):
+        if not self._context_transaction and (sql is None or _potentially_writes(sql)):
             self._write_lock.acquire()
             self._locked = True
 
     def _release(self) -> None:
         """ Release the writing lock """
-        if self._locked:
+        if not self._context_transaction and self._locked:
             self._write_lock.release()
             self._locked = False
+
+    def __enter__(self, *args, **kwargs):
+        self._write_lock.acquire()
+        self._locked = True
+        self._context_transaction = True
+        return super().__enter__(*args, **kwargs)
+
+    def __exit__(self, *args, **kwargs):
+        output = super().__exit__(*args, **kwargs)
+        self._write_lock.release()
+        self._locked = False
+        self._context_transaction = False
+        return output
 
 
 def connect(database:str,
