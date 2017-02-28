@@ -21,7 +21,10 @@ import re
 import sqlite3
 from datetime import timedelta
 from enum import Enum
+from functools import wraps
 from threading import Lock
+from types import MethodType
+from typing import Callable, Optional
 
 
 # This is a bit of a dirty hack! We simply search SQL statements for
@@ -73,52 +76,52 @@ class _ThreadSafeConnection(sqlite3.Connection):
     """ Subclass SQLite connections such that writes are serialised """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
         self._write_lock = Lock()
+        self._locked = False
 
-    ## Always serialise ################################################
+        serialise_always = [self.commit, self.executemany]
+        serialise_writes = [self.execute, self.executescript]
 
-    def commit(self):
-        """ Serialised Connection.commit """
-        with self._write_lock:
-            return super().commit()
+        to_serialise = list(zip(serialise_always, [True] * len(serialise_always))) \
+                     + list(zip(serialise_writes, [False] * len(serialise_writes)))
 
-    def executemany(self, sql:str, *args, **kwargs) -> sqlite3.Cursor:
+        for method, always in to_serialise:
+            self._serialise(method, always)
+            
+    def _serialise(self, method:Callable, always:bool) -> None:
         """
-        Serialised Connection.executemany
+        Serialise methods
 
-        @note    Connection.executemany can only execute DML statements,
-                 hence why we always serialise its calls
+        @param   method  Class method (callable)
+        @param   always  Always serialise, or just writes (bool)
+
+        @note    Write serialisation will be based on the first argument
         """
-        with self._write_lock:
-            return super().executemany(sql, *args, **kwargs)
+        @wraps(method)
+        def _serialised(_self, *args, **kwargs):
+            self._acquire(None if always else args[0])
+            output = method(*args, **kwargs)
+            self._release()
+            return output
 
-    ## Only serialise for writes #######################################
+        setattr(self, method.__name__, MethodType(_serialised, self))
 
-    def _serialse_op(self, op:str, sql:str, *args, **kwargs) -> sqlite3.Cursor:
+    def _acquire(self, sql:Optional[str] = None) -> None:
         """
-        Serialise writes for Connection methods
+        Acquire the writing lock
 
-        @param   op              Connection method name (str)
-        @param   sql             SQL statement(s) (str)
-        @param   *args/**kwargs  SQL parameters (if applicable)
-        @return  Cursor (sqlite3.Cursor)
+        @param   sql  SQL statement (string; None for always lock)
         """
-        potentially_writing = _potentially_writes(sql)
-        if potentially_writing:
+        if sql is None or _potentially_writes(sql):
             self._write_lock.acquire()
+            self._locked = True
 
-        cursor = getattr(super(), op)(sql, *args, **kwargs)
-
-        if potentially_writing:
+    def _release(self) -> None:
+        """ Release the writing lock """
+        if self._locked:
             self._write_lock.release()
-
-        return cursor
-
-    def execute(self, sql:str, *args, **kwargs) -> sqlite3.Cursor:
-        return self._serialse_op("execute", sql, *args, **kwargs)
-
-    def executescript(self, sql_script:str) -> sqlite3.Cursor:
-        return self._serialse_op("executescript", sql_script)
+            self._locked = False
 
 
 def connect(database:str,

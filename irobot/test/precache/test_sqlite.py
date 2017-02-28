@@ -154,8 +154,8 @@ class TestThreadSafeConnection(unittest.TestCase):
 
     def test_commit(self):
         self.connection.commit()
-        self.connection._write_lock.__enter__.assert_called_once()
-        self.connection._write_lock.__exit__.assert_called_once()
+        self.connection._write_lock.acquire.assert_called_once()
+        self.connection._write_lock.release.assert_called_once()
     
     def test_execute(self):
         cur = self.connection.execute("select 123")
@@ -171,8 +171,8 @@ class TestThreadSafeConnection(unittest.TestCase):
         self.connection._write_lock.reset_mock()
 
         self.connection.executemany("insert into foo(bar) values (?)", [(1,), (2,), (3,)])
-        self.connection._write_lock.__enter__.assert_called_once()
-        self.connection._write_lock.__exit__.assert_called_once()
+        self.connection._write_lock.acquire.assert_called_once()
+        self.connection._write_lock.release.assert_called_once()
 
     def test_executescript(self):
         self.connection.executescript("select 123; select 456;")
