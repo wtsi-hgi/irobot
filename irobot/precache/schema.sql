@@ -93,6 +93,8 @@ create view if not exists current_status as
   and       newer.timestamp   > newest.timestamp
   where     newer.id is null;
 
+-- NOTE This relies on a user-defined "stderr" aggregate function that
+-- must be implemented in the host environment
 create view if not exists production_rates as
   with _log as (
     select data_object,
@@ -120,8 +122,9 @@ create view if not exists production_rates as
     where  started.status         = 2
     and    finished.status        = 3
   )
-  select   case when datatype = 1 then "download" else "hash" end as process,
-           avg(1.0 * size / duration) as rate
+  select   case when datatype = 1 then "download" else "checksum" end as process,
+           avg(1.0 * size / duration) as rate,
+           stderr(1.0 * size / duration) as stderr
   from     _processing
   group by datatype;
 
