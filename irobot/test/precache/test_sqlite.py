@@ -20,6 +20,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock
 from concurrent.futures import ThreadPoolExecutor
+from math import sqrt
+from random import sample
+from statistics import stdev
 from threading import Lock
 from typing import Tuple
 
@@ -142,14 +145,23 @@ class TestMentalSQLRegEx(unittest.TestCase):
 class TestUDFs(unittest.TestCase):
     def test_stderr(self):
         stderr = _sqlite.StandardErrorUDF()
-        for x in ["foo"] + list(range(10)):
-            stderr.step(x)
 
-            # Need at least two numeric data points
-            if x in ["foo", 0]:
+        # Pass over non-numeric input
+        stderr.step("foo")
+        self.assertIsNone(stderr.finalize())
+
+        data = []
+        for i, x in enumerate(sample(range(100), 20)):
+            stderr.step(x)
+            data.append(x)
+
+            if i == 0:
+                # Need at least two numeric data points
                 self.assertIsNone(stderr.finalize())
 
-        self.assertAlmostEqual(stderr.finalize(), 0.957427107756338)
+            if i > 0:
+                calculated = stdev(data) / sqrt(i + 1)
+                self.assertAlmostEqual(stderr.finalize(), calculated)
 
 
 class TestThreadSafeConnection(unittest.TestCase):
