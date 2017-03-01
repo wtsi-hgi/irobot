@@ -57,8 +57,10 @@ class TrackingDB(LogWriter):
         """
         super().__init__(logger=logger)
 
+        self.path = path
+
         self.log(logging.INFO, f"Initialising precache tracking database in {path}")
-        self.conn = conn = _sqlite.connect(path, detect_types=_sqlite.TypeParser.DECLTYPES)
+        self.conn = conn = _sqlite.connect(path, detect_types=_sqlite.ParseTypes.ByDefinition)
         conn.create_aggregate("stderr", 1, _sqlite.StandardErrorUDF)
         _sqlite.sqlite3.register_adapter(datetime, _sqlite.datetime_adaptor)
         _sqlite.sqlite3.register_converter("TIMESTAMP", _sqlite.datetime_convertor)
