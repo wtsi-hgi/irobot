@@ -75,11 +75,10 @@ class TrackingDB(LogWriter):
         for enum_type, table in [(_Datatype, "datatypes"), (_Mode, "modes"), (_Status, "statuses")]:
             for member in enum_type:
                 assert conn.execute(f"""
-                    select count(*)
+                    select sum(case when id = ? and description = ? then 1 else 0 end),
+                           count(*)
                     from   {table}
-                    where  id          = ?
-                    and    description = ?
-                """, (member.value, member.name)).fetchone()[0] == 1
+                """, (member.value, member.name)).fetchone() == (1, len(enum_type))
 
         # NOTE Tracked files that are in an inconsistent state need to
         # be handled upstream; it shouldn't be done at this level
