@@ -20,36 +20,40 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 pragma foreign_keys = ON;
 
 create table if not exists datatypes (
-  id        integer  primary key,
-  datatype  text     not null unique
+  id           integer  primary key,
+  description  text     not null unique
 ) without rowid;
 
-insert or ignore into datatypes(id, datatype) values (1, "data"),
-                                                     (2, "metadata"),
-                                                     (3, "checksums");
+insert or ignore into datatypes(id, description) values (1, "data"),
+                                                        (2, "metadata"),
+                                                        (3, "checksums");
 
 create table if not exists modes (
-  id    integer  primary key,
-  mode  text     not null unique
+  id           integer  primary key,
+  description  text     not null unique
 ) without rowid;
 
-insert or ignore into modes(id, mode) values (1, "master"),
-                                             (2, "switchover");
+insert or ignore into modes(id, description) values (1, "master"),
+                                                    (2, "switchover");
 
 create table if not exists statuses (
-  id      integer  primary key,
-  status  text     not null unique
+  id           integer  primary key,
+  description  text     not null unique
 ) without rowid;
 
-insert or ignore into statuses(id, status) values (1, "requested"),
-                                                  (2, "producing"),
-                                                  (3, "ready");
+insert or ignore into statuses(id, description) values (1, "requested"),
+                                                       (2, "producing"),
+                                                       (3, "ready");
 
 create table if not exists data_objects (
   id             integer  primary key,
   irods_path     text     not null unique,
   precache_path  text     not null unique
 );
+
+create index if not exists do_id on data_objects(id);
+create index if not exists do_irods_path on data_objects(irods_path);
+create index if not exists do_precache_path on data_objects(precache_path);
 
 create table if not exists data_sizes (
   id           integer  primary key,
@@ -60,6 +64,9 @@ create table if not exists data_sizes (
 
   unique (data_object, datatype, mode)
 );
+
+create index if not exists ds_id on data_sizes(id);
+create index if not exists ds_file on data_sizes(data_object, datatype, mode);
 
 create view if not exists current_usage as
   select sum(size)
@@ -75,6 +82,13 @@ create table if not exists status_log (
 
   unique (data_object, datatype, mode, status)
 );
+
+create index if not exists log_id on status_log(id);
+create index if not exists log_timestamp on status_log(timestamp);
+create index if not exists log_file on status_log(data_object, datatype, mode);
+create index if not exists log_datatype on status_log(datatype);
+create index if not exists log_status on status_log(status);
+create index if not exists log_file_status on status_log(data_object, datatype, mode, status);
 
 create view if not exists current_status as
   select    data_objects.id,
@@ -136,4 +150,5 @@ create trigger if not exists auto_request
     insert into status_log(data_object, datatype, mode, status) values (NEW.id, 3, 1, 1);
   end;
 
+reindex;
 vacuum;
