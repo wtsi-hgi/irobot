@@ -150,8 +150,10 @@ class _ThreadSafeConnection(sqlite3.Connection):
         @wraps(method)
         def _serialised(_self, *args, **kwargs):
             self._acquire(None if always else args[0])
-            output = method(*args, **kwargs)
-            self._release()
+            try:
+                output = method(*args, **kwargs)
+            finally:
+                self._release()
             return output
 
         setattr(self, method.__name__, MethodType(_serialised, self))
