@@ -73,12 +73,12 @@ create view if not exists current_usage as
   from   data_sizes;
 
 create table if not exists status_log (
-  id           integer  primary key,
-  timestamp    integer  not null default (strftime('%s', 'now')),
-  data_object  integer  references data_objects(id) on delete cascade,
-  datatype     integer  references datatypes(id),
-  mode         integer  references modes(id),
-  status       integer  references statuses(id),
+  id           integer    primary key,
+  timestamp    TIMESTAMP  not null default (strftime('%s', 'now')),
+  data_object  integer    references data_objects(id) on delete cascade,
+  datatype     integer    references datatypes(id),
+  mode         integer    references modes(id),
+  status       integer    references statuses(id),
 
   unique (data_object, datatype, mode, status)
 );
