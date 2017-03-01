@@ -142,11 +142,11 @@ class TestMentalSQLRegEx(unittest.TestCase):
 class TestUDFs(unittest.TestCase):
     def test_stderr(self):
         stderr = _sqlite.StandardErrorUDF()
-        for x in range(10):
+        for x in ["foo"] + list(range(10)):
             stderr.step(x)
 
-            # Need at least two data points
-            if x == 0:
+            # Need at least two numeric data points
+            if x in ["foo", 0]:
                 self.assertIsNone(stderr.finalize())
 
         self.assertAlmostEqual(stderr.finalize(), 0.957427107756338)
