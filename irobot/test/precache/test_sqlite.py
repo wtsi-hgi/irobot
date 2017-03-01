@@ -20,6 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from math import sqrt
 from random import sample
 from statistics import stdev
@@ -140,6 +141,18 @@ class TestMentalSQLRegEx(unittest.TestCase):
             "delete from foo",
             "delete from foo.bar"
         )
+
+
+class TestAdaptorsAndConvertors(unittest.TestCase):
+    def test_datetime_adaptor(self):
+        dt_adapt = _sqlite.datetime_adaptor
+        self.assertEqual(dt_adapt(datetime(1970, 1, 1)), 0)
+        self.assertEqual(dt_adapt(datetime(1970, 1, 2)), 86400)
+
+    def test_datetime_convertor(self):
+        dt_conv = _sqlite.datetime_convertor
+        self.assertEqual(dt_conv(b"0"), datetime(1970, 1, 1))
+        self.assertEqual(dt_conv(b"86400"), datetime(1970, 1, 2))
 
 
 class TestUDFs(unittest.TestCase):
