@@ -17,11 +17,13 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import math
 import re
 import sqlite3
 from datetime import timedelta
 from enum import Enum
 from functools import wraps
+from numbers import Number
 from threading import Lock
 from types import MethodType
 from typing import Callable, Optional
@@ -70,6 +72,18 @@ class TypeParser(Enum):
     DECLTYPES = sqlite3.PARSE_DECLTYPES
     COLNAMES = sqlite3.PARSE_COLNAMES
     ALL = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+
+
+class StandardErrorUDF(object):
+    """ SQLite user-defined aggregation function that calculates standard error """
+    def __init__(self) -> None:
+        pass
+
+    def step(self, datum:Number) -> None:
+        pass
+
+    def finalize(self) -> Optional[float]:
+        pass
 
 
 class _ThreadSafeConnection(sqlite3.Connection):

@@ -139,6 +139,19 @@ class TestMentalSQLRegEx(unittest.TestCase):
         )
 
 
+class TestUDFs(unittest.TestCase):
+    def test_stderr(self):
+        stderr = _sqlite.StandardErrorUDF()
+        for x in range(10):
+            stderr.step(x)
+
+            # Need at least two data points
+            if x == 0:
+                self.assertIsNone(stderr.finalize())
+
+        self.assertAlmostEqual(stderr.finalize(), 0.957427107756338)
+
+
 class TestThreadSafeConnection(unittest.TestCase):
     def setUp(self):
         self._old_lock, _sqlite.Lock = _sqlite.Lock, MagicMock(spec=Lock)
