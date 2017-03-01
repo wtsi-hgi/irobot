@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import math
 import re
 import sqlite3
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum, IntFlag
 from functools import wraps
 from numbers import Number
@@ -99,6 +99,25 @@ class StandardErrorUDF(object):
             return None
 
         return math.sqrt(self.mean2 / (self.n * (self.n - 1)))
+
+
+def datetime_adaptor(dt:datetime) -> int:
+    """
+    datetime.datetime adaptor
+
+    @param   dt  Datetime (datetime.datetime)
+    @return  Unix timestamp (int)
+    """
+    return int(dt.replace(tzinfo=timezone.utc).timestamp())
+
+def datetime_convertor(dt:bytes) -> datetime:
+    """
+    datetime.datetime convertor
+
+    @param   dt  Datetime (bytes)
+    @return  Datetime object (datetime.datetime)
+    """
+    return datetime.utcfromtimestamp(int(dt))
 
 
 class _ThreadSafeConnection(sqlite3.Connection):
