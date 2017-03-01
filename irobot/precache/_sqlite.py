@@ -75,15 +75,31 @@ class TypeParser(Enum):
 
 
 class StandardErrorUDF(object):
-    """ SQLite user-defined aggregation function that calculates standard error """
+    """
+    SQLite user-defined aggregation function that calculates standard
+    error using Welford's algorithm
+    """
     def __init__(self) -> None:
-        pass
+        self.n     = 0
+        self.mean  = 0.0
+        self.mean2 = 0.0
 
     def step(self, datum:Number) -> None:
-        pass
+        if not isinstance(datum, Number):
+            # Pass over non-numeric input
+            return None
+
+        self.n += 1
+        delta = datum - self.mean
+        self.mean += delta / self.n
+        delta2 = datum - self.mean
+        self.mean2 += delta * delta2
 
     def finalize(self) -> Optional[float]:
-        pass
+        if self.n < 2:
+            return None
+
+        return math.sqrt(self.mean2 / (self.n * (self.n - 1)))
 
 
 class _ThreadSafeConnection(sqlite3.Connection):
