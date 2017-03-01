@@ -21,7 +21,7 @@ import math
 import re
 import sqlite3
 from datetime import timedelta
-from enum import Enum
+from enum import Enum, IntFlag
 from functools import wraps
 from numbers import Number
 from threading import Lock
@@ -66,12 +66,11 @@ class IsolationLevel(Enum):
     EXCLUSIVE = "EXCLUSIVE"
 
 
-class TypeParser(Enum):
+class TypeParser(IntFlag):
     """ SQLite3 type parsing constants """
     NONE = 0
     DECLTYPES = sqlite3.PARSE_DECLTYPES
     COLNAMES = sqlite3.PARSE_COLNAMES
-    ALL = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
 
 
 class StandardErrorUDF(object):
