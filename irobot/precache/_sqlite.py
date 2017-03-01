@@ -60,17 +60,17 @@ _potentially_writes = re.compile("|".join(map(lambda alt: rf"(?: \b {alt} \b )",
 
 class IsolationLevel(Enum):
     """ SQLite3 isolation levels """
-    AUTOCOMMIT = None
-    DEFERRED = "DEFERRED"
-    IMMEDIATE = "IMMEDIATE"
-    EXCLUSIVE = "EXCLUSIVE"
+    AutoCommit = None
+    Deferred = "DEFERRED"
+    Immediate = "IMMEDIATE"
+    Exclusive = "EXCLUSIVE"
 
 
-class TypeParser(IntFlag):
+class ParseTypes(IntFlag):
     """ SQLite3 type parsing constants """
-    NONE = 0
-    DECLTYPES = sqlite3.PARSE_DECLTYPES
-    COLNAMES = sqlite3.PARSE_COLNAMES
+    Ignore = 0
+    ByDefinition = sqlite3.PARSE_DECLTYPES
+    ByColumnAlias = sqlite3.PARSE_COLNAMES
 
 
 class StandardErrorUDF(object):
@@ -190,8 +190,8 @@ class _ThreadSafeConnection(sqlite3.Connection):
 
 def connect(database:str,
             timeout:timedelta = timedelta(seconds=5),
-            detect_types:TypeParser = TypeParser.NONE,
-            isolation_level:IsolationLevel = IsolationLevel.AUTOCOMMIT,
+            detect_types:ParseTypes = ParseTypes.Ignore,
+            isolation_level:IsolationLevel = IsolationLevel.AutoCommit,
             cached_statements:int = 100,
             uri:bool = False) -> _ThreadSafeConnection:
 

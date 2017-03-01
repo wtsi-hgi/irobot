@@ -221,7 +221,7 @@ class TestThreadSafeConnection(unittest.TestCase):
         self.connection._write_lock.release.assert_called_once()
 
     def test_context_manager(self):
-        conn = _sqlite.connect(":memory:", isolation_level=_sqlite.IsolationLevel.DEFERRED)
+        conn = _sqlite.connect(":memory:", isolation_level=_sqlite.IsolationLevel.Deferred)
 
         with conn:
             conn.execute("create table foo(bar)")
