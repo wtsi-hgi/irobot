@@ -47,10 +47,11 @@ insert or ignore into statuses(id, description) values (1, "requested"),
                                                        (3, "ready");
 
 create table if not exists data_objects (
-  id             integer  primary key,
-  mode           integer  references modes(id),
-  irods_path     text     not null,
-  precache_path  text     not null,
+  id             integer    primary key,
+  mode           integer    references modes(id),
+  irods_path     text       not null,
+  precache_path  text       not null,
+  last_access    TIMESTAMP  default (null) check (mode = 1 or last_access is null),
 
   unique (mode, irods_path, precache_path)
 );
@@ -59,6 +60,7 @@ create index if not exists do_id on data_objects(id);
 create index if not exists do_file on data_objects(mode, irods_path, precache_path);
 create index if not exists do_irods_path on data_objects(irods_path);
 create index if not exists do_precache_path on data_objects(precache_path);
+create index if not exists do_last_access on data_objects(last_access);
 
 create table if not exists data_sizes (
   id           integer  primary key,
