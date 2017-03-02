@@ -47,11 +47,15 @@ insert or ignore into statuses(id, description) values (1, "requested"),
 
 create table if not exists data_objects (
   id             integer  primary key,
-  irods_path     text     not null unique,
-  precache_path  text     not null unique
+  mode           integer  references modes(id),
+  irods_path     text     not null,
+  precache_path  text     not null,
+
+  unique (mode, irods_path, precache_path)
 );
 
 create index if not exists do_id on data_objects(id);
+create index if not exists do_file on data_objects(mode, irods_path, precache_path);
 create index if not exists do_irods_path on data_objects(irods_path);
 create index if not exists do_precache_path on data_objects(precache_path);
 
@@ -59,14 +63,13 @@ create table if not exists data_sizes (
   id           integer  primary key,
   data_object  integer  references data_objects(id) on delete cascade,
   datatype     integer  references datatypes(id),
-  mode         integer  references modes(id),
   size         integer  not null check (size > 0),
 
-  unique (data_object, datatype, mode)
+  unique (data_object, datatype)
 );
 
 create index if not exists ds_id on data_sizes(id);
-create index if not exists ds_file on data_sizes(data_object, datatype, mode);
+create index if not exists ds_file on data_sizes(data_object, datatype);
 
 create view if not exists current_usage as
   select sum(size)
@@ -77,24 +80,23 @@ create table if not exists status_log (
   timestamp    TIMESTAMP  not null default (strftime('%s', 'now')),
   data_object  integer    references data_objects(id) on delete cascade,
   datatype     integer    references datatypes(id),
-  mode         integer    references modes(id),
   status       integer    references statuses(id),
 
-  unique (data_object, datatype, mode, status)
+  unique (data_object, datatype, status)
 );
 
 create index if not exists log_id on status_log(id);
 create index if not exists log_timestamp on status_log(timestamp);
-create index if not exists log_file on status_log(data_object, datatype, mode);
+create index if not exists log_file on status_log(data_object, datatype);
 create index if not exists log_datatype on status_log(datatype);
 create index if not exists log_status on status_log(status);
-create index if not exists log_file_status on status_log(data_object, datatype, mode, status);
+create index if not exists log_file_status on status_log(data_object, datatype, status);
 
 create view if not exists current_status as
   select    data_objects.id,
+            data_objects.mode,
             data_objects.irods_path,
             newest.datatype,
-            newest.mode,
             newest.timestamp,
             newest.status
   from      data_objects
@@ -103,7 +105,6 @@ create view if not exists current_status as
   left join status_log as newer
   on        newer.data_object = newest.data_object
   and       newer.datatype    = newest.datatype
-  and       newer.mode        = newest.mode
   and       newer.timestamp   > newest.timestamp
   where     newer.id is null;
 
@@ -113,7 +114,6 @@ create view if not exists production_rates as
   with _log as (
     select data_object,
            datatype,
-           mode,
            timestamp,
            status
     from   status_log
@@ -128,11 +128,9 @@ create view if not exists production_rates as
     join   _log as finished
     on     finished.data_object   = started.data_object
     and    finished.datatype      = started.datatype
-    and    finished.mode          = started.mode
     join   data_sizes
     on     data_sizes.data_object = started.data_object
     and    data_sizes.datatype    = 1
-    and    data_sizes.mode        = started.mode
     where  started.status         = 2
     and    finished.status        = 3
   )
@@ -145,9 +143,9 @@ create view if not exists production_rates as
 create trigger if not exists auto_request
   after insert on data_objects for each row
   begin
-    insert into status_log(data_object, datatype, mode, status) values (NEW.id, 1, 1, 1);
-    insert into status_log(data_object, datatype, mode, status) values (NEW.id, 2, 1, 1);
-    insert into status_log(data_object, datatype, mode, status) values (NEW.id, 3, 1, 1);
+    insert into status_log(data_object, datatype, status) values (NEW.id, 1, 1);
+    insert into status_log(data_object, datatype, status) values (NEW.id, 2, 1);
+    insert into status_log(data_object, datatype, status) values (NEW.id, 3, 1);
   end;
 
 reindex;
