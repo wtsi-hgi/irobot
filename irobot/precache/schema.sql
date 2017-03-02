@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 pragma foreign_keys = ON;
+pragma locking_mode = EXCLUSIVE;
 
 create table if not exists datatypes (
   id           integer  primary key,
