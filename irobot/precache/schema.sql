@@ -143,13 +143,10 @@ create trigger if not exists auto_first_status
 create view if not exists current_status as
   select    do_modes.data_object,
             do_modes.mode,
-            data_objects.irods_path,
             newest.datatype,
             newest.timestamp,
             newest.status
   from      do_modes
-  join      data_objects
-  on        data_objects.id = do_modes.data_object
   join      status_log as newest
   on        newest.dom_file = do_modes.id
   left join status_log as newer
