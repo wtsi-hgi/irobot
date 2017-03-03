@@ -30,20 +30,19 @@ import irobot.precache._sqlite as _sqlite
 from irobot.logging import LogWriter
 
 
-class _Datatype(Enum):
+class Datatype(Enum):
     data       = 1
     metadata   = 2
     checksums  = 3
 
-class _Mode(Enum):
+class Mode(Enum):
     master     = 1
     switchover = 2
 
-class _Status(Enum):
+class Status(Enum):
     requested  = 1
     producing  = 2
     ready      = 3
-    
 
 
 class TrackingDB(LogWriter):
@@ -61,8 +60,16 @@ class TrackingDB(LogWriter):
 
         self.log(logging.INFO, f"Initialising precache tracking database in {path}")
         self.conn = conn = _sqlite.connect(path, detect_types=_sqlite.ParseTypes.ByDefinition)
+
+        # Register host function hooks
         conn.create_aggregate("stderr", 1, _sqlite.StandardErrorUDF)
+        _sqlite.sqlite3.register_adapter(Datatype, _sqlite.enum_adaptor)
+        _sqlite.sqlite3.register_adapter(Mode, _sqlite.enum_adaptor)
+        _sqlite.sqlite3.register_adapter(Status, _sqlite.enum_adaptor)
         _sqlite.sqlite3.register_adapter(datetime, _sqlite.datetime_adaptor)
+        _sqlite.sqlite3.register_converter("DATATYPE", _sqlite.enum_convertor_factory(Datatype))
+        _sqlite.sqlite3.register_converter("MODE", _sqlite.enum_convertor_factory(Mode))
+        _sqlite.sqlite3.register_converter("STATUS", _sqlite.enum_convertor_factory(Status))
         _sqlite.sqlite3.register_converter("TIMESTAMP", _sqlite.datetime_convertor)
 
         schema = canon.path(join(dirname(__file__), "schema.sql"))
@@ -71,8 +78,8 @@ class TrackingDB(LogWriter):
             schema_script = schema_file.read()
         conn.executescript(schema_script)
 
-        # Sanity check our enumerations
-        for enum_type, table in [(_Datatype, "datatypes"), (_Mode, "modes"), (_Status, "statuses")]:
+        # Sanity check our enumerations for parity
+        for enum_type, table in [(Datatype, "datatypes"), (Mode, "modes"), (Status, "statuses")]:
             for member in enum_type:
                 assert conn.execute(f"""
                     select sum(case when id = ? and description = ? then 1 else 0 end),
@@ -86,11 +93,14 @@ class TrackingDB(LogWriter):
 
         self._schedule_vacuum()
         atexit.register(self._vacuum_timer.cancel)
+        atexit.register(self.conn.close)
 
     def __del__(self) -> None:
-        """ Cancel the vacuum timer on GC """
+        """ Cancel the vacuum timer and close the connection on GC """
         if self._vacuum_timer.is_alive():
             self._vacuum_timer.cancel()
+
+        self.conn.close()
 
     def _schedule_vacuum(self) -> None:
         """ Initialise and start the vacuum timer """
