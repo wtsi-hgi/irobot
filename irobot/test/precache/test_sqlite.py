@@ -21,6 +21,7 @@ import unittest
 from unittest.mock import MagicMock
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from enum import Enum
 from math import sqrt
 from random import sample
 from statistics import stdev
@@ -153,6 +154,34 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         dt_conv = _sqlite.datetime_convertor
         self.assertEqual(dt_conv(b"0"), datetime(1970, 1, 1))
         self.assertEqual(dt_conv(b"86400"), datetime(1970, 1, 2))
+
+    def test_enum_adaptor(self):
+        my_enum = Enum("my_enum", "foo bar quux")
+        e_adapt = _sqlite.enum_adaptor
+        self.assertEqual(e_adapt(my_enum.foo), 1)
+        self.assertEqual(e_adapt(my_enum.bar), 2)
+        self.assertEqual(e_adapt(my_enum.quux), 3)
+
+    def test_enum_convertor_int(self):
+        my_enum = Enum("my_enum", "foo bar quux")
+        e_conv = _sqlite.enum_convertor_factory(my_enum)
+        self.assertEqual(e_conv(b"1"), my_enum.foo)
+        self.assertEqual(e_conv(b"2"), my_enum.bar)
+        self.assertEqual(e_conv(b"3"), my_enum.quux)
+
+    def test_enum_convertor_string(self):
+        class my_enum(Enum):
+            foo = "abc"
+            bar = "def"
+            quux = "xyz"
+
+        def str_cast(value:bytes) -> str:
+            return value.decode()
+
+        e_conv = _sqlite.enum_convertor_factory(my_enum, str_cast)
+        self.assertEqual(e_conv(b"abc"), my_enum.foo)
+        self.assertEqual(e_conv(b"def"), my_enum.bar)
+        self.assertEqual(e_conv(b"xyz"), my_enum.quux)
 
 
 class TestUDFs(unittest.TestCase):

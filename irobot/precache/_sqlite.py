@@ -26,7 +26,7 @@ from functools import wraps
 from numbers import Number
 from threading import Lock
 from types import MethodType
-from typing import Callable, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 
 # This is a bit of a dirty hack! We simply search SQL statements for
@@ -118,6 +118,28 @@ def datetime_convertor(dt:bytes) -> datetime:
     @return  Datetime object (datetime.datetime)
     """
     return datetime.utcfromtimestamp(int(dt))
+
+def enum_adaptor(e:Enum) -> Any:
+    """
+    Enum adaptor
+
+    @param   e  Some enum value (Enum)
+    @return  Enum's value
+    """
+    return e.value
+
+def enum_convertor_factory(enum_type:ClassVar[Enum], cast_fn:Callable[[bytes], Any] = int) -> Callable[[bytes], "enum_type"]:
+    """
+    Enum convertor factory
+
+    @param   enum_type  Enum class
+    @param   cast_fn    Function to cast bytes to enum values (default: int)
+    @return  Enum convertor function for specific enum type (function)
+    """
+    def _enum_convertor(value:bytes) -> enum_type:
+        return enum_type(cast_fn(value))
+
+    return _enum_convertor
 
 
 class _ThreadSafeConnection(sqlite3.Connection):
