@@ -57,7 +57,7 @@ create index if not exists do_irods_path on data_objects(irods_path);
 create table if not exists do_modes (
   id             integer  primary key,
   data_object    integer  references data_objects(id) on delete cascade,
-  mode           integer  references modes(id),
+  mode           MODE     references modes(id),
   precache_path  text     not null unique,
 
   unique (data_object, mode)
@@ -101,10 +101,10 @@ create trigger if not exists auto_first_access
   end;
 
 create table if not exists data_sizes (
-  id        integer  primary key,
-  dom_file  integer  references do_modes(id) on delete cascade,
-  datatype  integer  references datatypes(id),
-  size      integer  not null check (size > 0),
+  id        integer   primary key,
+  dom_file  integer   references do_modes(id) on delete cascade,
+  datatype  DATATYPE  references datatypes(id),
+  size      integer   not null check (size > 0),
 
   unique (dom_file, datatype)
 );
@@ -120,8 +120,8 @@ create table if not exists status_log (
   id         integer    primary key,
   timestamp  TIMESTAMP  not null default (strftime('%s', 'now')),
   dom_file   integer    references do_modes(id) on delete cascade,
-  datatype   integer    references datatypes(id),
-  status     integer    references statuses(id),
+  datatype   DATATYPE   references datatypes(id),
+  status     STATUS     references statuses(id),
 
   unique (dom_file, datatype, status)
 );
