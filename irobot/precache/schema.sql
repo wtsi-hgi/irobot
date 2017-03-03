@@ -47,75 +47,122 @@ insert or ignore into statuses(id, description) values (1, "requested"),
                                                        (3, "ready");
 
 create table if not exists data_objects (
-  id             integer    primary key,
-  mode           integer    references modes(id),
-  irods_path     text       not null,
-  precache_path  text       not null,
-  last_access    TIMESTAMP  default (null) check (mode = 1 or last_access is null),
-
-  unique (mode, irods_path, precache_path)
+  id          integer  primary key,
+  irods_path  text     not null unique
 );
 
 create index if not exists do_id on data_objects(id);
-create index if not exists do_file on data_objects(mode, irods_path, precache_path);
 create index if not exists do_irods_path on data_objects(irods_path);
-create index if not exists do_precache_path on data_objects(precache_path);
-create index if not exists do_last_access on data_objects(last_access);
+
+create table if not exists do_modes (
+  id             integer  primary key,
+  data_object    integer  references data_objects(id) on delete cascade,
+  mode           integer  references modes(id),
+  precache_path  text     not null unique,
+
+  unique (data_object, mode)
+);
+
+create index if not exists dom_id on do_modes(id);
+create index if not exists dom_file on do_modes(data_object, mode);
+
+-- This is for convenience, to enter new master data objects
+create view if not exists do_requests as
+  select data_objects.id,
+         data_objects.irods_path,
+         do_modes.precache_path
+  from   data_objects
+  join   do_modes
+  on     do_modes.data_object = data_objects.id
+  where  do_modes.mode        = 1;
+
+create trigger if not exists auto_request
+  instead of insert on do_requests for each row
+  begin
+    insert into data_objects(irods_path) values (NEW.irods_path);
+    insert into do_modes(data_object, mode, precache_path) values (last_insert_rowid(), 1, NEW.precache_path);
+  end;
+
+-- Last access for master data objects only
+create table if not exists last_access (
+  id           integer    primary key,
+  data_object  integer    references data_objects(id) on delete cascade,
+  last_access  TIMESTAMP  not null default (strftime('%s', 'now'))
+);
+
+create index if not exists la_id on last_access(id);
+create index if not exists la_data_object on last_access(data_object);
+create index if not exists la_last_access on last_access(last_access);
+
+create trigger if not exists auto_first_access
+  after insert on do_modes for each row when NEW.mode = 1
+  begin
+    insert into last_access(data_object) values (NEW.id);
+  end;
 
 create table if not exists data_sizes (
-  id           integer  primary key,
-  data_object  integer  references data_objects(id) on delete cascade,
-  datatype     integer  references datatypes(id),
-  size         integer  not null check (size > 0),
+  id        integer  primary key,
+  dom_file  integer  references do_modes(id) on delete cascade,
+  datatype  integer  references datatypes(id),
+  size      integer  not null check (size > 0),
 
-  unique (data_object, datatype)
+  unique (dom_file, datatype)
 );
 
 create index if not exists ds_id on data_sizes(id);
-create index if not exists ds_file on data_sizes(data_object, datatype);
+create index if not exists ds_file on data_sizes(dom_file, datatype);
 
-create view if not exists current_usage as
+create view if not exists precache_commitment as
   select sum(size)
   from   data_sizes;
 
 create table if not exists status_log (
-  id           integer    primary key,
-  timestamp    TIMESTAMP  not null default (strftime('%s', 'now')),
-  data_object  integer    references data_objects(id) on delete cascade,
-  datatype     integer    references datatypes(id),
-  status       integer    references statuses(id),
+  id         integer    primary key,
+  timestamp  TIMESTAMP  not null default (strftime('%s', 'now')),
+  dom_file   integer    references do_modes(id) on delete cascade,
+  datatype   integer    references datatypes(id),
+  status     integer    references statuses(id),
 
-  unique (data_object, datatype, status)
+  unique (dom_file, datatype, status)
 );
 
 create index if not exists log_id on status_log(id);
 create index if not exists log_timestamp on status_log(timestamp);
-create index if not exists log_file on status_log(data_object, datatype);
+create index if not exists log_file on status_log(dom_file, datatype);
 create index if not exists log_datatype on status_log(datatype);
 create index if not exists log_status on status_log(status);
-create index if not exists log_file_status on status_log(data_object, datatype, status);
+create index if not exists log_file_status on status_log(dom_file, datatype, status);
+
+create trigger if not exists auto_first_status
+  after insert on do_modes for each row
+  begin
+    insert into status_log(dom_file, datatype, status)
+      select NEW.id, id, 1 from datatypes;
+  end;
 
 create view if not exists current_status as
-  select    data_objects.id,
-            data_objects.mode,
+  select    do_modes.data_object,
+            do_modes.mode,
             data_objects.irods_path,
             newest.datatype,
             newest.timestamp,
             newest.status
-  from      data_objects
+  from      do_modes
+  join      data_objects
+  on        data_objects.id = do_modes.data_object
   join      status_log as newest
-  on        newest.data_object = data_objects.id
+  on        newest.dom_file = do_modes.id
   left join status_log as newer
-  on        newer.data_object = newest.data_object
-  and       newer.datatype    = newest.datatype
-  and       newer.timestamp   > newest.timestamp
+  on        newer.dom_file  = newest.dom_file
+  and       newer.datatype  = newest.datatype
+  and       newer.timestamp > newest.timestamp
   where     newer.id is null;
 
 -- NOTE This relies on a user-defined "stderr" aggregate function that
 -- must be implemented in the host environment
 create view if not exists production_rates as
   with _log as (
-    select data_object,
+    select dom_file,
            datatype,
            timestamp,
            status
@@ -129,27 +176,19 @@ create view if not exists production_rates as
            finished.timestamp - started.timestamp as duration
     from   _log as started
     join   _log as finished
-    on     finished.data_object   = started.data_object
-    and    finished.datatype      = started.datatype
+    on     finished.dom_file   = started.dom_file
+    and    finished.datatype   = started.datatype
     join   data_sizes
-    on     data_sizes.data_object = started.data_object
-    and    data_sizes.datatype    = 1
-    where  started.status         = 2
-    and    finished.status        = 3
+    on     data_sizes.dom_file = started.dom_file
+    and    data_sizes.datatype = 1
+    where  started.status      = 2
+    and    finished.status     = 3
   )
   select   case when datatype = 1 then "download" else "checksum" end as process,
            avg(1.0 * size / duration) as rate,
            stderr(1.0 * size / duration) as stderr
   from     _processing
   group by datatype;
-
-create trigger if not exists auto_request
-  after insert on data_objects for each row
-  begin
-    insert into status_log(data_object, datatype, status) values (NEW.id, 1, 1);
-    insert into status_log(data_object, datatype, status) values (NEW.id, 2, 1);
-    insert into status_log(data_object, datatype, status) values (NEW.id, 3, 1);
-  end;
 
 reindex;
 vacuum;
