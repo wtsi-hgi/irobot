@@ -20,6 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import atexit
 import logging
 import os
+from collections import namedtuple
 from datetime import datetime, timedelta
 from enum import Enum
 from os.path import dirname, join
@@ -46,22 +47,7 @@ class Status(Enum):
     ready      = 3
 
 
-class SummaryStat(object):
-    """ Model for arithmetic mean and standard error """
-    def __init__(self, mean:float, stderr:float) -> None:
-        self._mean = mean
-        self._stderr = stderr
-
-    def __str__(self) -> str:
-        return f"{self.mean}±{self.stderr}"
-
-    @property
-    def mean(self) -> float:
-        return self._mean
-
-    @property
-    def stderr(self) -> float:
-        return self._stderr
+SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
 
 
 class TrackingDB(LogWriter):
@@ -156,7 +142,7 @@ class TrackingDB(LogWriter):
         """
         Retrieve the current production rates
 
-        @return  Dictionary of production rates, where available
+        @return  Dictionary of production rates, where available (dict)
         """
         return {
             "download": None,
