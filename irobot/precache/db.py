@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from os.path import dirname, join
 from threading import Timer
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple
 
 import irobot.common.canon as canon
 import irobot.precache._sqlite as _sqlite
@@ -48,6 +48,7 @@ class Status(Enum):
 
 
 SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
+DataObjectFileStatus = namedtuple("DataObjectFileStatus", ["timestamp", "status"])
 
 
 class TrackingDB(LogWriter):
@@ -135,7 +136,7 @@ class TrackingDB(LogWriter):
         @return  Precache commitment (int)
         """
         db_size = os.stat(self.path).st_size if self.in_precache else 0
-        precache_commitment = self.conn.execute("select size from precache_commitment").fetchone()[0] or 0
+        precache_commitment, = self.conn.execute("select size from precache_commitment").fetchone() or (0,)
         return db_size + precache_commitment
 
     def get_production_rates(self) -> Dict[str, Optional[SummaryStat]]:
@@ -151,6 +152,86 @@ class TrackingDB(LogWriter):
             **{
                 process: SummaryStat(rate, stderr)
                 for process, rate, stderr
-                in  self.conn.execute("select process, rate, stderr from production_rates")
+                in  self.conn.execute("""
+                    select process,
+                           rate,
+                           stderr
+                    from   production_rates
+                """)
             }
         }
+
+    def get_data_object_id(self, irods_path:str) -> Optional[int]:
+        """
+        Get the ID of the data object with the given path on iRODS
+
+        @param   irods_path  iRODS path (string)
+        @return  Database ID (int; None if not found)
+        """
+        do_id, = self.conn.execute("""
+            select id
+            from   data_objects
+            where  irods_path = ?
+        """, (irods_path,)).fetchone() or (None,)
+        return do_id
+
+    def get_data_object_mode_id(self, data_object:int, mode:Mode) -> Optional[int]:
+        """
+        Get the ID of the data object with the given mode
+
+        @param   data_object  Data object ID (int)
+        @param   mode         Mode (Mode)
+        @return  Database ID (int; None if not found)
+        """
+        dom_id, = self.conn.execute("""
+            select id
+            from   do_modes
+            where  data_object = ?
+            and    mode = ?
+        """, (data_object, mode)).fetchone() or (None,)
+        return dom_id
+
+    def get_last_access(self, data_object:Optional[int] = None, older_than:timedelta = timedelta(0)) -> List[Tuple[int, datetime]]:
+        """
+        Get the list of last access times, either in totality or for a
+        specific data object, optionally older than a specified duration
+
+        @param   data_object  Data object ID (int)
+        @param   older_than   Cut off duration (datetime.timedelta)
+        @return  List of data object IDs and their last access time,
+                 ordered chronologically
+        """
+        sql = """
+            select data_object,
+                   last_access
+            from   last_access
+            where  ? - last_access > ?
+        """
+        params = (datetime.utcnow(), older_than.total_seconds())
+
+        if not data_object is None:
+            sql = sql + " and data_object = ?"
+            params = params + (data_object,)
+
+        sql = sql + " order by last_access asc"
+
+        return self.conn.execute(sql, params).fetchall()
+
+    def get_current_status(self, data_object:int, mode:Mode, datatype:Datatype) -> Optional[DataObjectFileStatus]:
+        """
+        Get the current status of the data_object file
+
+        @param   data_object  Data object ID (int)
+        @param   mode         Mode (Mode)
+        @param   datatype     File type (Datatype)
+        @return  Current status (DataObjectFileStatus; None if not found)
+        """
+        status = self.conn.execute("""
+            select timestamp,
+                   status
+            from   current_status
+            where  data_object = ?
+            and    mode        = ?
+            and    datatype    = ?
+        """, (data_object, mode, datatype)).fetchone()
+        return DataObjectFileStatus(*status) if status else None
