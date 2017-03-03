@@ -113,7 +113,7 @@ create index if not exists ds_id on data_sizes(id);
 create index if not exists ds_file on data_sizes(dom_file, datatype);
 
 create view if not exists precache_commitment as
-  select sum(size)
+  select sum(size) as size
   from   data_sizes;
 
 create table if not exists status_log (

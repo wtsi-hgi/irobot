@@ -19,11 +19,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import atexit
 import logging
+import os
 from datetime import datetime, timedelta
 from enum import Enum
 from os.path import dirname, join
 from threading import Timer
-from typing import Optional
+from typing import Dict, Optional
 
 import irobot.common.canon as canon
 import irobot.precache._sqlite as _sqlite
@@ -45,18 +46,39 @@ class Status(Enum):
     ready      = 3
 
 
+class SummaryStat(object):
+    """ Model for arithmetic mean and standard error """
+    def __init__(self, mean:float, stderr:float) -> None:
+        self._mean = mean
+        self._stderr = stderr
+
+    def __str__(self) -> str:
+        return f"{self.mean}±{self.stderr}"
+
+    @property
+    def mean(self) -> float:
+        return self._mean
+
+    @property
+    def stderr(self) -> float:
+        return self._stderr
+
+
 class TrackingDB(LogWriter):
     """ Tracking DB """
-    def __init__(self, path:str, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, path:str, in_precache:bool = True, logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor
 
-        @param   path    Path to SQLite database (string)
-        @param   logger  Logger
+        @param   path         Path to SQLite database (string)
+        @param   in_precache  Whether the precache tracking DB is
+                              located within the precache (bool)
+        @param   logger       Logger (logging.Logger)
         """
         super().__init__(logger=logger)
 
         self.path = path
+        self.in_precache = False if path == ":memory:" else in_precache
 
         self.log(logging.INFO, f"Initialising precache tracking database in {path}")
         self.conn = conn = _sqlite.connect(path, detect_types=_sqlite.ParseTypes.ByDefinition)
@@ -113,3 +135,36 @@ class TrackingDB(LogWriter):
         self.log(logging.DEBUG, "Vacuuming precache tracking database")
         self.conn.execute("vacuum")
         self._schedule_vacuum()
+
+    def get_commitment(self) -> int:
+        """
+        Retrieve the amount of space used/reserved by the precache
+        (including the size of the tracking DB, when relevant)
+
+        @note    This represents the actual size of used/reserved in the
+                 precache, rather than the physical size on disk (i.e.,
+                 modulo device block size). As such, it will generally
+                 be an underestimate.
+
+        @return  Precache commitment (int)
+        """
+        db_size = os.stat(self.path).st_size if self.in_precache else 0
+        precache_commitment = self.conn.execute("select size from precache_commitment").fetchone()[0] or 0
+        return db_size + precache_commitment
+
+    def get_production_rates(self) -> Dict[str, Optional[SummaryStat]]:
+        """
+        Retrieve the current production rates
+
+        @return  Dictionary of production rates, where available
+        """
+        return {
+            "download": None,
+            "checksum": None,
+
+            **{
+                process: SummaryStat(rate, stderr)
+                for process, rate, stderr
+                in  self.conn.execute("select process, rate, stderr from production_rates")
+            }
+        }
