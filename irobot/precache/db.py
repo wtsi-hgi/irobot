@@ -51,6 +51,10 @@ SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
 DataObjectFileStatus = namedtuple("DataObjectFileStatus", ["timestamp", "status"])
 
 
+class SwitchoverExists(Exception):
+    pass
+
+
 class TrackingDB(LogWriter):
     """ Tracking DB """
     def __init__(self, path:str, in_precache:bool = True, logger:Optional[logging.Logger] = None) -> None:
@@ -175,22 +179,6 @@ class TrackingDB(LogWriter):
         """, (irods_path,)).fetchone() or (None,)
         return do_id
 
-    def get_data_object_mode_id(self, data_object:int, mode:Mode) -> Optional[int]:
-        """
-        Get the ID of the data object with the given mode
-
-        @param   data_object  Data object ID (int)
-        @param   mode         Mode (Mode)
-        @return  Database ID (int; None if not found)
-        """
-        dom_id, = self.conn.execute("""
-            select id
-            from   do_modes
-            where  data_object = ?
-            and    mode = ?
-        """, (data_object, mode)).fetchone() or (None,)
-        return dom_id
-
     def get_last_access(self, data_object:Optional[int] = None, older_than:timedelta = timedelta(0)) -> List[Tuple[int, datetime]]:
         """
         Get the list of last access times, either in totality or for a
@@ -235,3 +223,80 @@ class TrackingDB(LogWriter):
             and    datatype    = ?
         """, (data_object, mode, datatype)).fetchone()
         return DataObjectFileStatus(*status) if status else None
+
+    def get_size(self, data_object:int, mode:Mode, datatype:Datatype) -> Optional[int]:
+        """
+        Get the size of a data object file
+
+        @param   data_object  Data object ID (int)
+        @param   mode         Mode (Mode)
+        @param   datatype     File type (Datatype)
+        @return  File size in bytes (int; None if not found)
+        """
+        size, = self.conn.execute("""
+            select size
+            from   data_sizes
+            join   do_modes
+            on     do_modes.id = data_sizes.dom_file
+            where  do_modes.data_object = ?
+            and    do_modes.mode        = ?
+            and    data_sizes.datatype  = ?
+        """, (data_object, mode, datatype)).fetchone() or (None,)
+        return size
+
+    def set_size(self, data_object:int, mode:Mode, datatype:Datatype, size:int) -> None:
+        """
+        Set the size of a data object file
+
+        @param   data_object  Data object ID (int)
+        @param   mode         Mode (Mode)
+        @param   datatype     File type (Datatype)
+        @param   size         File size in bytes (int)
+        """
+        assert size > 0
+        
+        self.conn.execute("""
+            insert or replace into data_sizes(dom_file, datatype, size)
+                select do_modes.id,
+                       ?,
+                       ?
+                from   do_modes
+                where  do_modes.data_object = ?
+                and    do_modes.mode = ?
+        """, (datatype, size, data_object, mode))
+
+    def new_request(self, irods_path:str, precache_path:str, sizes:Tuple[int, int, int]) -> int:
+        """
+        foo
+        """
+        existing_id = self.get_data_object_id(irods_path)
+
+        if existing_id:
+            # Create a switchover record, if it doesn't already exist
+            try:
+                self.conn.execute("insert into do_modes(data_object, mode, precache_path) values (?, ?, ?)", (existing_id, Mode.switchover, precache_path))
+                do_id = existing_id
+                do_mode = Mode.switchover
+
+            except _sqlite.sqlite3.IntegrityError:
+                raise SwitchoverExists(f"Switchover already exists for {irods_path}")
+
+        else:
+            # Create a new record
+            with self.conn:
+                self.conn.execute("insert into do_requests(irods_path, precache_path) values(?, ?)", (irods_path, precache_path))
+                do_id, = self.conn.execute("select last_insert_rowid()").fetchone()
+                do_mode = Mode.master
+
+        # Set file sizes
+        for datatype, size in zip(Datatype, sizes):
+            self.set_size(do_id, do_mode, datatype, size)
+
+        return do_id
+
+    # TODO
+    # set_status
+    # set_last_access
+    # switchover
+    # delete_do
+    # *logging
