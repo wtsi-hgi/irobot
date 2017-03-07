@@ -1,1 +1,2 @@
 requests==2.13.0
+git+https://github.com/rogerbinns/apsw.git@3.17.0-r1#egg=apsw
