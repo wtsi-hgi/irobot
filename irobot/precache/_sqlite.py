@@ -18,89 +18,31 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import math
-import re
-import sqlite3
-from datetime import datetime, timedelta, timezone
-from enum import Enum, IntFlag
-from functools import wraps
+from abc import ABCMeta, abstractmethod, abstractproperty
+from collections import OrderedDict
+from enum import Enum
+from datetime import datetime, timezone
+from inspect import Parameter, signature
 from numbers import Number
-from threading import Lock
-from types import MethodType
-from typing import Any, Callable, ClassVar, Optional
+from typing import (Any, Callable, ClassVar, Dict, Iterator, List,
+                    Optional, Sequence, Tuple, Type, Union)
+
+import apsw
 
 
-# This is a bit of a dirty hack! We simply search SQL statements for
-# keywords that indicate that they may be statements that perform a
-# write operation. Unfortunately, we can't just search for SELECT
-# statements, because they can appear elsewhere; similarly, we can't
-# check just the first word because of WITH statements and BEGIN
-# transaction blocks. It will trigger false positives whenever any of
-# the keywords are part of a simple SELECT statement, but the only
-# effect will be to forcibly serialise that SELECT.
-_potentially_writes = re.compile("|".join(map(lambda alt: rf"(?: \b {alt} \b )", [
-    r"BEGIN (?: \s+ (?: DEFERRED | IMMEDIATE | EXCLUSIVE ))? (?: \s+ TRANSACTION )?",
-    r"(?: COMMIT | END ) (?: \s+ TRANSACTION )?",
-    r"ROLLBACK (?: \s+ TRANSACTION )?",
-    r"(?: INSERT | REPLACE | (?: INSERT \s+ OR \s+ (?: REPLACE | ROLLBACK | ABORT | FAIL | IGNORE ))) \s+ INTO \s+ (?: (?: \w+ \. )? \w+ )",
-    r"PRAGMA \s+ (?: (?: \w+ \. )? \w+ )",
-    r"REINDEX",
-    r"SAVEPOINT \s+ \w+",
-    r"RELEASE (?: \s+ SAVEPOINT )? \s+ \w+",
-    r"UPDATE (?: \s+ OR \s+ (?: ROLLBACK | ABORT | REPLACE | FAIL | IGNORE ))? \s+ (?: (?: \w+ \. )? \w+ ) \s+ SET",
-    r"VACUUM",
-    r"CREATE (?: \s+ UNIQUE )? \s+ INDEX (?: \s+ IF \s+ NOT \s+ EXISTS )? \s+ (?: (?: \w+ \. )? \w+ ) \s+ ON \s+ \w+",
-    r"CREATE (?: \s+ TEMP (?: ORARY )?)? \s+ (?: TABLE | TRIGGER | VIEW ) (?: \s+ IF \s+ NOT \s+ EXISTS )? \s+ (?: (?: \w+ \. )? \w+ )",
-    r"CREATE \s+ VIRTUAL \s+ TABLE (?: \s+ IF \s+ NOT \s+ EXISTS )? \s+ (?: (?: \w+ \. )? \w+ ) \s+ USING \s+ \w+",
-    r"DELETE \s+ FROM \s+ (?: (?: \w+ \. )? \w+ )",
-    r"DROP \s+ (?: INDEX | TABLE | TRIGGER | VIEW ) (?: IF \s+ EXISTS )? \s+ (?: (?: \w+ \. )? \w+)",
-    r"ALTER \s+ TABLE \s+ (?: (?: \w+ \. )? \w+ ) \s+ (?: RENAME | ADD )",
-    r"ANALYZE"
-])), re.VERBOSE | re.IGNORECASE).search
+# Type aliases for SQLite and interoperability with Python
+_SQLiteT = Union[str, bytes, int, float, None]
+_PyBindingsT = Union[Tuple[Any, ...], Dict[str, Any]]
+_SQLiteBindingsT = Union[Tuple[_SQLiteT, ...], Dict[str, _SQLiteT]]
+
+_AdaptorT = Callable[[Any], _SQLiteT]
+_AdaptorsT = Dict[Type, _AdaptorT]
+
+_ConvertorT = Callable[[bytes], Any]
+_ConvertorsT = Dict[str, _ConvertorT]
 
 
-class IsolationLevel(Enum):
-    """ SQLite3 isolation levels """
-    AutoCommit = None
-    Deferred = "DEFERRED"
-    Immediate = "IMMEDIATE"
-    Exclusive = "EXCLUSIVE"
-
-
-class ParseTypes(IntFlag):
-    """ SQLite3 type parsing constants """
-    Ignore = 0
-    ByDefinition = sqlite3.PARSE_DECLTYPES
-    ByColumnAlias = sqlite3.PARSE_COLNAMES
-
-
-class StandardErrorUDF(object):
-    """
-    SQLite user-defined aggregation function that calculates standard
-    error using Welford's algorithm
-    """
-    def __init__(self) -> None:
-        self.n     = 0
-        self.mean  = 0.0
-        self.mean2 = 0.0
-
-    def step(self, datum:Number) -> None:
-        if not isinstance(datum, Number):
-            # Pass over non-numeric input
-            return None
-
-        self.n += 1
-        delta = datum - self.mean
-        self.mean += delta / self.n
-        delta2 = datum - self.mean
-        self.mean2 += delta * delta2
-
-    def finalize(self) -> Optional[float]:
-        if self.n < 2:
-            return None
-
-        return math.sqrt(self.mean2 / (self.n * (self.n - 1)))
-
-
+# Some standard adaptors and convertors
 def datetime_adaptor(dt:datetime) -> int:
     """
     datetime.datetime adaptor
@@ -142,87 +84,241 @@ def enum_convertor_factory(enum_type:ClassVar[Enum], cast_fn:Callable[[bytes], A
     return _enum_convertor
 
 
-class _ThreadSafeConnection(sqlite3.Connection):
-    """ Subclass SQLite connections such that writes are serialised """
+class AggregateUDF(metaclass=ABCMeta):
+    """ Metaclass for aggregate user-defined functions """
+    @abstractproperty
+    def name(self) -> str:
+        """ Aggregate UDF's name in SQLite """
+    
+    @abstractmethod
+    def step(self, *args) -> None:
+        """ Step function """
+
+    @abstractmethod
+    def finalise(self) -> _SQLiteT:
+        """ Finalise function """
+
+def _aggregate_udf_factory_factory(udf:AggregateUDF) -> Callable:
+    """
+    Create the aggregate UDF factory for APSW using AggregateUDF
+
+    @note    APSW wants a factory that takes no parameters (i.e., a
+             constant), so blame that for the "factory factory"!
+
+    @param   udf  User-defined aggregate function (AggregateUDF)
+    @return  Aggregate UDF factory
+    """
+    def _step(context:AggregateUDF, *args) -> None:
+        return context.step(*args)
+
+    def _finalise(context:AggregateUDF) -> _SQLiteT:
+        return context.finalise()
+
+    return lambda: (udf, _step, _finalise)
+
+
+class UDF(object):
+    """ Namespace for UDFs """
+    class StandardError(AggregateUDF):
+        """
+        SQLite user-defined aggregation function that calculates standard
+        error using Welford's algorithm
+        """
+        def __init__(self) -> None:
+            self.n     = 0
+            self.mean  = 0.0
+            self.mean2 = 0.0
+
+        @property
+        def name(self) -> str:
+            return "stderr"
+
+        def step(self, datum:Number) -> None:
+            if not isinstance(datum, Number):
+                # Pass over non-numeric input
+                return None
+
+            self.n += 1
+            delta = datum - self.mean
+            self.mean += delta / self.n
+            delta2 = datum - self.mean
+            self.mean2 += delta * delta2
+
+        def finalise(self) -> Optional[float]:
+            if self.n < 2:
+                return None
+
+            return math.sqrt(self.mean2 / (self.n * (self.n - 1)))
+
+
+class Cursor(Iterator):
+    """
+    Cursor implementation that adds adaptor and convertor support to the
+    default APSW cursor
+    """
+    def __init__(self, native_cursor:"apsw.Cursor") -> None:
+        """
+        Constructor
+        
+        @param   native_cursor  APSW Cursor
+        """
+        self._cursor = native_cursor
+
+        # Get adaptors and convertors from parent connection
+        conn = self._cursor.getconnection()
+        self._adaptors = conn._adaptors
+        self._convertors = conn._convertors
+
+    def __iter__(self) -> "Cursor":
+        return self
+
+    def __next__(self) -> Tuple:
+        """
+        Fetch the next row of data from the cursor and convert values
+        for any matching SQLite declarations
+
+        @return  Row of data
+        """
+        data = next(self._cursor)
+        desc = self._cursor.getdescription()
+
+        return tuple(
+            self._convertors.get(type_decl, lambda x: x)(value)
+            for value, (_col_name, type_decl)
+            in  zip(data, desc)
+        )
+
+    def _adapt_pyval(self, pyval:Any) -> _SQLiteT:
+        """
+        Adapt a Python value to a native SQLite type
+
+        @param   pyval  Python value
+        @return  Native SQLite value
+        """
+        pytype = type(pyval)
+
+        if pyval is None or pytype in [str, bytes, int, float]:
+            # Pass through already native types
+            return pyval
+
+        try:
+            # Try to adapt non-native types
+            return self._adaptors[pytype](pyval)
+
+        except KeyError:
+            raise TypeError(f"No adaptor for {pytype.__name__} type")
+
+    def _adapt_bindings(self, bindings:_PyBindingsT) -> _SQLiteBindingsT:
+        """
+        Adapt bind variables to native SQLite types
+
+        @param   bindings  Bind variables (Python types)
+        @return  Bind variables (SQLite types)
+        """
+        if isinstance(bindings, Tuple):
+            return tuple(map(self._adapt_pyval, bindings))
+
+        elif isinstance(bindings, Dict):
+            return {k:self._adapt_pyval(v) for k, v in bindings.items()}
+
+        else:
+            raise TypeError("Invalid bindings; should be a tuple or dictionary")
+
+    def execute(self, sql:str, bindings:Optional[_PyBindingsT] = None) -> "Cursor":
+        """
+        Executes the SQL statements with the specified bindings
+
+        @param   sql       SQL statements (string)
+        @param   bindings  Bind variables
+        @return  Cursor to execution
+        """
+        sqlite_bindings = self._adapt_bindings(bindings) if bindings else None
+        return Cursor(self._cursor.execute(sql, sqlite_bindings))
+
+    def executemany(self, sql:str, binding_seq:Sequence[_PyBindingsT]) -> "Cursor":
+        """
+        Executes the SQL statements with a sequence of bindings
+
+        @param   sql          SQL statements (string)
+        @param   binding_seq  Sequence of bind variables
+        @return  Cursor to execution
+        """
+        sqlite_binding_seq = [self._adapt_bindings(v) for v in binding_seq]
+        return Cursor(self._cursor.executemany(sql, sqlite_binding_seq))
+
+    def fetchone(self) -> Optional[Tuple]:
+        """
+        Fetch the next row of data from the cursor
+
+        @return  Row of data (tuple; None on no more data)
+        """
+        try:
+            return next(self)
+
+        except StopIteration:
+            return None
+
+    def fetchall(self) -> List[Tuple]:
+        """
+        Fetch all the remaining rows of data from the cursor
+
+        @return  Rows of data (list)
+        """
+        return list(self)
+
+
+class Connection(apsw.Connection):
+    """
+    Subtyped APSW connection that allows us to register adaptors and
+    convertors and which returns a cursor that supports them
+    """
     def __init__(self, *args, **kwargs) -> None:
+        """ Constructor """
         super().__init__(*args, **kwargs)
+        self._adaptors:_AdaptorsT = {}
+        self._convertors:_ConvertorsT = {}
 
-        self._write_lock = Lock()
-        self._locked = False
-        self._context_transaction = False
-
-        serialise_always = [self.commit, self.executemany]
-        serialise_writes = [self.execute, self.executescript]
-
-        to_serialise = list(zip(serialise_always, [True] * len(serialise_always))) \
-                     + list(zip(serialise_writes, [False] * len(serialise_writes)))
-
-        for method, always in to_serialise:
-            self._serialise(method, always)
-            
-    def _serialise(self, method:Callable, always:bool) -> None:
+    def cursor(self) -> Cursor:
         """
-        Serialise methods
+        Create a new cursor on this connection
 
-        @param   method  Class method (callable)
-        @param   always  Always serialise, or just writes (bool)
-
-        @note    Write serialisation will be based on the first argument
+        @return  Cursor
         """
-        @wraps(method)
-        def _serialised(_self, *args, **kwargs):
-            self._acquire(None if always else args[0])
-            try:
-                output = method(*args, **kwargs)
-            finally:
-                self._release()
-            return output
+        return Cursor(super().cursor())
 
-        setattr(self, method.__name__, MethodType(_serialised, self))
-
-    def _acquire(self, sql:Optional[str] = None) -> None:
+    def register_aggregate_function(self, fn:ClassVar[AggregateUDF]) -> None:
         """
-        Acquire the writing lock
+        Register an aggregation function using an AggregateUDF
 
-        @param   sql  SQL statement (string; None for always lock)
+        @param   fn  Aggregate function implementation (class)
         """
-        if not self._context_transaction and (sql is None or _potentially_writes(sql)):
-            self._write_lock.acquire()
-            self._locked = True
+        # The first parameter is self, so we cut that off
+        param_kinds = list(map(lambda x: x.kind,
+                               list(OrderedDict(signature(fn.step).parameters).values())[1:]))
 
-    def _release(self) -> None:
-        """ Release the writing lock """
-        if not self._context_transaction and self._locked:
-            self._write_lock.release()
-            self._locked = False
+        if any(p in [Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD] for p in param_kinds):
+            raise TypeError(f"Aggregate function {fn.__name__} has an invalid step signature")
 
-    def __enter__(self, *args, **kwargs):
-        self._write_lock.acquire()
-        self._locked = True
-        self._context_transaction = True
-        return super().__enter__(*args, **kwargs)
+        num_args = -1 if any(p == Parameter.VAR_POSITIONAL for p in param_kinds) else len(param_kinds)
 
-    def __exit__(self, *args, **kwargs):
-        output = super().__exit__(*args, **kwargs)
-        self._write_lock.release()
-        self._locked = False
-        self._context_transaction = False
-        return output
+        udf = fn()
+        assert len(udf.name) < 255, f"Aggregate function {fn.__name__} name is too long"
+        self.createaggregatefunction(udf.name, _aggregate_udf_factory_factory(udf), num_args)
 
+    def register_adaptor(self, t:Type, adaptor:_AdaptorT) -> None:
+        """
+        Register a type adaptor
 
-def connect(database:str,
-            timeout:timedelta = timedelta(seconds=5),
-            detect_types:ParseTypes = ParseTypes.Ignore,
-            isolation_level:IsolationLevel = IsolationLevel.AutoCommit,
-            cached_statements:int = 100,
-            uri:bool = False) -> _ThreadSafeConnection:
+        @param   t        Type
+        @param   adaptor  Adaptor function (callable)
+        """
+        self._adaptors[t] = adaptor
 
-    """ Instantiate a thread-safe connection """
-    return sqlite3.connect(database=database,
-                           timeout=timeout.total_seconds(),
-                           detect_types=detect_types.value,
-                           isolation_level=isolation_level.value,
-                           check_same_thread=False,
-                           factory=_ThreadSafeConnection,
-                           cached_statements=cached_statements,
-                           uri=uri)
+    def register_convertor(self, decl:str, convertor:_ConvertorT) -> None:
+        """
+        Register a type convertor
+
+        @param   decl       Declared type (string)
+        @param   convertor  Convertor function (callable)
+        """
+        self._convertors[decl] = convertor
