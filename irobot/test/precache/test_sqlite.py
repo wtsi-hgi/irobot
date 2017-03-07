@@ -18,133 +18,74 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from unittest.mock import MagicMock
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import datetime
 from enum import Enum
 from math import sqrt
 from random import sample
 from statistics import stdev
-from threading import Lock
-from typing import Tuple
 
 import irobot.precache._sqlite as _sqlite
 
 
-class TestMentalSQLRegEx(unittest.TestCase):
-    def _assert_writes(self, *statements:Tuple[str, ...]):
-        for statement in statements:
-            self.assertIsNotNone(_sqlite._potentially_writes(statement))
-
-    def _assert_no_write(self, *statements:Tuple[str, ...]):
-        for statement in statements:
-            self.assertIsNone(_sqlite._potentially_writes(statement))
-
-    def test_select(self):
-        self._assert_no_write(
-            "select * from foo",
-            "with foo as (select * from bar) select * from foo",
-            "explain query plan select * from foo"
-        )
-
-    def test_transaction_block(self):
-        self._assert_writes(
-            "begin",
-            "begin transaction",
-            "begin deferred",
-            "begin deferred transaction",
-            "begin immediate",
-            "begin immediate transaction",
-            "begin exclusive",
-            "begin exclusive transaction",
-
-            "commit",
-            "commit transaction",
-            "end",
-            "end transaction",
-
-            "rollback",
-            "rollback transaction to savepoint foo"
-        )
-
-    def test_misc(self):
-        self._assert_writes(
-            "pragma foo.bar(123)",
-            "analyze",
-            "vacuum",
-            "savepoint foo",
-            "release foo",
-            "release savepoint foo"
-        )
-
-    def test_table(self):
-        self._assert_writes(
-            "create table foo.bar (quux)",
-            "alter table foo.bar add column quux",
-            "alter table foo.bar rename",
-            "create temp table foo",
-            "create temporary table foo",
-            "create table if not exists foo",
-            "create virtual table foo using bar",
-            "create virtual table if not exists foo using bar",
-            "drop table foo",
-            "drop table if exists foo.bar"
-        )
-
-    def test_index(self):
-        self._assert_writes(
-            "create index foo.bar on quux",
-            "create unique index foo on bar",
-            "create index if not exists foo on quux",
-            "reindex",
-            "drop index foo",
-            "drop index if exists foo.bar"
-        )
-
-    def test_view(self):
-        self._assert_writes(
-            "create view foo",
-            "create view if not exists foo.bar",
-            "create temp view foo",
-            "create temporary view foo.bar",
-            "drop view foo",
-            "drop view if exists foo.bar"
-        )
-
-    def test_trigger(self):
-        self._assert_writes(
-            "create trigger foo",
-            "create trigger if not exists foo.bar",
-            "create temp trigger foo",
-            "create temporary trigger foo.bar",
-            "drop trigger foo",
-            "drop trigger if exists foo.bar"
-        )
-
-    def test_dml(self):
-        self._assert_writes(
-            "insert into foo",
-            "insert into foo.bar",
-            "replace into foo",
-            "insert or replace into foo",
-            "insert or rollback into foo",
-            "insert or abort into foo",
-            "insert or fail into foo",
-            "insert or ignore into foo",
-
-            "update foo set",
-            "update or rollback foo.bar set",
-            "update or abort foo set",
-            "update or replace foo set",
-            "update or fail foo set",
-            "update or ignore foo set",
-
-            "delete from foo",
-            "delete from foo.bar"
-        )
-
-
 class TestAdaptorsAndConvertors(unittest.TestCase):
+    def test_adaptor_registration(self):
+        def my_adaptor(x) -> str:
+            return f"{x.real} + {x.imag}i"
+
+        conn = _sqlite.Connection(":memory:")
+        conn.register_adaptor(complex, my_adaptor)
+
+        c = conn.cursor()
+        adapted, = c.execute("select ?", (1 + 2j,)).fetchone()
+        self.assertEqual(adapted, "1.0 + 2.0i")
+
+        conn.close()
+
+    def test_adapt_binding_dict(self):
+        def my_adaptor(x) -> str:
+            return f"COMPLEX {x}"
+
+        conn = _sqlite.Connection(":memory:")
+        conn.register_adaptor(complex, my_adaptor)
+
+        c = conn.cursor()
+        adapted, = c.execute("select :foo", {"foo": 1+2j}).fetchone()
+        self.assertEqual(adapted, f"COMPLEX {1+2j}")
+
+        conn.close()
+
+    def test_bad_bindings(self):
+        conn = _sqlite.Connection(":memory:")
+        
+        c = conn.cursor()
+        self.assertRaises(TypeError, c.execute, "select ?", ["foo"])
+
+        conn.close()
+
+    def test_no_such_adaptor(self):
+        conn = _sqlite.Connection(":memory:")
+
+        c = conn.cursor()
+        self.assertRaises(TypeError, c.execute, "select ?", (datetime.now(),))
+
+        conn.close()
+
+    def test_convertor_registration(self):
+        def my_convertor(x) -> complex:
+            return complex(x)
+            
+        conn = _sqlite.Connection(":memory:")
+        conn.register_convertor("COMPLEX", my_convertor)
+
+        c = conn.cursor()
+        c.execute("create table foo(bar COMPLEX)")
+        c.execute("insert into foo values (\"1+2j\")")
+
+        converted, = c.execute("select bar from foo").fetchone()
+        self.assertEqual(converted, 1 + 2j)
+
+        conn.close()
+
     def test_datetime_adaptor(self):
         dt_adapt = _sqlite.datetime_adaptor
         self.assertEqual(dt_adapt(datetime(1970, 1, 1)), 0)
@@ -185,12 +126,57 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
 
 
 class TestUDFs(unittest.TestCase):
+    def test_aggregate_registration(self):
+        class MyCount(_sqlite.AggregateUDF):
+            def __init__(self):
+                self._count = 0
+
+            @property
+            def name(self):
+                return "my_count"
+
+            def step(self, *args):
+                self._count += 1
+
+            def finalise(self):
+                return self._count
+
+        conn = _sqlite.Connection(":memory:")
+        conn.register_aggregate_function(MyCount)
+
+        c = conn.cursor()
+        c.execute("create table foo(bar)")
+        c.executemany("insert into foo values (?)", list(map(lambda x: (x,), range(10))))
+
+        my_count, = c.execute("select my_count(bar) from foo").fetchone()
+        self.assertEqual(my_count, 10)
+
+        conn.close()
+
+    def test_bad_aggregate_function(self):
+        class BadAggregate(_sqlite.AggregateUDF):
+            @property
+            def name(self):
+                pass
+
+            def step(self, **kwargs):
+                pass
+
+            def finalise(self):
+                pass
+
+        conn = _sqlite.Connection(":memory:")
+        self.assertRaises(TypeError, conn.register_aggregate_function, BadAggregate)
+        conn.close()
+
     def test_stderr(self):
-        stderr = _sqlite.StandardErrorUDF()
+        stderr = _sqlite.UDF.StandardError()
+
+        self.assertEqual(stderr.name, "stderr")
 
         # Pass over non-numeric input
         stderr.step("foo")
-        self.assertIsNone(stderr.finalize())
+        self.assertIsNone(stderr.finalise())
 
         data = []
         for i, x in enumerate(sample(range(100), 20)):
@@ -199,81 +185,43 @@ class TestUDFs(unittest.TestCase):
 
             if i == 0:
                 # Need at least two numeric data points
-                self.assertIsNone(stderr.finalize())
+                self.assertIsNone(stderr.finalise())
 
             if i > 0:
                 calculated = stdev(data) / sqrt(i + 1)
-                self.assertAlmostEqual(stderr.finalize(), calculated)
+                self.assertAlmostEqual(stderr.finalise(), calculated)
 
 
-class TestThreadSafeConnection(unittest.TestCase):
+class TestCursor(unittest.TestCase):
     def setUp(self):
-        self._old_lock, _sqlite.Lock = _sqlite.Lock, MagicMock(spec=Lock)
-        self.connection = _sqlite.connect(":memory:")
+        self.conn = _sqlite.Connection(":memory:")
+
+    def test_iterator(self):
+        c = self.conn.cursor()
+        c.execute("create table foo(bar)")
+        c.executemany("insert into foo values (?)", list(map(lambda x: (x,), range(10))))
+
+        summation = 0
+        for row in c.execute("select * from foo"):
+            summation += row[0]
+
+        self.assertEqual(summation, 45)
+
+    def test_fetchall(self):
+        data = list(map(lambda x: (x,), range(10)))
+
+        c = self.conn.cursor()
+        c.execute("create table foo(bar)")
+        c.executemany("insert into foo values (?)", data)
+
+        self.assertEqual(c.execute("select * from foo order by bar").fetchall(), data)
+
+    def test_empty_fetchone(self):
+        c = self.conn.cursor()
+        self.assertIsNone(c.fetchone())
 
     def tearDown(self):
-        self.connection.close()
-        _sqlite.Lock = self._old_lock
-
-    def test_connection(self):
-        self.assertFalse(self.connection.in_transaction)
-        self.assertEqual(self.connection.total_changes, 0)
-
-    def test_commit(self):
-        self.connection.commit()
-        self.connection._write_lock.acquire.assert_called_once()
-        self.connection._write_lock.release.assert_called_once()
-    
-    def test_execute(self):
-        cur = self.connection.execute("select 123")
-        self.assertEqual(cur.fetchone(), (123,))
-        self.connection._write_lock.acquire.assert_not_called()
-
-        self.connection.execute("create table foo(bar)")
-        self.connection._write_lock.acquire.assert_called_once()
-        self.connection._write_lock.release.assert_called_once()
-
-    def test_executemany(self):
-        self.connection.execute("create table foo(bar)")
-        self.connection._write_lock.reset_mock()
-
-        self.connection.executemany("insert into foo(bar) values (?)", [(1,), (2,), (3,)])
-        self.connection._write_lock.acquire.assert_called_once()
-        self.connection._write_lock.release.assert_called_once()
-
-    def test_executescript(self):
-        self.connection.executescript("select 123; select 456;")
-        self.connection._write_lock.acquire.assert_not_called()
-        
-        self.connection.executescript("create table foo(bar); select * from foo;")
-        self.connection._write_lock.acquire.assert_called_once()
-        self.connection._write_lock.release.assert_called_once()
-
-    def test_context_manager(self):
-        conn = _sqlite.connect(":memory:", isolation_level=_sqlite.IsolationLevel.Deferred)
-
-        with conn:
-            conn.execute("create table foo(bar)")
-            conn.execute("insert into foo(bar) values (123)")
-
-        conn._write_lock.acquire.assert_called_once()
-        conn._write_lock.release.assert_called_once()
-
-
-class TestThreadSafeWriting(unittest.TestCase):
-    def test_multithread_write(self):
-        conn = _sqlite.connect(":memory:")
-        conn.execute("create table foo(bar)")
-
-        with ThreadPoolExecutor() as executor:
-            for x in range(10):
-                executor.submit(conn.execute, "insert into foo(bar) values (?)", (x,))
-
-        conn.row_factory = lambda _, row: row[0]
-        self.assertEqual(conn.execute("select bar from foo order by bar").fetchall(), list(range(10)))
-
-        conn.close()
-
+        self.conn.close()
 
 if __name__ == "__main__":
     unittest.main()
