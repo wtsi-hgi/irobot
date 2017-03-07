@@ -96,7 +96,7 @@ main() {
   done
 
   clear
-  green -vvv --run-coverage ${to_test[@]:-}
+  nose2 -F -C --coverage-report=term-missing -v ${to_test[@]:-}
 
   # All tests passed with updated packages, so let's bump them
   [ -z "${to_test[@]:-}" ] && (( updated )) && update_requirements
