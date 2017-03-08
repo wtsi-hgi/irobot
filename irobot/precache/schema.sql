@@ -155,6 +155,24 @@ create view if not exists current_status as
   and       newer.timestamp > newest.timestamp
   where     newer.id is null;
 
+create view if not exists download_queue as
+  select   current_status.status,
+           current_status.timestamp,
+           current_status.data_object,
+           current_status.mode,
+           data_sizes.size
+  from     current_status
+  join     do_modes
+  on       do_modes.data_object     = current_status.data_object
+  and      do_modes.mode            = current_status.mode
+  join     data_sizes
+  on       data_sizes.dom_file      = do_modes.id
+  and      data_sizes.datatype      = current_status.datatype
+  where    current_status.datatype  = 1
+  and      current_status.status   in (1, 2)
+  order by current_status.status,
+           current_status.timestamp;
+
 -- NOTE This relies on a user-defined "stderr" aggregate function that
 -- must be implemented in the host environment
 create view if not exists production_rates as
