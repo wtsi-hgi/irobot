@@ -20,6 +20,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 pragma foreign_keys = ON;
 pragma locking_mode = EXCLUSIVE;
 
+begin exclusive transaction;
+
 create table if not exists datatypes (
   id           integer  primary key,
   description  text     not null unique
@@ -186,6 +188,8 @@ create view if not exists production_rates as
            stderr(1.0 * size / duration) as stderr
   from     _processing
   group by datatype;
+
+commit;
 
 reindex;
 vacuum;
