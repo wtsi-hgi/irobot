@@ -10,7 +10,6 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - green -vvv -f --run-coverage
   - nose2 -F -C --coverage-report=term-missing -v
 
 after_success:
