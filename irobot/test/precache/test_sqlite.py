@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from math import sqrt
 from random import sample
@@ -95,6 +95,17 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         dt_conv = _sqlite.datetime_convertor
         self.assertEqual(dt_conv(b"0"), datetime(1970, 1, 1))
         self.assertEqual(dt_conv(b"86400"), datetime(1970, 1, 2))
+
+    def test_timedelta_adaptor(self):
+        d_adapt = _sqlite.timedelta_adaptor
+        self.assertEqual(d_adapt(timedelta(seconds=123)), 123.0)
+        self.assertEqual(d_adapt(timedelta(days=1)), 86400.0)
+
+    def test_timedelta_convertor(self):
+        d_conv = _sqlite.timedelta_convertor
+        self.assertEqual(d_conv(b"0"), timedelta(0))
+        self.assertEqual(d_conv(b"1.23"), timedelta(seconds=1.23))
+        self.assertEqual(d_conv(b"86400.0"), timedelta(days=1))
 
     def test_enum_adaptor(self):
         my_enum = Enum("my_enum", "foo bar quux")
