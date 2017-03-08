@@ -205,6 +205,23 @@ create view if not exists production_rates as
   from     _processing
   group by datatype;
 
+-- Reset files in a bad state (i.e., "producing")
+with _bad_records as (
+  select status_log.id
+  from   current_status
+  join   do_modes
+  on     do_modes.data_object  = current_status.data_object
+  and    do_modes.mode         = current_status.mode
+  join   status_log
+  on     status_log.dom_file   = do_modes.id
+  and    status_log.datatype   = current_status.datatype
+  and    status_log.status     = current_status.status
+  where  current_status.status = 2
+)
+delete
+from   status_log
+where  id in (select id from _bad_records);
+
 commit;
 
 reindex;
