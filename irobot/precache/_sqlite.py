@@ -21,7 +21,7 @@ import math
 from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import OrderedDict
 from enum import Enum
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from inspect import Parameter, signature
 from numbers import Number
 from typing import (Any, Callable, ClassVar, Dict, Iterator, List,
@@ -60,6 +60,24 @@ def datetime_convertor(dt:bytes) -> datetime:
     @return  Datetime object (datetime.datetime)
     """
     return datetime.utcfromtimestamp(int(dt))
+
+def timedelta_adaptor(d:timedelta) -> float:
+    """
+    datetime.timedelta adaptor
+
+    @param   d  Time delta (datetime.timedelta)
+    @return  Seconds (float)
+    """
+    return d.total_seconds()
+
+def timedelta_convertor(d:bytes) -> timedelta:
+    """
+    datetime.timedelta convertor
+
+    @param   d  Seconds (bytes)
+    @return  Time delta object (datetime.timedelta)
+    """
+    return timedelta(seconds=float(d))
 
 def enum_adaptor(e:Enum) -> Any:
     """
