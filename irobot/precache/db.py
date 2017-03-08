@@ -25,11 +25,16 @@ from datetime import datetime, timedelta
 from enum import Enum
 from os.path import dirname, join
 from threading import Timer
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import irobot.common.canon as canon
 import irobot.precache._sqlite as _sqlite
 from irobot.logging import LogWriter
+
+
+def _nuple(n:int = 1) -> Tuple:
+    """ Create an n-tuple of None """
+    return (None,) * n
 
 
 class Datatype(Enum):
@@ -51,7 +56,16 @@ SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
 DataObjectFileStatus = namedtuple("DataObjectFileStatus", ["timestamp", "status"])
 
 
+class StatusExists(Exception):
+    pass
+
 class SwitchoverExists(Exception):
+    pass
+
+class SwitchoverDoesNotExist(Exception):
+    pass
+
+class PrecacheExists(Exception):
     pass
 
 
@@ -68,45 +82,55 @@ class TrackingDB(LogWriter):
         """
         super().__init__(logger=logger)
 
-        self.path = path
+        self.log(logging.INFO, f"Initialising precache tracking database in {path}")
+        self.conn = _sqlite.Connection(path)
+
         self.in_precache = False if path == ":memory:" else in_precache
 
-        self.log(logging.INFO, f"Initialising precache tracking database in {path}")
-        self.conn = conn = _sqlite.connect(path, detect_types=_sqlite.ParseTypes.ByDefinition)
-
         # Register host function hooks
-        conn.create_aggregate("stderr", 1, _sqlite.StandardErrorUDF)
-        _sqlite.sqlite3.register_adapter(Datatype, _sqlite.enum_adaptor)
-        _sqlite.sqlite3.register_adapter(Mode, _sqlite.enum_adaptor)
-        _sqlite.sqlite3.register_adapter(Status, _sqlite.enum_adaptor)
-        _sqlite.sqlite3.register_adapter(datetime, _sqlite.datetime_adaptor)
-        _sqlite.sqlite3.register_converter("DATATYPE", _sqlite.enum_convertor_factory(Datatype))
-        _sqlite.sqlite3.register_converter("MODE", _sqlite.enum_convertor_factory(Mode))
-        _sqlite.sqlite3.register_converter("STATUS", _sqlite.enum_convertor_factory(Status))
-        _sqlite.sqlite3.register_converter("TIMESTAMP", _sqlite.datetime_convertor)
+        self.conn.register_aggregate_function(_sqlite.UDF.StandardError)
+        self.conn.register_adaptor(Datatype, _sqlite.enum_adaptor)
+        self.conn.register_adaptor(Mode, _sqlite.enum_adaptor)
+        self.conn.register_adaptor(Status, _sqlite.enum_adaptor)
+        self.conn.register_adaptor(datetime, _sqlite.datetime_adaptor)
+        self.conn.register_adaptor(timedelta, _sqlite.timedelta_adaptor)
+        self.conn.register_convertor("DATATYPE", _sqlite.enum_convertor_factory(Datatype))
+        self.conn.register_convertor("MODE", _sqlite.enum_convertor_factory(Mode))
+        self.conn.register_convertor("STATUS", _sqlite.enum_convertor_factory(Status))
+        self.conn.register_convertor("TIMESTAMP", _sqlite.datetime_convertor)
 
         schema = canon.path(join(dirname(__file__), "schema.sql"))
         self.log(logging.DEBUG, f"Initialising precache tracking database schema from {schema}")
-        with open(schema, "rt") as schema_file:
-            schema_script = schema_file.read()
-        conn.executescript(schema_script)
+        schema_script = open(schema, "rt").read()
+        _ = self._exec(schema_script).fetchall()
 
         # Sanity check our enumerations for parity
         for enum_type, table in [(Datatype, "datatypes"), (Mode, "modes"), (Status, "statuses")]:
             for member in enum_type:
-                assert conn.execute(f"""
+                assert self._exec(f"""
                     select sum(case when id = ? and description = ? then 1 else 0 end),
                            count(*)
                     from   {table}
                 """, (member.value, member.name)).fetchone() == (1, len(enum_type))
 
         # NOTE Tracked files that are in an inconsistent state need to
-        # be handled upstream; it shouldn't be done at this level
+        # be handled upstream; it shouldn't be done at this level. The
+        # get_download_queue method can be used to determine this and
+        # the database will sanitise files in a bad state (i.e.,
+        # "producing") at initialisation time
         self.log(logging.INFO, "Precache tracking database ready")
 
         self._schedule_vacuum()
         atexit.register(self._vacuum_timer.cancel)
         atexit.register(self.conn.close)
+
+    @property
+    def _exec(self) -> Callable:
+        """
+        Convenience property to create a new cursor and return its
+        execute method; now we can do self._exec(...) instead
+        """
+        return self.conn.cursor().execute
 
     def __del__(self) -> None:
         """ Cancel the vacuum timer and close the connection on GC """
@@ -124,7 +148,7 @@ class TrackingDB(LogWriter):
     def _vacuum(self) -> None:
         """ Vacuum the database """
         self.log(logging.DEBUG, "Vacuuming precache tracking database")
-        self.conn.execute("vacuum")
+        self._exec("vacuum")
         self._schedule_vacuum()
 
     def get_commitment(self) -> int:
@@ -140,8 +164,9 @@ class TrackingDB(LogWriter):
         @return  Precache commitment (int)
         """
         db_size = os.stat(self.path).st_size if self.in_precache else 0
-        precache_commitment, = self.conn.execute("select size from precache_commitment").fetchone() or (0,)
-        return db_size + precache_commitment
+        precache_commitment, = self._exec("select size from precache_commitment").fetchone()
+
+        return db_size + (precache_commitment or 0)
 
     def get_production_rates(self) -> Dict[str, Optional[SummaryStat]]:
         """
@@ -156,7 +181,7 @@ class TrackingDB(LogWriter):
             **{
                 process: SummaryStat(rate, stderr)
                 for process, rate, stderr
-                in  self.conn.execute("""
+                in  self._exec("""
                     select process,
                            rate,
                            stderr
@@ -172,12 +197,28 @@ class TrackingDB(LogWriter):
         @param   irods_path  iRODS path (string)
         @return  Database ID (int; None if not found)
         """
-        do_id, = self.conn.execute("""
+        do_id, = self._exec("""
             select id
             from   data_objects
             where  irods_path = ?
-        """, (irods_path,)).fetchone() or (None,)
+        """, (irods_path,)).fetchone() or _nuple()
         return do_id
+
+    def has_switchover(self, data_object:int) -> bool:
+        """
+        Check to see if a given data object has a switchover record
+
+        @param   data_object  Data object ID (int)
+        @return  Switchover existence (bool)
+        """
+        switchover_id, = self._exec("""
+            select id
+            from   do_modes
+            where  data_object = ?
+            and    mode        = 2
+        """, (data_object,)).fetchone() or _nuple()
+
+        return False if switchover_id is None else True
 
     def get_last_access(self, data_object:Optional[int] = None, older_than:timedelta = timedelta(0)) -> List[Tuple[int, datetime]]:
         """
@@ -189,32 +230,48 @@ class TrackingDB(LogWriter):
         @return  List of data object IDs and their last access time,
                  ordered chronologically
         """
-        sql = """
-            select data_object,
-                   last_access
-            from   last_access
-            where  ? - last_access > ?
+        data_object_clause = "" if data_object is None else "and data_object = :do_id"
+        sql = f"""
+            select   data_object,
+                     last_access
+            from     last_access
+            where    :now - last_access > :age
+                     {data_object_clause}
+            order by last_access asc
         """
-        params = (datetime.utcnow(), older_than.total_seconds())
 
-        if not data_object is None:
-            sql = sql + " and data_object = ?"
-            params = params + (data_object,)
+        return self._exec(sql, {
+            "now":   datetime.utcnow(),
+            "age":   older_than,
+            "do_id": data_object
+        }).fetchall()
 
-        sql = sql + " order by last_access asc"
+    def update_last_access(self, data_object:int) -> None:
+        """
+        Set the last access time of a data object to the current time
+        (defined by the database)
 
-        return self.conn.execute(sql, params).fetchall()
+        @param   data_object  Data object ID (int)
+        """
+        self._exec("""
+            begin immediate transaction;
+
+            insert or replace into last_access (data_object)
+                                        values (?);
+
+            commit;
+        """, (data_object,))
 
     def get_current_status(self, data_object:int, mode:Mode, datatype:Datatype) -> Optional[DataObjectFileStatus]:
         """
-        Get the current status of the data_object file
+        Get the current status of the data object file
 
         @param   data_object  Data object ID (int)
         @param   mode         Mode (Mode)
         @param   datatype     File type (Datatype)
         @return  Current status (DataObjectFileStatus; None if not found)
         """
-        status = self.conn.execute("""
+        status = self._exec("""
             select timestamp,
                    status
             from   current_status
@@ -223,6 +280,49 @@ class TrackingDB(LogWriter):
             and    datatype    = ?
         """, (data_object, mode, datatype)).fetchone()
         return DataObjectFileStatus(*status) if status else None
+
+    def get_download_queue(self) -> List[Tuple[Status, datetime, int, Mode, int]]:
+        """
+        Get the list of files being downloaded or waiting to be
+        downloaded
+
+        @return  List of current status, timestamp, data object, mode
+                 and size in bytes, ordered by status then timestamp
+        """
+        return self._exec("select * from download_queue").fetchall()
+
+    def set_status(self, data_object:int, mode:Mode, datatype:Datatype, status:Status) -> None:
+        """
+        Set the status of the given data object file
+
+        @param   data_object  Data object ID (int)
+        @param   mode         Mode (Mode)
+        @param   datatype     File type (Datatype)
+        @param   status       New status (Status)
+        """
+        try:
+            self._exec("""
+                begin immediate transaction;
+
+                insert into status_log (dom_file, datatype, status)
+                    select id,
+                           :datatype,
+                           :status
+                    from   do_modes
+                    where  data_object = :do_id
+                    and    mode        = :mode;
+
+                commit;
+            """, {
+                "do_id":    data_object,
+                "mode":     mode,
+                "datatype": datatype,
+                "status":   status
+            })
+
+        except _sqlite.apsw.ConstraintError:
+            self._exec("rollback")
+            raise StatusExists(f"Data object file already has {status.name} status")
 
     def get_size(self, data_object:int, mode:Mode, datatype:Datatype) -> Optional[int]:
         """
@@ -233,15 +333,15 @@ class TrackingDB(LogWriter):
         @param   datatype     File type (Datatype)
         @return  File size in bytes (int; None if not found)
         """
-        size, = self.conn.execute("""
+        size, = self._exec("""
             select size
             from   data_sizes
             join   do_modes
-            on     do_modes.id = data_sizes.dom_file
+            on     do_modes.id          = data_sizes.dom_file
             where  do_modes.data_object = ?
             and    do_modes.mode        = ?
             and    data_sizes.datatype  = ?
-        """, (data_object, mode, datatype)).fetchone() or (None,)
+        """, (data_object, mode, datatype)).fetchone() or _nuple()
         return size
 
     def set_size(self, data_object:int, mode:Mode, datatype:Datatype, size:int) -> None:
@@ -254,49 +354,126 @@ class TrackingDB(LogWriter):
         @param   size         File size in bytes (int)
         """
         assert size > 0
-        
-        self.conn.execute("""
+
+        self._exec("""
+            begin immediate transaction;
+
             insert or replace into data_sizes(dom_file, datatype, size)
                 select do_modes.id,
-                       ?,
-                       ?
+                       :datatype,
+                       :size
                 from   do_modes
-                where  do_modes.data_object = ?
-                and    do_modes.mode = ?
-        """, (datatype, size, data_object, mode))
+                where  do_modes.data_object = :do_id
+                and    do_modes.mode        = :dom_id;
 
-    def new_request(self, irods_path:str, precache_path:str, sizes:Tuple[int, int, int]) -> int:
+            commit;
+        """, {
+            "do_id":    data_object,
+            "dom_id":   mode,
+            "datatype": datatype,
+            "size":     size
+        })
+
+    def new_request(self, irods_path:str, precache_path:str, sizes:Tuple[int, int, int]) -> Tuple[int, Mode]:
         """
-        foo
+        Track a new data object or a new switchover therefor (the
+        database will handle setting most of the state via triggers)
+
+        @param   irods_path     iRODS data object path (string)
+        @param   precache_path  Precache path (string)
+        @param   sizes          Size in bytes of the data, metadata and
+                                checksum files (tuple)
+        @return  Data object ID and mode (tuple)
         """
         existing_id = self.get_data_object_id(irods_path)
 
         if existing_id:
             # Create a switchover record, if it doesn't already exist
             try:
-                self.conn.execute("insert into do_modes(data_object, mode, precache_path) values (?, ?, ?)", (existing_id, Mode.switchover, precache_path))
+                self._exec("""
+                    begin immediate transaction;
+
+                    insert into do_modes (data_object, mode, precache_path)
+                                  values (?, ?, ?);
+
+                    commit;
+                """, (existing_id, Mode.switchover, precache_path))
+
                 do_id = existing_id
                 do_mode = Mode.switchover
 
-            except _sqlite.sqlite3.IntegrityError:
-                raise SwitchoverExists(f"Switchover already exists for {irods_path}")
+            except _sqlite.apsw.ConstraintError:
+                self._exec("rollback")
+
+                if self.has_switchover(existing_id):
+                    raise SwitchoverExists(f"Switchover already exists for {irods_path}")
+
+                raise PrecacheExists(f"Cannot create switchover; precache entity in {precache_path} already exists")
 
         else:
             # Create a new record
-            with self.conn:
-                self.conn.execute("insert into do_requests(irods_path, precache_path) values(?, ?)", (irods_path, precache_path))
-                do_id, = self.conn.execute("select last_insert_rowid()").fetchone()
-                do_mode = Mode.master
+            (do_id,), *_ = self._exec("""
+                begin immediate transaction;
+
+                insert into do_requests (irods_path,  precache_path)
+                                 values (:irods_path, :precache_path);
+
+                select id
+                from   data_objects
+                where  irods_path = :irods_path;
+
+                commit;
+            """, {
+                "irods_path":    irods_path,
+                "precache_path": precache_path
+            }).fetchall()
+
+            do_mode = Mode.master
 
         # Set file sizes
         for datatype, size in zip(Datatype, sizes):
             self.set_size(do_id, do_mode, datatype, size)
 
-        return do_id
+        return do_id, do_mode
 
-    # TODO
-    # set_status
-    # set_last_access
-    # switchover
-    # delete_do
-    # *logging
+    def do_switchover(self, data_object:int) -> None:
+        """
+        Switchover to master (the database will handle the cascade)
+
+        @param   data_object  Data object ID
+        """
+        if not self.has_switchover(data_object):
+            raise SwitchoverDoesNotExist("No switchover available")
+
+        self._exec("""
+            begin immediate transaction;
+
+            delete
+            from   do_modes
+            where  data_object = :do_id
+            and    mode        = 1;
+
+            update do_modes
+            set    mode        = 1
+            where  data_object = :do_id
+            and    mode        = 2;
+
+            commit;
+        """, {"do_id": data_object})
+
+    def delete_data_object(self, data_object:int) -> None:
+        """
+        Delete a data object from the database in its entirety (the
+        database will handle the cascade)
+
+        @param   data_object  Data object ID
+        """
+        self._exec("""
+            begin immediate transaction;
+
+            delete
+            from   data_objects
+            where  id = ?;
+
+            commit;
+        """, (data_object,))
