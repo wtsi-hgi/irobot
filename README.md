@@ -10,6 +10,37 @@ before being sent out as a response. The service also acts as a
 precache, to presumptively seed upstream systems with data, as well as
 managing a connection pool to iRODS.
 
+## Work in Progress
+
+- [x] Configuration parsing
+  - [x] Precache
+  - [x] iRODS
+  - [x] HTTP API
+  - [x] Authentication
+    - [x] HTTP Basic
+    - [x] Arvados
+  - [x] Logging
+- [x] Logging
+- [x] iRODS interface
+- [ ] Precache
+  - [x] Tracking database
+  - [ ] Checksummer
+  - [ ] ...
+- [x] Authentication handlers
+  - [x] HTTP Basic
+  - [x] Arvados
+- [ ] HTTP interface
+  - [ ] ...
+- [ ] Installation/containerisation
+  - [x] Base system
+  - [x] Kerberos support
+  - [ ] iRobot
+- [ ] Testing
+  - [x] Unit testing
+  - [ ] Integration testing
+  - [ ] User acceptance testing
+- [x] Documentation
+
 ## Installation
 
 iRobot is fully containerised, using Docker. The container image can be
