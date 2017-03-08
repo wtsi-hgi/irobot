@@ -87,12 +87,10 @@ create trigger if not exists auto_request
 
 -- Last access for master data objects only
 create table if not exists last_access (
-  id           integer    primary key,
-  data_object  integer    references data_objects(id) on delete cascade,
+  data_object  integer    primary key references data_objects(id) on delete cascade,
   last_access  TIMESTAMP  not null default (strftime('%s', 'now'))
 );
 
-create index if not exists la_id on last_access(id);
 create index if not exists la_data_object on last_access(data_object);
 create index if not exists la_last_access on last_access(last_access);
 
