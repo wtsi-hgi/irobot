@@ -24,7 +24,7 @@ from math import sqrt
 from random import sample
 from statistics import stdev
 
-import irobot.precache._sqlite as _sqlite
+import irobot.precache.db._dbi as _dbi
 
 
 class TestAdaptorsAndConvertors(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         def my_adaptor(x) -> str:
             return f"{x.real} + {x.imag}i"
 
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
         conn.register_adaptor(complex, my_adaptor)
 
         c = conn.cursor()
@@ -45,7 +45,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         def my_adaptor(x) -> str:
             return f"COMPLEX {x}"
 
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
         conn.register_adaptor(complex, my_adaptor)
 
         c = conn.cursor()
@@ -55,7 +55,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         conn.close()
 
     def test_bad_bindings(self):
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
         
         c = conn.cursor()
         self.assertRaises(TypeError, c.execute, "select ?", ["foo"])
@@ -63,7 +63,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         conn.close()
 
     def test_no_such_adaptor(self):
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
 
         c = conn.cursor()
         self.assertRaises(TypeError, c.execute, "select ?", (datetime.now(),))
@@ -74,7 +74,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         def my_convertor(x) -> complex:
             return complex(x)
             
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
         conn.register_convertor("COMPLEX", my_convertor)
 
         c = conn.cursor()
@@ -87,36 +87,36 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         conn.close()
 
     def test_datetime_adaptor(self):
-        dt_adapt = _sqlite.datetime_adaptor
+        dt_adapt = _dbi.datetime_adaptor
         self.assertEqual(dt_adapt(datetime(1970, 1, 1)), 0)
         self.assertEqual(dt_adapt(datetime(1970, 1, 2)), 86400)
 
     def test_datetime_convertor(self):
-        dt_conv = _sqlite.datetime_convertor
+        dt_conv = _dbi.datetime_convertor
         self.assertEqual(dt_conv(b"0"), datetime(1970, 1, 1))
         self.assertEqual(dt_conv(b"86400"), datetime(1970, 1, 2))
 
     def test_timedelta_adaptor(self):
-        d_adapt = _sqlite.timedelta_adaptor
+        d_adapt = _dbi.timedelta_adaptor
         self.assertEqual(d_adapt(timedelta(seconds=123)), 123.0)
         self.assertEqual(d_adapt(timedelta(days=1)), 86400.0)
 
     def test_timedelta_convertor(self):
-        d_conv = _sqlite.timedelta_convertor
+        d_conv = _dbi.timedelta_convertor
         self.assertEqual(d_conv(b"0"), timedelta(0))
         self.assertEqual(d_conv(b"1.23"), timedelta(seconds=1.23))
         self.assertEqual(d_conv(b"86400.0"), timedelta(days=1))
 
     def test_enum_adaptor(self):
         my_enum = Enum("my_enum", "foo bar quux")
-        e_adapt = _sqlite.enum_adaptor
+        e_adapt = _dbi.enum_adaptor
         self.assertEqual(e_adapt(my_enum.foo), 1)
         self.assertEqual(e_adapt(my_enum.bar), 2)
         self.assertEqual(e_adapt(my_enum.quux), 3)
 
     def test_enum_convertor_int(self):
         my_enum = Enum("my_enum", "foo bar quux")
-        e_conv = _sqlite.enum_convertor_factory(my_enum)
+        e_conv = _dbi.enum_convertor_factory(my_enum)
         self.assertEqual(e_conv(b"1"), my_enum.foo)
         self.assertEqual(e_conv(b"2"), my_enum.bar)
         self.assertEqual(e_conv(b"3"), my_enum.quux)
@@ -130,7 +130,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
         def str_cast(value:bytes) -> str:
             return value.decode()
 
-        e_conv = _sqlite.enum_convertor_factory(my_enum, str_cast)
+        e_conv = _dbi.enum_convertor_factory(my_enum, str_cast)
         self.assertEqual(e_conv(b"abc"), my_enum.foo)
         self.assertEqual(e_conv(b"def"), my_enum.bar)
         self.assertEqual(e_conv(b"xyz"), my_enum.quux)
@@ -138,7 +138,7 @@ class TestAdaptorsAndConvertors(unittest.TestCase):
 
 class TestUDFs(unittest.TestCase):
     def test_aggregate_registration(self):
-        class MyCount(_sqlite.AggregateUDF):
+        class MyCount(_dbi.AggregateUDF):
             def __init__(self):
                 self._count = 0
 
@@ -152,7 +152,7 @@ class TestUDFs(unittest.TestCase):
             def finalise(self):
                 return self._count
 
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
         conn.register_aggregate_function(MyCount)
 
         c = conn.cursor()
@@ -165,7 +165,7 @@ class TestUDFs(unittest.TestCase):
         conn.close()
 
     def test_bad_aggregate_function(self):
-        class BadAggregate(_sqlite.AggregateUDF):
+        class BadAggregate(_dbi.AggregateUDF):
             @property
             def name(self):
                 pass
@@ -176,12 +176,12 @@ class TestUDFs(unittest.TestCase):
             def finalise(self):
                 pass
 
-        conn = _sqlite.Connection(":memory:")
+        conn = _dbi.Connection(":memory:")
         self.assertRaises(TypeError, conn.register_aggregate_function, BadAggregate)
         conn.close()
 
     def test_stderr(self):
-        stderr = _sqlite.UDF.StandardError()
+        stderr = _dbi.UDF.StandardError()
 
         self.assertEqual(stderr.name, "stderr")
 
@@ -205,7 +205,7 @@ class TestUDFs(unittest.TestCase):
 
 class TestCursor(unittest.TestCase):
     def setUp(self):
-        self.conn = _sqlite.Connection(":memory:")
+        self.conn = _dbi.Connection(":memory:")
 
     def test_iterator(self):
         c = self.conn.cursor()
