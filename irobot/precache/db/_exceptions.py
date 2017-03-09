@@ -17,10 +17,14 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Any, Callable, Union
+class StatusExists(Exception):
+    """ Raised when a new status is set that is not unique to that file  """
 
+class SwitchoverExists(Exception):
+    """ Raised when a switchover record already exists """
 
-SQLite = Union[str, bytes, int, float, None]
+class SwitchoverDoesNotExist(Exception):
+    """ Raised when a switchover record doesn't exist """
 
-Adaptor = Callable[[Any], SQLite]
-Convertor = Callable[[bytes], Any]
+class PrecacheExists(Exception):
+    """ Raised when a precache entity already exists """
