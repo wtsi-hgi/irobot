@@ -157,7 +157,7 @@ class TrackingDB(LogWriter):
         db_size = os.stat(self.path).st_size if self.in_precache else 0
         precache_commitment, = self._exec("select size from precache_commitment").fetchone()
 
-        return db_size + (precache_commitment or 0)
+        return db_size + precache_commitment
 
     def get_production_rates(self) -> Dict[str, Optional[SummaryStat]]:
         """
