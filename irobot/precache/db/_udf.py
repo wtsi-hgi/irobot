@@ -22,7 +22,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Callable, Optional
 from numbers import Number
 
-import irobot.precache.db._types as _types
+from irobot.precache.db._types import SQLite
 
 
 class AggregateUDF(metaclass=ABCMeta):
@@ -36,7 +36,7 @@ class AggregateUDF(metaclass=ABCMeta):
         """ Step function """
 
     @abstractmethod
-    def finalise(self) -> _types.SQLite:
+    def finalise(self) -> SQLite:
         """ Finalise function """
 
     def __call__(self) -> Callable:
@@ -48,7 +48,7 @@ class AggregateUDF(metaclass=ABCMeta):
         def _step(_context, *args) -> None:
             self.step(*args)
 
-        def _finalise(_context) -> _types.SQLite:
+        def _finalise(_context) -> SQLite:
             return self.finalise()
 
         return lambda: (self, _step, _finalise)

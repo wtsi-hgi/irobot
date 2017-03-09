@@ -28,11 +28,11 @@ from threading import Timer
 from typing import Callable, Dict, List, Optional, Tuple
 
 import irobot.common.canon as canon
-import irobot.precache.db._dbi as _dbi
-import irobot.precache.db._exceptions as _exc
-import irobot.precache.db._udf as _udf
 from irobot.logging import LogWriter
+from irobot.precache.db._exceptions import StatusExists, SwitchoverExists, SwitchoverDoesNotExist, PrecacheExists
 from irobot.precache.db._adaptors_convertors import Adaptor, Convertor
+from irobot.precache.db._udf import StandardError
+from irobot.precache.db._dbi import Connection, apsw
 
 
 def _nuple(n:int = 1) -> Tuple:
@@ -73,13 +73,13 @@ class TrackingDB(LogWriter):
         super().__init__(logger=logger)
 
         self.log(logging.INFO, f"Initialising precache tracking database in {path}")
-        self.conn = _dbi.Connection(path)
+        self.conn = Connection(path)
 
         self.path = path
         self.in_precache = False if path == ":memory:" else in_precache
 
         # Register host function hooks
-        self.conn.register_aggregate_function(_udf.StandardError)
+        self.conn.register_aggregate_function(StandardError)
         self.conn.register_adaptor(Datatype, Adaptor.enum)
         self.conn.register_adaptor(Mode, Adaptor.enum)
         self.conn.register_adaptor(Status, Adaptor.enum)
@@ -311,9 +311,9 @@ class TrackingDB(LogWriter):
                 "status":   status
             })
 
-        except _dbi.apsw.ConstraintError:
+        except apsw.ConstraintError:
             self._exec("rollback")
-            raise _exc.StatusExists(f"Data object file already has {status.name} status")
+            raise StatusExists(f"Data object file already has {status.name} status")
 
     def get_size(self, data_object:int, mode:Mode, datatype:Datatype) -> Optional[int]:
         """
@@ -393,13 +393,13 @@ class TrackingDB(LogWriter):
                 do_id = existing_id
                 do_mode = Mode.switchover
 
-            except _dbi.apsw.ConstraintError:
+            except apsw.ConstraintError:
                 self._exec("rollback")
 
                 if self.has_switchover(existing_id):
-                    raise _exc.SwitchoverExists(f"Switchover already exists for {irods_path}")
+                    raise SwitchoverExists(f"Switchover already exists for {irods_path}")
 
-                raise _exc.PrecacheExists(f"Cannot create switchover; precache entity in {precache_path} already exists")
+                raise PrecacheExists(f"Cannot create switchover; precache entity in {precache_path} already exists")
 
         else:
             # Create a new record
@@ -434,7 +434,7 @@ class TrackingDB(LogWriter):
         @param   data_object  Data object ID
         """
         if not self.has_switchover(data_object):
-            raise _exc.SwitchoverDoesNotExist("No switchover available")
+            raise SwitchoverDoesNotExist("No switchover available")
 
         self._exec("""
             begin immediate transaction;
