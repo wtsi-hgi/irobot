@@ -29,7 +29,10 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import irobot.common.canon as canon
 import irobot.precache.db._dbi as _dbi
+import irobot.precache.db._exceptions as _exc
+import irobot.precache.db._udf as _udf
 from irobot.logging import LogWriter
+from irobot.precache.db._adaptors_convertors import Adaptor, Convertor
 
 
 def _nuple(n:int = 1) -> Tuple:
@@ -56,19 +59,6 @@ SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
 DataObjectFileStatus = namedtuple("DataObjectFileStatus", ["timestamp", "status"])
 
 
-class StatusExists(Exception):
-    pass
-
-class SwitchoverExists(Exception):
-    pass
-
-class SwitchoverDoesNotExist(Exception):
-    pass
-
-class PrecacheExists(Exception):
-    pass
-
-
 class TrackingDB(LogWriter):
     """ Tracking DB """
     def __init__(self, path:str, in_precache:bool = True, logger:Optional[logging.Logger] = None) -> None:
@@ -85,19 +75,20 @@ class TrackingDB(LogWriter):
         self.log(logging.INFO, f"Initialising precache tracking database in {path}")
         self.conn = _dbi.Connection(path)
 
+        self.path = path
         self.in_precache = False if path == ":memory:" else in_precache
 
         # Register host function hooks
-        self.conn.register_aggregate_function(_dbi.UDF.StandardError)
-        self.conn.register_adaptor(Datatype, _dbi.enum_adaptor)
-        self.conn.register_adaptor(Mode, _dbi.enum_adaptor)
-        self.conn.register_adaptor(Status, _dbi.enum_adaptor)
-        self.conn.register_adaptor(datetime, _dbi.datetime_adaptor)
-        self.conn.register_adaptor(timedelta, _dbi.timedelta_adaptor)
-        self.conn.register_convertor("DATATYPE", _dbi.enum_convertor_factory(Datatype))
-        self.conn.register_convertor("MODE", _dbi.enum_convertor_factory(Mode))
-        self.conn.register_convertor("STATUS", _dbi.enum_convertor_factory(Status))
-        self.conn.register_convertor("TIMESTAMP", _dbi.datetime_convertor)
+        self.conn.register_aggregate_function(_udf.StandardError)
+        self.conn.register_adaptor(Datatype, Adaptor.enum)
+        self.conn.register_adaptor(Mode, Adaptor.enum)
+        self.conn.register_adaptor(Status, Adaptor.enum)
+        self.conn.register_adaptor(datetime, Adaptor.datetime)
+        self.conn.register_adaptor(timedelta, Adaptor.timedelta)
+        self.conn.register_convertor("DATATYPE", Convertor.enum_factory(Datatype))
+        self.conn.register_convertor("MODE", Convertor.enum_factory(Mode))
+        self.conn.register_convertor("STATUS", Convertor.enum_factory(Status))
+        self.conn.register_convertor("TIMESTAMP", Convertor.datetime)
 
         schema = canon.path(join(dirname(__file__), "schema.sql"))
         self.log(logging.DEBUG, f"Initialising precache tracking database schema from {schema}")
@@ -322,7 +313,7 @@ class TrackingDB(LogWriter):
 
         except _dbi.apsw.ConstraintError:
             self._exec("rollback")
-            raise StatusExists(f"Data object file already has {status.name} status")
+            raise _exc.StatusExists(f"Data object file already has {status.name} status")
 
     def get_size(self, data_object:int, mode:Mode, datatype:Datatype) -> Optional[int]:
         """
@@ -406,9 +397,9 @@ class TrackingDB(LogWriter):
                 self._exec("rollback")
 
                 if self.has_switchover(existing_id):
-                    raise SwitchoverExists(f"Switchover already exists for {irods_path}")
+                    raise _exc.SwitchoverExists(f"Switchover already exists for {irods_path}")
 
-                raise PrecacheExists(f"Cannot create switchover; precache entity in {precache_path} already exists")
+                raise _exc.PrecacheExists(f"Cannot create switchover; precache entity in {precache_path} already exists")
 
         else:
             # Create a new record
@@ -443,7 +434,7 @@ class TrackingDB(LogWriter):
         @param   data_object  Data object ID
         """
         if not self.has_switchover(data_object):
-            raise SwitchoverDoesNotExist("No switchover available")
+            raise _exc.SwitchoverDoesNotExist("No switchover available")
 
         self._exec("""
             begin immediate transaction;
