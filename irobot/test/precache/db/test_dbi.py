@@ -18,194 +18,17 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from datetime import datetime, timedelta
-from enum import Enum
-from math import sqrt
-from random import sample
-from statistics import stdev
 
 import irobot.precache.db._dbi as _dbi
-
-
-class TestAdaptorsAndConvertors(unittest.TestCase):
-    def test_adaptor_registration(self):
-        def my_adaptor(x) -> str:
-            return f"{x.real} + {x.imag}i"
-
-        conn = _dbi.Connection(":memory:")
-        conn.register_adaptor(complex, my_adaptor)
-
-        c = conn.cursor()
-        adapted, = c.execute("select ?", (1 + 2j,)).fetchone()
-        self.assertEqual(adapted, "1.0 + 2.0i")
-
-        conn.close()
-
-    def test_adapt_binding_dict(self):
-        def my_adaptor(x) -> str:
-            return f"COMPLEX {x}"
-
-        conn = _dbi.Connection(":memory:")
-        conn.register_adaptor(complex, my_adaptor)
-
-        c = conn.cursor()
-        adapted, = c.execute("select :foo", {"foo": 1+2j}).fetchone()
-        self.assertEqual(adapted, f"COMPLEX {1+2j}")
-
-        conn.close()
-
-    def test_bad_bindings(self):
-        conn = _dbi.Connection(":memory:")
-        
-        c = conn.cursor()
-        self.assertRaises(TypeError, c.execute, "select ?", ["foo"])
-
-        conn.close()
-
-    def test_no_such_adaptor(self):
-        conn = _dbi.Connection(":memory:")
-
-        c = conn.cursor()
-        self.assertRaises(TypeError, c.execute, "select ?", (datetime.now(),))
-
-        conn.close()
-
-    def test_convertor_registration(self):
-        def my_convertor(x) -> complex:
-            return complex(x)
-            
-        conn = _dbi.Connection(":memory:")
-        conn.register_convertor("COMPLEX", my_convertor)
-
-        c = conn.cursor()
-        c.execute("create table foo(bar COMPLEX)")
-        c.execute("insert into foo values (\"1+2j\")")
-
-        converted, = c.execute("select bar from foo").fetchone()
-        self.assertEqual(converted, 1 + 2j)
-
-        conn.close()
-
-    def test_datetime_adaptor(self):
-        dt_adapt = _dbi.datetime_adaptor
-        self.assertEqual(dt_adapt(datetime(1970, 1, 1)), 0)
-        self.assertEqual(dt_adapt(datetime(1970, 1, 2)), 86400)
-
-    def test_datetime_convertor(self):
-        dt_conv = _dbi.datetime_convertor
-        self.assertEqual(dt_conv(b"0"), datetime(1970, 1, 1))
-        self.assertEqual(dt_conv(b"86400"), datetime(1970, 1, 2))
-
-    def test_timedelta_adaptor(self):
-        d_adapt = _dbi.timedelta_adaptor
-        self.assertEqual(d_adapt(timedelta(seconds=123)), 123.0)
-        self.assertEqual(d_adapt(timedelta(days=1)), 86400.0)
-
-    def test_timedelta_convertor(self):
-        d_conv = _dbi.timedelta_convertor
-        self.assertEqual(d_conv(b"0"), timedelta(0))
-        self.assertEqual(d_conv(b"1.23"), timedelta(seconds=1.23))
-        self.assertEqual(d_conv(b"86400.0"), timedelta(days=1))
-
-    def test_enum_adaptor(self):
-        my_enum = Enum("my_enum", "foo bar quux")
-        e_adapt = _dbi.enum_adaptor
-        self.assertEqual(e_adapt(my_enum.foo), 1)
-        self.assertEqual(e_adapt(my_enum.bar), 2)
-        self.assertEqual(e_adapt(my_enum.quux), 3)
-
-    def test_enum_convertor_int(self):
-        my_enum = Enum("my_enum", "foo bar quux")
-        e_conv = _dbi.enum_convertor_factory(my_enum)
-        self.assertEqual(e_conv(b"1"), my_enum.foo)
-        self.assertEqual(e_conv(b"2"), my_enum.bar)
-        self.assertEqual(e_conv(b"3"), my_enum.quux)
-
-    def test_enum_convertor_string(self):
-        class my_enum(Enum):
-            foo = "abc"
-            bar = "def"
-            quux = "xyz"
-
-        def str_cast(value:bytes) -> str:
-            return value.decode()
-
-        e_conv = _dbi.enum_convertor_factory(my_enum, str_cast)
-        self.assertEqual(e_conv(b"abc"), my_enum.foo)
-        self.assertEqual(e_conv(b"def"), my_enum.bar)
-        self.assertEqual(e_conv(b"xyz"), my_enum.quux)
-
-
-class TestUDFs(unittest.TestCase):
-    def test_aggregate_registration(self):
-        class MyCount(_dbi.AggregateUDF):
-            def __init__(self):
-                self._count = 0
-
-            @property
-            def name(self):
-                return "my_count"
-
-            def step(self, *args):
-                self._count += 1
-
-            def finalise(self):
-                return self._count
-
-        conn = _dbi.Connection(":memory:")
-        conn.register_aggregate_function(MyCount)
-
-        c = conn.cursor()
-        c.execute("create table foo(bar)")
-        c.executemany("insert into foo values (?)", list(map(lambda x: (x,), range(10))))
-
-        my_count, = c.execute("select my_count(bar) from foo").fetchone()
-        self.assertEqual(my_count, 10)
-
-        conn.close()
-
-    def test_bad_aggregate_function(self):
-        class BadAggregate(_dbi.AggregateUDF):
-            @property
-            def name(self):
-                pass
-
-            def step(self, **kwargs):
-                pass
-
-            def finalise(self):
-                pass
-
-        conn = _dbi.Connection(":memory:")
-        self.assertRaises(TypeError, conn.register_aggregate_function, BadAggregate)
-        conn.close()
-
-    def test_stderr(self):
-        stderr = _dbi.UDF.StandardError()
-
-        self.assertEqual(stderr.name, "stderr")
-
-        # Pass over non-numeric input
-        stderr.step("foo")
-        self.assertIsNone(stderr.finalise())
-
-        data = []
-        for i, x in enumerate(sample(range(100), 20)):
-            stderr.step(x)
-            data.append(x)
-
-            if i == 0:
-                # Need at least two numeric data points
-                self.assertIsNone(stderr.finalise())
-
-            if i > 0:
-                calculated = stdev(data) / sqrt(i + 1)
-                self.assertAlmostEqual(stderr.finalise(), calculated)
+from irobot.precache.db._udf import AggregateUDF
 
 
 class TestCursor(unittest.TestCase):
     def setUp(self):
         self.conn = _dbi.Connection(":memory:")
+
+    def tearDown(self):
+        self.conn.close()
 
     def test_iterator(self):
         c = self.conn.cursor()
@@ -231,8 +54,85 @@ class TestCursor(unittest.TestCase):
         c = self.conn.cursor()
         self.assertIsNone(c.fetchone())
 
-    def tearDown(self):
-        self.conn.close()
+    def test_aggregate_registration(self):
+        class MyCount(AggregateUDF):
+            def __init__(self):
+                self._count = 0
+
+            @property
+            def name(self):
+                return "my_count"
+
+            def step(self, *args):
+                self._count += 1
+
+            def finalise(self):
+                return self._count
+
+        self.conn.register_aggregate_function(MyCount)
+
+        c = self.conn.cursor()
+        c.execute("create table foo(bar)")
+        c.executemany("insert into foo values (?)", list(map(lambda x: (x,), range(10))))
+
+        my_count, = c.execute("select my_count(bar) from foo").fetchone()
+        self.assertEqual(my_count, 10)
+
+    def test_bad_aggregate_function(self):
+        class BadAggregate(_dbi.AggregateUDF):
+            @property
+            def name(self):
+                pass
+
+            def step(self, **kwargs):
+                pass
+
+            def finalise(self):
+                pass
+
+        self.assertRaises(TypeError, self.conn.register_aggregate_function, BadAggregate)
+
+    def test_adaptor_registration(self):
+        def my_adaptor(x) -> str:
+            return f"{x.real} + {x.imag}i"
+
+        self.conn.register_adaptor(complex, my_adaptor)
+
+        c = self.conn.cursor()
+        adapted, = c.execute("select ?", (1 + 2j,)).fetchone()
+        self.assertEqual(adapted, "1.0 + 2.0i")
+
+    def test_adapt_binding_dict(self):
+        def my_adaptor(x) -> str:
+            return f"COMPLEX {x}"
+
+        self.conn.register_adaptor(complex, my_adaptor)
+
+        c = self.conn.cursor()
+        adapted, = c.execute("select :foo", {"foo": 1+2j}).fetchone()
+        self.assertEqual(adapted, f"COMPLEX {1+2j}")
+
+    def test_bad_bindings(self):
+        c = self.conn.cursor()
+        self.assertRaises(TypeError, c.execute, "select ?", ["foo"])
+
+    def test_no_such_adaptor(self):
+        c = self.conn.cursor()
+        self.assertRaises(TypeError, c.execute, "select ?", (1 + 2j,))
+
+    def test_convertor_registration(self):
+        def my_convertor(x) -> complex:
+            return complex(x)
+            
+        self.conn.register_convertor("COMPLEX", my_convertor)
+
+        c = self.conn.cursor()
+        c.execute("create table foo(bar COMPLEX)")
+        c.execute("insert into foo values (\"1+2j\")")
+
+        converted, = c.execute("select bar from foo").fetchone()
+        self.assertEqual(converted, 1 + 2j)
+
 
 if __name__ == "__main__":
     unittest.main()
