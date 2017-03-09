@@ -17,156 +17,15 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import math
-from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import OrderedDict
-from enum import Enum
-from datetime import datetime, timedelta, timezone
 from inspect import Parameter, signature
-from numbers import Number
-from typing import (Any, Callable, ClassVar, Dict, Iterator, List,
-                    Optional, Sequence, Tuple, Type, Union)
+from typing import (Any, ClassVar, Dict, Iterator, List, Optional,
+                    Sequence, Tuple, Type)
 
 import apsw
 
-
-# Type aliases for SQLite and interoperability with Python
-_SQLiteT = Union[str, bytes, int, float, None]
-_PyBindingsT = Union[Tuple[Any, ...], Dict[str, Any]]
-_SQLiteBindingsT = Union[Tuple[_SQLiteT, ...], Dict[str, _SQLiteT]]
-
-_AdaptorT = Callable[[Any], _SQLiteT]
-_AdaptorsT = Dict[Type, _AdaptorT]
-
-_ConvertorT = Callable[[bytes], Any]
-_ConvertorsT = Dict[str, _ConvertorT]
-
-
-# Some standard adaptors and convertors
-def datetime_adaptor(dt:datetime) -> int:
-    """
-    datetime.datetime adaptor
-
-    @param   dt  Datetime (datetime.datetime)
-    @return  Unix timestamp (int)
-    """
-    return int(dt.replace(tzinfo=timezone.utc).timestamp())
-
-def datetime_convertor(dt:bytes) -> datetime:
-    """
-    datetime.datetime convertor
-
-    @param   dt  Datetime (bytes)
-    @return  Datetime object (datetime.datetime)
-    """
-    return datetime.utcfromtimestamp(int(dt))
-
-def timedelta_adaptor(d:timedelta) -> float:
-    """
-    datetime.timedelta adaptor
-
-    @param   d  Time delta (datetime.timedelta)
-    @return  Seconds (float)
-    """
-    return d.total_seconds()
-
-def timedelta_convertor(d:bytes) -> timedelta:
-    """
-    datetime.timedelta convertor
-
-    @param   d  Seconds (bytes)
-    @return  Time delta object (datetime.timedelta)
-    """
-    return timedelta(seconds=float(d))
-
-def enum_adaptor(e:Enum) -> Any:
-    """
-    Enum adaptor
-
-    @param   e  Some enum value (Enum)
-    @return  Enum's value
-    """
-    return e.value
-
-def enum_convertor_factory(enum_type:ClassVar[Enum], cast_fn:Callable[[bytes], Any] = int) -> Callable[[bytes], "enum_type"]:
-    """
-    Enum convertor factory
-
-    @param   enum_type  Enum class
-    @param   cast_fn    Function to cast bytes to enum values (default: int)
-    @return  Enum convertor function for specific enum type (function)
-    """
-    def _enum_convertor(value:bytes) -> enum_type:
-        return enum_type(cast_fn(value))
-
-    return _enum_convertor
-
-
-class AggregateUDF(metaclass=ABCMeta):
-    """ Metaclass for aggregate user-defined functions """
-    @abstractproperty
-    def name(self) -> str:
-        """ Aggregate UDF's name in SQLite """
-    
-    @abstractmethod
-    def step(self, *args) -> None:
-        """ Step function """
-
-    @abstractmethod
-    def finalise(self) -> _SQLiteT:
-        """ Finalise function """
-
-def _aggregate_udf_factory_factory(udf:AggregateUDF) -> Callable:
-    """
-    Create the aggregate UDF factory for APSW using AggregateUDF
-
-    @note    APSW wants a factory that takes no parameters (i.e., a
-             constant), so blame that for the "factory factory"!
-
-    @param   udf  User-defined aggregate function (AggregateUDF)
-    @return  Aggregate UDF factory
-    """
-    def _step(context:AggregateUDF, *args) -> None:
-        return context.step(*args)
-
-    def _finalise(context:AggregateUDF) -> _SQLiteT:
-        return context.finalise()
-
-    return lambda: (udf, _step, _finalise)
-
-
-class UDF(object):
-    """ Namespace for UDFs """
-    class StandardError(AggregateUDF):
-        """
-        SQLite user-defined aggregation function that calculates standard
-        error using Welford's algorithm
-        """
-        def __init__(self) -> None:
-            self.n     = 0
-            self.mean  = 0.0
-            self.mean2 = 0.0
-
-        @property
-        def name(self) -> str:
-            return "stderr"
-
-        def step(self, datum:Number) -> None:
-            if not isinstance(datum, Number):
-                # Pass over non-numeric input
-                return None
-
-            self.n += 1
-            delta = datum - self.mean
-            self.mean += delta / self.n
-            delta2 = datum - self.mean
-            self.mean2 += delta * delta2
-
-        def finalise(self) -> Optional[float]:
-            if self.n < 2:
-                return None
-
-            return math.sqrt(self.mean2 / (self.n * (self.n - 1)))
+import irobot.precache.db._types as _types
+from irobot.precache.db._udf import AggregateUDF
 
 
 class Cursor(Iterator):
@@ -206,7 +65,7 @@ class Cursor(Iterator):
             in  zip(data, desc)
         )
 
-    def _adapt_pyval(self, pyval:Any) -> _SQLiteT:
+    def _adapt_pyval(self, pyval:Any) -> _types.SQLite:
         """
         Adapt a Python value to a native SQLite type
 
@@ -226,7 +85,7 @@ class Cursor(Iterator):
         except KeyError:
             raise TypeError(f"No adaptor for {pytype.__name__} type")
 
-    def _adapt_bindings(self, bindings:_PyBindingsT) -> _SQLiteBindingsT:
+    def _adapt_bindings(self, bindings:_types.PyBindings) -> _types.SQLiteBindings:
         """
         Adapt bind variables to native SQLite types
 
@@ -242,7 +101,7 @@ class Cursor(Iterator):
         else:
             raise TypeError("Invalid bindings; should be a tuple or dictionary")
 
-    def execute(self, sql:str, bindings:Optional[_PyBindingsT] = None) -> "Cursor":
+    def execute(self, sql:str, bindings:Optional[_types.PyBindings] = None) -> "Cursor":
         """
         Executes the SQL statements with the specified bindings
 
@@ -253,7 +112,7 @@ class Cursor(Iterator):
         sqlite_bindings = self._adapt_bindings(bindings) if bindings else None
         return Cursor(self._cursor.execute(sql, sqlite_bindings))
 
-    def executemany(self, sql:str, binding_seq:Sequence[_PyBindingsT]) -> "Cursor":
+    def executemany(self, sql:str, binding_seq:Sequence[_types.PyBindings]) -> "Cursor":
         """
         Executes the SQL statements with a sequence of bindings
 
@@ -288,13 +147,14 @@ class Cursor(Iterator):
 class Connection(apsw.Connection):
     """
     Subtyped APSW connection that allows us to register adaptors and
-    convertors and which returns a cursor that supports them
+    convertors and which returns a cursor that supports them, as well as
+    a more convenient interface for registering aggregate UDFs
     """
     def __init__(self, *args, **kwargs) -> None:
         """ Constructor """
         super().__init__(*args, **kwargs)
-        self._adaptors:_AdaptorsT = {}
-        self._convertors:_ConvertorsT = {}
+        self._adaptors:_types.Adaptors = {}
+        self._convertors:_types.Convertors = {}
 
     def cursor(self) -> Cursor:
         """
@@ -321,9 +181,9 @@ class Connection(apsw.Connection):
 
         udf = fn()
         assert len(udf.name) < 255, f"Aggregate function {fn.__name__} name is too long"
-        self.createaggregatefunction(udf.name, _aggregate_udf_factory_factory(udf), num_args)
+        self.createaggregatefunction(udf.name, udf(), num_args)
 
-    def register_adaptor(self, t:Type, adaptor:_AdaptorT) -> None:
+    def register_adaptor(self, t:Type, adaptor:_types.Adaptor) -> None:
         """
         Register a type adaptor
 
@@ -332,7 +192,7 @@ class Connection(apsw.Connection):
         """
         self._adaptors[t] = adaptor
 
-    def register_convertor(self, decl:str, convertor:_ConvertorT) -> None:
+    def register_convertor(self, decl:str, convertor:_types.Convertor) -> None:
         """
         Register a type convertor
 
