@@ -56,10 +56,7 @@ class AggregateUDF(metaclass=ABCMeta):
 ## Implementations #####################################################
 
 class StandardError(AggregateUDF):
-    """
-    SQLite user-defined aggregation function that calculates standard
-    error using Welford's algorithm
-    """
+    """ Calculate the standard error using Welford's algorithm """
     def __init__(self) -> None:
         self.n     = 0
         self.mean  = 0.0

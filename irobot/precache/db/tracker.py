@@ -29,10 +29,10 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import irobot.common.canon as canon
 from irobot.logging import LogWriter
-from irobot.precache.db._exceptions import StatusExists, SwitchoverExists, SwitchoverDoesNotExist, PrecacheExists
 from irobot.precache.db._adaptors_convertors import Adaptor, Convertor
-from irobot.precache.db._udf import StandardError
 from irobot.precache.db._dbi import Connection, apsw
+from irobot.precache.db._exceptions import StatusExists, SwitchoverExists, SwitchoverDoesNotExist, PrecacheExists
+from irobot.precache.db._udf import StandardError
 
 
 def _nuple(n:int = 1) -> Tuple:
