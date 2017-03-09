@@ -28,7 +28,7 @@ from threading import Timer
 from typing import Callable, Dict, List, Optional, Tuple
 
 import irobot.common.canon as canon
-import irobot.precache._sqlite as _sqlite
+import irobot.precache.db._dbi as _dbi
 from irobot.logging import LogWriter
 
 
@@ -83,21 +83,21 @@ class TrackingDB(LogWriter):
         super().__init__(logger=logger)
 
         self.log(logging.INFO, f"Initialising precache tracking database in {path}")
-        self.conn = _sqlite.Connection(path)
+        self.conn = _dbi.Connection(path)
 
         self.in_precache = False if path == ":memory:" else in_precache
 
         # Register host function hooks
-        self.conn.register_aggregate_function(_sqlite.UDF.StandardError)
-        self.conn.register_adaptor(Datatype, _sqlite.enum_adaptor)
-        self.conn.register_adaptor(Mode, _sqlite.enum_adaptor)
-        self.conn.register_adaptor(Status, _sqlite.enum_adaptor)
-        self.conn.register_adaptor(datetime, _sqlite.datetime_adaptor)
-        self.conn.register_adaptor(timedelta, _sqlite.timedelta_adaptor)
-        self.conn.register_convertor("DATATYPE", _sqlite.enum_convertor_factory(Datatype))
-        self.conn.register_convertor("MODE", _sqlite.enum_convertor_factory(Mode))
-        self.conn.register_convertor("STATUS", _sqlite.enum_convertor_factory(Status))
-        self.conn.register_convertor("TIMESTAMP", _sqlite.datetime_convertor)
+        self.conn.register_aggregate_function(_dbi.UDF.StandardError)
+        self.conn.register_adaptor(Datatype, _dbi.enum_adaptor)
+        self.conn.register_adaptor(Mode, _dbi.enum_adaptor)
+        self.conn.register_adaptor(Status, _dbi.enum_adaptor)
+        self.conn.register_adaptor(datetime, _dbi.datetime_adaptor)
+        self.conn.register_adaptor(timedelta, _dbi.timedelta_adaptor)
+        self.conn.register_convertor("DATATYPE", _dbi.enum_convertor_factory(Datatype))
+        self.conn.register_convertor("MODE", _dbi.enum_convertor_factory(Mode))
+        self.conn.register_convertor("STATUS", _dbi.enum_convertor_factory(Status))
+        self.conn.register_convertor("TIMESTAMP", _dbi.datetime_convertor)
 
         schema = canon.path(join(dirname(__file__), "schema.sql"))
         self.log(logging.DEBUG, f"Initialising precache tracking database schema from {schema}")
@@ -320,7 +320,7 @@ class TrackingDB(LogWriter):
                 "status":   status
             })
 
-        except _sqlite.apsw.ConstraintError:
+        except _dbi.apsw.ConstraintError:
             self._exec("rollback")
             raise StatusExists(f"Data object file already has {status.name} status")
 
@@ -402,7 +402,7 @@ class TrackingDB(LogWriter):
                 do_id = existing_id
                 do_mode = Mode.switchover
 
-            except _sqlite.apsw.ConstraintError:
+            except _dbi.apsw.ConstraintError:
                 self._exec("rollback")
 
                 if self.has_switchover(existing_id):
