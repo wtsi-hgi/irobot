@@ -21,6 +21,14 @@ import unittest
 from tempfile import NamedTemporaryFile
 
 from irobot.precache.db import TrackingDB, Datatype, Mode, Status
+from irobot.precache.db.tracker import _nuple
+
+
+class TestMisc(unittest.TestCase):
+    def test_nuple(self):
+        self.assertEqual(_nuple(), (None,))
+        self.assertEqual(_nuple(2), (None, None))
+        self.assertEqual(_nuple(3), (None, None, None))
 
 
 class TestDBMagic(unittest.TestCase):
