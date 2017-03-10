@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from datetime import datetime, timezone
 from logging import Logger
 from tempfile import NamedTemporaryFile
@@ -69,29 +69,25 @@ class TestLoggerCreation(unittest.TestCase):
             self.assertEqual(logged[1], "1981-09-25T05:55:00Z+00:00\tINFO\tHello World!\n")
 
 
+@patch("irobot.logging.logger.sys.exit", spec=True)
 class TestExceptionHandler(unittest.TestCase):
     def setUp(self):
         self.log = MagicMock(spec=Logger)
-        self._old_exit, logger.sys.exit = logger.sys.exit, MagicMock()
-
         self.handler = logger._exception_handler(self.log)
 
-    def tearDown(self):
-        logger.sys.exit = self._old_exit
-
-    def test_normal_exception(self):
+    def test_normal_exception(self, mock_sys_exit):
         exc = Exception("foo")
         self.handler(exc.__class__, exc, None)
 
         self.log.critical.assert_called_once_with(str(exc))
-        logger.sys.exit.assert_called_once_with(1)
+        mock_sys_exit.assert_called_once_with(1)
 
-    def test_keyboard_interrupt(self):
+    def test_keyboard_interrupt(self, mock_sys_exit):
         exc = KeyboardInterrupt()
         self.assertIsNone(self.handler(exc.__class__, exc, None))
 
         self.log.critical.assert_not_called()
-        logger.sys.exit.assert_not_called()
+        mock_sys_exit.assert_not_called()
 
 
 if __name__ == "__main__":

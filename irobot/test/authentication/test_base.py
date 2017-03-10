@@ -18,34 +18,29 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import patch
 from datetime import datetime, timedelta
 
 import irobot.authentication._base as base
 
 
+@patch("irobot.authentication._base.datetime", spec=True)
 class TestAuthenticatedUser(unittest.TestCase):
-    def setUp(self):
-        self._old_datetime, base.datetime = base.datetime, MagicMock(spec=datetime)
-
-    def tearDown(self):
-        base.datetime = self._old_datetime
-
-    def test_properties(self):
-        validation_time = base.datetime.utcnow.return_value = datetime.utcnow()
+    def test_properties(self, mock_datetime):
+        validation_time = mock_datetime.utcnow.return_value = datetime.utcnow()
         user = base.AuthenticatedUser("foo")
 
         self.assertEqual(user.user, "foo")
         self.assertEqual(user.authenticated, validation_time)
 
-    def test_validity(self):
+    def test_validity(self, mock_datetime):
         validation_time = datetime.utcnow()
 
-        base.datetime.utcnow.return_value = validation_time
+        mock_datetime.utcnow.return_value = validation_time
         user = base.AuthenticatedUser("foo")
         self.assertTrue(user.valid(timedelta(minutes=10)))
 
-        base.datetime.utcnow.return_value = validation_time + timedelta(minutes=11)
+        mock_datetime.utcnow.return_value = validation_time + timedelta(minutes=11)
         self.assertFalse(user.valid(timedelta(minutes=10)))
 
         self.assertFalse(user.valid(None))
