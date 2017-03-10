@@ -138,6 +138,9 @@ class TestDBMagic(unittest.TestCase):
             after = TrackingDB(temp_db.name)
             after_count, = after._exec("select count(*) from current_status where status = 2").fetchone()
             self.assertEqual(after_count, 0)
+            
+            sanity_check, = after._exec("select count(*) from current_status where status = 1").fetchone()
+            self.assertEqual(sanity_check, len(Datatype))
 
 
 if __name__ == "__main__":
