@@ -24,7 +24,7 @@ from typing import (Any, ClassVar, Dict, Iterator, List, Optional,
 
 import apsw
 
-from irobot.precache.db._udf import AggregateUDF
+from irobot.precache.db._udf import AggregateUDF, aggregate_udf_factory_factory
 from irobot.precache.db._types import Adaptor, Convertor, SQLite
 
 
@@ -172,24 +172,24 @@ class Connection(apsw.Connection):
         """
         return Cursor(super().cursor())
 
-    def register_aggregate_function(self, fn:ClassVar[AggregateUDF]) -> None:
+    def register_aggregate_function(self, name:str, udf:ClassVar[AggregateUDF]) -> None:
         """
         Register an aggregation function using an AggregateUDF
+        implementation
 
-        @param   fn  Aggregate function implementation (class)
+        @param   udf  Aggregate function implementation (AggregateUDF)
         """
         # The first parameter is self, so we cut that off
         param_kinds = list(map(lambda x: x.kind,
-                               list(OrderedDict(signature(fn.step).parameters).values())[1:]))
+                               list(OrderedDict(signature(udf.step).parameters).values())[1:]))
 
         if any(p in [Parameter.KEYWORD_ONLY, Parameter.VAR_KEYWORD] for p in param_kinds):
-            raise TypeError(f"Aggregate function {fn.__name__} has an invalid step signature")
+            raise TypeError(f"Aggregate function {udf.__name__} has an invalid step signature")
 
         num_args = -1 if any(p == Parameter.VAR_POSITIONAL for p in param_kinds) else len(param_kinds)
 
-        udf = fn()
-        assert len(udf.name) < 255, f"Aggregate function {fn.__name__} name is too long"
-        self.createaggregatefunction(udf.name, udf(), num_args)
+        assert len(name) < 255, f"\"{name}\" name is too long for aggregate function"
+        self.createaggregatefunction(name, aggregate_udf_factory_factory(udf), num_args)
 
     def register_adaptor(self, t:Type, adaptor:Adaptor) -> None:
         """

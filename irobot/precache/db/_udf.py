@@ -18,8 +18,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import math
-from abc import ABCMeta, abstractmethod, abstractproperty
-from typing import Callable, Optional
+from abc import ABCMeta, abstractmethod
+from typing import Callable, ClassVar, Optional
 from numbers import Number
 
 from irobot.precache.db._types import SQLite
@@ -27,10 +27,6 @@ from irobot.precache.db._types import SQLite
 
 class AggregateUDF(metaclass=ABCMeta):
     """ Metaclass for aggregate user-defined functions """
-    @abstractproperty
-    def name(self) -> str:
-        """ Aggregate UDF's name in SQLite """
-
     @abstractmethod
     def step(self, *args) -> None:
         """ Step function """
@@ -39,19 +35,25 @@ class AggregateUDF(metaclass=ABCMeta):
     def finalise(self) -> SQLite:
         """ Finalise function """
 
-    def __call__(self) -> Callable:
-        """
-        Create the aggregate UDF factory for APSW
 
-        @return  Aggregate UDF factory
-        """
-        def _step(_context, *args) -> None:
-            self.step(*args)
+def aggregate_udf_factory_factory(udf:ClassVar[AggregateUDF]) -> Callable:
+    """
+    Create the aggregate UDF factory for APSW using an AggregateUDF
+    implementation
 
-        def _finalise(_context) -> SQLite:
-            return self.finalise()
+    @note    APSW wants a factory that takes no parameters (i.e., a
+             constant), so blame that for the "factory factory"!
 
-        return lambda: (self, _step, _finalise)
+    @param   udf  User-defined aggregate function implementation (AggregateUDF)
+    @return  Aggregate UDF factory
+    """
+    def _step(context:AggregateUDF, *args) -> None:
+        context.step(*args)
+
+    def _finalise(context:AggregateUDF) -> SQLite:
+        return context.finalise()
+
+    return lambda: (udf(), _step, _finalise)
 
 ## Implementations #####################################################
 
@@ -61,10 +63,6 @@ class StandardError(AggregateUDF):
         self.n     = 0
         self.mean  = 0.0
         self.mean2 = 0.0
-
-    @property
-    def name(self) -> str:
-        return "stderr"
 
     def step(self, datum:Number) -> None:
         if not isinstance(datum, Number):

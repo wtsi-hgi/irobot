@@ -59,17 +59,13 @@ class TestCursor(unittest.TestCase):
             def __init__(self):
                 self._count = 0
 
-            @property
-            def name(self):
-                return "my_count"
-
             def step(self, *args):
                 self._count += 1
 
             def finalise(self):
                 return self._count
 
-        self.conn.register_aggregate_function(MyCount)
+        self.conn.register_aggregate_function("my_count", MyCount)
 
         c = self.conn.cursor()
         c.execute("create table foo(bar)")
@@ -80,17 +76,13 @@ class TestCursor(unittest.TestCase):
 
     def test_bad_aggregate_function(self):
         class BadAggregate(_dbi.AggregateUDF):
-            @property
-            def name(self):
-                pass
-
             def step(self, **kwargs):
                 pass
 
             def finalise(self):
                 pass
 
-        self.assertRaises(TypeError, self.conn.register_aggregate_function, BadAggregate)
+        self.assertRaises(TypeError, self.conn.register_aggregate_function, "foo", BadAggregate)
 
     def test_adaptor_registration(self):
         def my_adaptor(x) -> str:
