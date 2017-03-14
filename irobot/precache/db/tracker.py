@@ -79,7 +79,7 @@ class TrackingDB(LogWriter):
         self.in_precache = False if path == ":memory:" else in_precache
 
         # Register host function hooks
-        self.conn.register_aggregate_function(StandardError)
+        self.conn.register_aggregate_function("stderr", StandardError)
         self.conn.register_adaptor(Datatype, Adaptor.enum)
         self.conn.register_adaptor(Mode, Adaptor.enum)
         self.conn.register_adaptor(Status, Adaptor.enum)
