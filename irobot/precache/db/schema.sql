@@ -89,7 +89,7 @@ create trigger if not exists auto_request
 create table if not exists last_access (
   data_object  integer    primary key references data_objects(id) on delete cascade,
   last_access  TIMESTAMP  not null default (strftime('%s', 'now'))
-);
+) without rowid;
 
 create index if not exists la_data_object on last_access(data_object);
 create index if not exists la_last_access on last_access(last_access);
