@@ -339,12 +339,14 @@ class TrackingDB(LogWriter):
         """
         Set the size of a data object file
 
+        @note    This probably doesn't need to be called externally
+
         @param   data_object  Data object ID (int)
         @param   mode         Mode (Mode)
         @param   datatype     File type (Datatype)
         @param   size         File size in bytes (int)
         """
-        assert size > 0
+        assert size >= 0
 
         self._exec("""
             begin immediate transaction;
