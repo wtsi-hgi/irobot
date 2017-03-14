@@ -104,7 +104,7 @@ create table if not exists data_sizes (
   id        integer   primary key,
   dom_file  integer   references do_modes(id) on delete cascade,
   datatype  DATATYPE  references datatypes(id),
-  size      integer   not null check (size > 0),
+  size      integer   not null check (size >= 0),
 
   unique (dom_file, datatype)
 );
