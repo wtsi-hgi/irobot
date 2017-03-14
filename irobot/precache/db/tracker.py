@@ -106,9 +106,9 @@ class TrackingDB(LogWriter):
 
         # NOTE Tracked files that are in an inconsistent state need to
         # be handled upstream; it shouldn't be done at this level. The
-        # get_download_queue method can be used to determine this and
-        # the database will sanitise files in a bad state (i.e.,
-        # "producing") at initialisation time
+        # download_queue property can be used to determine this and the
+        # database will sanitise files in a bad state (i.e., producing)
+        # at initialisation time
         self.log(logging.INFO, "Precache tracking database ready")
 
         self._schedule_vacuum()
@@ -142,7 +142,8 @@ class TrackingDB(LogWriter):
         self._exec("vacuum")
         self._schedule_vacuum()
 
-    def get_commitment(self) -> int:
+    @property
+    def commitment(self) -> int:
         """
         Retrieve the amount of space used/reserved by the precache
         (including the size of the tracking DB, when relevant)
@@ -159,7 +160,8 @@ class TrackingDB(LogWriter):
 
         return db_size + precache_commitment
 
-    def get_production_rates(self) -> Dict[str, Optional[SummaryStat]]:
+    @property
+    def production_rates(self) -> Dict[str, Optional[SummaryStat]]:
         """
         Retrieve the current production rates
 
@@ -180,6 +182,17 @@ class TrackingDB(LogWriter):
                 """)
             }
         }
+
+    @property
+    def download_queue(self) -> List[Tuple[Status, datetime, int, Mode, int]]:
+        """
+        Get the list of files being downloaded or waiting to be
+        downloaded
+
+        @return  List of current status, timestamp, data object, mode
+                 and size in bytes, ordered by status then timestamp
+        """
+        return self._exec("select * from download_queue").fetchall()
 
     def get_data_object_id(self, irods_path:str) -> Optional[int]:
         """
@@ -271,16 +284,6 @@ class TrackingDB(LogWriter):
             and    datatype    = ?
         """, (data_object, mode, datatype)).fetchone()
         return DataObjectFileStatus(*status) if status else None
-
-    def get_download_queue(self) -> List[Tuple[Status, datetime, int, Mode, int]]:
-        """
-        Get the list of files being downloaded or waiting to be
-        downloaded
-
-        @return  List of current status, timestamp, data object, mode
-                 and size in bytes, ordered by status then timestamp
-        """
-        return self._exec("select * from download_queue").fetchall()
 
     def set_status(self, data_object:int, mode:Mode, datatype:Datatype, status:Status) -> None:
         """
