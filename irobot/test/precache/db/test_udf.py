@@ -29,8 +29,6 @@ class TestUDFs(unittest.TestCase):
     def test_stderr(self):
         stderr = _udf.StandardError()
 
-        self.assertEqual(stderr.name, "stderr")
-
         # Pass over non-numeric input
         stderr.step("foo")
         self.assertIsNone(stderr.finalise())
