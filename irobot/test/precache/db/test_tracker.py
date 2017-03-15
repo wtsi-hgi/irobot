@@ -17,18 +17,23 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import math
+import os
+import random
+import statistics
 import unittest
+from unittest.mock import MagicMock, patch
 from tempfile import NamedTemporaryFile
 
+import irobot.precache.db.tracker as _tracker
 from irobot.precache.db import TrackingDB, Datatype, Mode, Status
-from irobot.precache.db.tracker import _nuple
 
 
 class TestMisc(unittest.TestCase):
     def test_nuple(self):
-        self.assertEqual(_nuple(), (None,))
-        self.assertEqual(_nuple(2), (None, None))
-        self.assertEqual(_nuple(3), (None, None, None))
+        self.assertEqual(_tracker._nuple(),  (None,))
+        self.assertEqual(_tracker._nuple(2), (None, None))
+        self.assertEqual(_tracker._nuple(3), (None, None, None))
 
 
 class TestDBMagic(unittest.TestCase):
@@ -138,9 +143,127 @@ class TestDBMagic(unittest.TestCase):
             after = TrackingDB(temp_db.name)
             after_count, = after._exec("select count(*) from current_status where status = 2").fetchone()
             self.assertEqual(after_count, 0)
-            
+
             sanity_check, = after._exec("select count(*) from current_status where status = 1").fetchone()
             self.assertEqual(sanity_check, len(Datatype))
+
+
+class TestTrackingDB(unittest.TestCase):
+    def setUp(self):
+        self.tracker = TrackingDB(":memory:")
+        self.mock_connection = MagicMock(spec=_tracker.Connection)
+
+    @patch("irobot.precache.db.tracker.Timer", spec=True)
+    def test_cleanup_on_gc(self, mock_timer):
+        tracker = TrackingDB(":memory:")
+        tracker.conn = self.mock_connection
+        mock_timer.is_alive.return_value = True
+
+        tracker.__del__()
+        tracker._vacuum_timer.is_alive.assert_called_once()
+        tracker._vacuum_timer.cancel.assert_called_once()
+        tracker.conn.close.assert_called_once()
+
+    def test_vacuum(self):
+        self.tracker.conn = self.mock_connection
+        self.tracker._vacuum()
+        self.tracker.conn.cursor().execute.assert_called_once_with("vacuum")
+
+    def test_external_commitment(self):
+        self.assertEqual(self.tracker.commitment, 0)
+        self.tracker.new_request("foo", "bar", (123, 456, 789))
+        self.assertEqual(self.tracker.commitment, 1368)
+
+    def test_internal_commitment(self):
+        with NamedTemporaryFile() as temp_db:
+            db_file= temp_db.name
+            tracker = TrackingDB(db_file, True)
+            self.assertEqual(tracker.commitment, os.stat(db_file).st_size)
+
+    def test_production_rates(self):
+        self.assertEqual(self.tracker.production_rates, {"download": None, "checksum": None})
+
+        data_size      = random.randint(500, 2000)
+        start_time     = random.randint(0, 3600)
+        download_times = [t + start_time for t in random.sample(range(100), 3)]
+        checksum_times = [t + start_time for t in random.sample(range(100), 4)]
+
+        # Set initial state
+        self.tracker._exec("""
+            begin immediate transaction;
+
+            insert into data_objects (id, irods_path)
+                              values (1,  "foo"),
+                                     (2,  "bar"),
+                                     (3,  "quux");
+
+            insert into do_modes (id, data_object, mode, precache_path)
+                          values (1,  1,           1,    "foo"),
+                                 (2,  2,           1,    "bar"),
+                                 (3,  3,           1,    "quux"),
+                                 (4,  3,           2,    "baz");
+
+            insert into data_sizes (dom_file, datatype, size)
+                select do_modes.id, 1, ?
+                from   do_modes;
+
+            update status_log set timestamp = 0;
+
+            -- Set the producing time
+            insert into status_log (timestamp, dom_file, datatype, status)
+                select     ?, do_modes.id, datatypes.id, 2
+                from       do_modes
+                cross join datatypes;
+
+            commit;
+        """, (data_size, start_time))
+
+        # Set ready times
+        self.tracker.conn.cursor().executemany("""
+            insert into status_log (timestamp, dom_file, datatype, status)
+                        values     (?,         ?,        ?,        ?)
+        """, [
+            (timestamp, dom_file, Datatype.data, Status.ready)
+            for dom_file, timestamp
+            in  enumerate(download_times, 1)
+        ] + [
+            (timestamp, dom_file, Datatype.checksums, Status.ready)
+            for dom_file, timestamp
+            in  enumerate(checksum_times, 1)
+        ])
+
+        for stat, times in ("download", download_times), ("checksum", checksum_times):
+            self.assertAlmostEqual(
+                self.tracker.production_rates[stat].mean,
+                statistics.mean([data_size / (t - start_time) for t in times])
+            )
+
+            self.assertAlmostEqual(
+                self.tracker.production_rates[stat].stderr,
+                statistics.stdev([data_size / (t - start_time) for t in times]) / math.sqrt(len(times))
+            )
+
+    def test_download_queue(self):
+        self.assertEqual(self.tracker.download_queue, [])
+
+        req = self.tracker.new_request("foo", "bar", (123, 0, 0))
+        q = self.tracker.download_queue
+
+        self.assertEqual(len(q), 1)
+        self.assertEqual(q[0][0], Status.requested)
+        self.assertEqual((q[0][2], q[0][3]), req)
+        self.assertEqual(q[0][4], 123)
+
+        self.tracker.set_status(req[0], req[1], Datatype.data, Status.producing)
+        q = self.tracker.download_queue
+
+        self.assertEqual(self.tracker.get_current_status(req[0], req[1], Datatype.data).status, Status.producing)
+
+        self.assertEqual(len(q), 1)
+        self.assertEqual(q[0][0], Status.producing)
+
+        self.tracker.set_status(req[0], req[1], Datatype.data, Status.ready)
+        self.assertEqual(self.tracker.download_queue, [])
 
 
 if __name__ == "__main__":
