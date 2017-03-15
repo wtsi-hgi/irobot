@@ -146,6 +146,9 @@ create trigger if not exists auto_first_status
       select NEW.id, id, 1 from datatypes;
   end;
 
+-- Status is strictly increasing and unique for each data object file.
+-- As such, we use that (instead of timestamp with only one second
+-- resolution) to order the status log
 create view if not exists current_status as
   select    do_modes.data_object,
             do_modes.mode,
@@ -158,8 +161,8 @@ create view if not exists current_status as
   left join status_log as newer
   on        newer.dom_file  = newest.dom_file
   and       newer.datatype  = newest.datatype
-  and       newer.timestamp > newest.timestamp
-  where     newer.id is null;
+  and       newer.status    > newest.status
+  where     newer.id       is null;
 
 create view if not exists download_queue as
   select   current_status.status,
