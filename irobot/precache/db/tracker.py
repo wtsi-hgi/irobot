@@ -232,14 +232,14 @@ class TrackingDB(LogWriter):
         @param   data_object  Data object ID (int)
         @param   older_than   Cut off duration (datetime.timedelta)
         @return  List of data object IDs and their last access time,
-                 ordered chronologically
+                 ordered chronologically (oldest first)
         """
         data_object_clause = "" if data_object is None else "and data_object = :do_id"
         sql = f"""
             select   data_object,
                      last_access
             from     last_access
-            where    :now - last_access > :age
+            where    :now - last_access >= :age
                      {data_object_clause}
             order by last_access asc
         """

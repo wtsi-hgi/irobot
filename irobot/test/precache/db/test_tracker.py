@@ -23,10 +23,12 @@ import random
 import statistics
 import unittest
 from unittest.mock import MagicMock, patch
+from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 
 import irobot.precache.db.tracker as _tracker
 from irobot.precache.db import TrackingDB, Datatype, Mode, Status
+from irobot.precache.db._exceptions import StatusExists
 
 
 class TestMisc(unittest.TestCase):
@@ -185,8 +187,8 @@ class TestTrackingDB(unittest.TestCase):
 
         data_size      = random.randint(500, 2000)
         start_time     = random.randint(0, 3600)
-        download_times = [t + start_time for t in random.sample(range(100), 3)]
-        checksum_times = [t + start_time for t in random.sample(range(100), 4)]
+        download_times = [t + start_time + 1 for t in random.sample(range(100), 3)]
+        checksum_times = [t + start_time + 1 for t in random.sample(range(100), 4)]
 
         # Set initial state
         self.tracker._exec("""
@@ -264,6 +266,73 @@ class TestTrackingDB(unittest.TestCase):
 
         self.tracker.set_status(req[0], req[1], Datatype.data, Status.ready)
         self.assertEqual(self.tracker.download_queue, [])
+
+    def test_get_do_id(self):
+        do_id, _mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        self.assertEqual(self.tracker.get_data_object_id("foo"), do_id)
+        self.assertIsNone(self.tracker.get_data_object_id("quux"))
+
+    def test_has_switchover(self):
+        do_id1, mode1 = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        self.assertEqual(mode1, Mode.master)
+        self.assertFalse(self.tracker.has_switchover(do_id1))
+
+        do_id2, mode2 = self.tracker.new_request("foo", "quux", (0, 0, 0))
+        self.assertEqual(do_id1, do_id2)
+        self.assertEqual(mode2, Mode.switchover)
+        self.assertTrue(self.tracker.has_switchover(do_id1))
+
+    def test_last_access(self):
+        self.assertEqual(self.tracker.get_last_access(), [])
+
+        do_id, mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        last_access, = self.tracker._exec("select last_access from last_access where data_object = ?", (do_id,)).fetchone()
+        self.assertEqual(self.tracker.get_last_access(), [(do_id, last_access)])
+        self.assertEqual(self.tracker.get_last_access(do_id), [(do_id, last_access)])
+        self.assertEqual(self.tracker.get_last_access(do_id + 123), [])
+
+        with patch("irobot.precache.db.tracker.datetime") as mock_datetime:
+            delta = timedelta(seconds=10)
+            mock_datetime.utcnow.return_value = last_access + delta
+            self.assertEqual(self.tracker.get_last_access(do_id, delta), [(do_id, last_access)])
+            self.assertEqual(self.tracker.get_last_access(do_id, timedelta(seconds=11)), [])
+
+        do_id2, _mode = self.tracker.new_request("quux", "xyzzy", (0, 0, 0))
+        self.tracker._exec("update last_access set last_access = ? - 123 where data_object = ?", (last_access, do_id2))
+        self.assertEqual(len(self.tracker.get_last_access()), 2)
+        self.assertEqual(self.tracker.get_last_access()[0][0], do_id2)
+        self.assertEqual(self.tracker.get_last_access()[1][0], do_id)
+
+    def test_update_last_access(self):
+        start = datetime.utcnow()
+
+        do_id, _mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        [(_, first_access)] = self.tracker.get_last_access(do_id)
+
+        self.tracker.update_last_access(do_id)
+        [(_, last_access)] = self.tracker.get_last_access(do_id)
+
+        op_duration = datetime.utcnow() - start
+        self.assertLessEqual(last_access - first_access, op_duration)
+
+    def test_status(self):
+       self.assertIsNone(self.tracker.get_current_status(123, Mode.master, Datatype.data))
+
+       do_id, mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
+       self.assertEqual(self.tracker.get_current_status(do_id, mode, Datatype.data).status, Status.requested)
+
+       self.tracker.set_status(do_id, mode, Datatype.data, Status.producing)
+       self.assertEqual(self.tracker.get_current_status(do_id, mode, Datatype.data).status, Status.producing)
+
+       self.assertRaises(StatusExists, self.tracker.set_status, do_id, mode, Datatype.data, Status.producing)
+
+    def test_size(self):
+        self.assertIsNone(self.tracker.get_size(123, Mode.master, Datatype.data))
+
+        do_id, mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
+        self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.data), 123)
+        self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.metadata), 456)
+        self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.checksums), 789)
 
 
 if __name__ == "__main__":
