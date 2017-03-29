@@ -28,7 +28,7 @@ from tempfile import NamedTemporaryFile
 
 import irobot.precache.db.tracker as _tracker
 from irobot.precache.db import TrackingDB, Datatype, Mode, Status
-from irobot.precache.db._exceptions import StatusExists
+from irobot.precache.db._exceptions import PrecacheExists, StatusExists, SwitchoverExists, SwitchoverDoesNotExist
 
 
 class TestMisc(unittest.TestCase):
@@ -333,6 +333,57 @@ class TestTrackingDB(unittest.TestCase):
         self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.data), 123)
         self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.metadata), 456)
         self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.checksums), 789)
+
+    def test_new_request(self):
+        do_id, mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
+        self.assertEqual(mode, Mode.master)
+
+        self.assertRaises(PrecacheExists, self.tracker.new_request, "foo", "bar", (123, 456, 789))
+
+        do_id2, mode2 = self.tracker.new_request("foo", "quux", (123, 456, 789))
+        self.assertEqual(do_id, do_id2)
+        self.assertEqual(mode2, Mode.switchover)
+
+        self.assertRaises(SwitchoverExists, self.tracker.new_request, "foo", "baz", (123, 456, 789))
+
+    def test_do_switchover(self):
+        do_id, _mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
+        self.assertRaises(SwitchoverDoesNotExist, self.tracker.do_switchover, do_id)
+
+        precache_path, = self.tracker._exec("select precache_path from do_requests where  id = ?", (do_id,)).fetchone()
+        self.assertEqual(precache_path, "bar")
+
+        do_id2, mode2 = self.tracker.new_request("foo", "quux", (123, 456, 789))
+        self.assertEqual(do_id, do_id2)
+        self.assertEqual(mode2, Mode.switchover)
+        self.assertTrue(self.tracker.has_switchover(do_id))
+
+        self.tracker.do_switchover(do_id)
+        self.assertFalse(self.tracker.has_switchover(do_id))
+
+        new_precache_path, = self.tracker._exec("select precache_path from do_requests where  id = ?", (do_id,)).fetchone()
+        self.assertEqual(new_precache_path, "quux")
+
+    def test_delete_object(self):
+        do_id, _mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
+        self.tracker.delete_data_object(do_id)
+
+        records, = self.tracker._exec("""
+            with _counts as (
+                select count(*) as c from data_objects
+                union all
+                select count(*) as c from do_modes
+                union all
+                select count(*) as c from last_access
+                union all
+                select count(*) as c from data_sizes
+                union all
+                select count(*) as c from status_log
+            )
+            select sum(c) from _counts;
+        """).fetchone()
+
+        self.assertEqual(records, 0)
 
 
 if __name__ == "__main__":
