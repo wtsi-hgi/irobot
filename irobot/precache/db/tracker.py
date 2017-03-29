@@ -40,19 +40,9 @@ def _nuple(n:int = 1) -> Tuple:
     return (None,) * n
 
 
-class Datatype(Enum):
-    data       = 1
-    metadata   = 2
-    checksums  = 3
-
-class Mode(Enum):
-    master     = 1
-    switchover = 2
-
-class Status(Enum):
-    requested  = 1
-    producing  = 2
-    ready      = 3
+Datatype = Enum("Datatype", "data metadata checksums")
+Mode = Enum("Mode", "master switchover")
+Status = Enum("Status", "requested producing ready")
 
 
 SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
