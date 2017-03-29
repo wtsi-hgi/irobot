@@ -111,7 +111,7 @@ class TestiRODS(unittest.TestCase):
         self.irods.add_listener(_listener)
 
         self.irods.get_dataobject("/foo/bar", "/quux/xyzzy")
-        _listener.assert_called_once_with(1234, irods.IGET_QUEUED, "/foo/bar")
+        _listener.assert_called_once_with(1234, irods.iGetStatus.queued, "/foo/bar")
         self.assertEqual(len(self.irods._iget_queue), 1)
         self.assertEqual(self.irods._iget_queue.pop(), ("/foo/bar", "/quux/xyzzy"))
 
@@ -154,8 +154,8 @@ class TestiRODS(unittest.TestCase):
         self.irods._iget("/foo/bar", "/quux/xyzzy")
         irods.iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(1234, irods.IGET_STARTED, "/foo/bar"),
-            call(1234, irods.IGET_FINISHED, "/foo/bar")
+            call(1234, irods.iGetStatus.started, "/foo/bar"),
+            call(1234, irods.iGetStatus.finished, "/foo/bar")
         ])
 
     def test_iget_fail(self):
@@ -170,8 +170,8 @@ class TestiRODS(unittest.TestCase):
         self.irods._iget("/foo/bar", "/quux/xyzzy")
         irods.iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(1234, irods.IGET_STARTED, "/foo/bar"),
-            call(1234, irods.IGET_FAILED, "/foo/bar")
+            call(1234, irods.iGetStatus.started, "/foo/bar"),
+            call(1234, irods.iGetStatus.failed, "/foo/bar")
         ])
 
     def test_get_metadata(self):

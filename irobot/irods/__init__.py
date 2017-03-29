@@ -1,1 +1,1 @@
-from irobot.irods.irods import iRODS, IGET_QUEUED, IGET_STARTED, IGET_FINISHED, IGET_FAILED
+from irobot.irods.irods import iRODS, iGetStatus
