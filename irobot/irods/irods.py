@@ -20,6 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import logging
 from collections import deque
 from datetime import datetime
+from enum import Enum
 from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
 from typing import Optional
@@ -28,13 +29,6 @@ from irobot.common import Listener
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 from irobot.logging import LogWriter
-
-
-# Status constants
-IGET_QUEUED = "queued"
-IGET_STARTED = "started"
-IGET_FINISHED = "finished"
-IGET_FAILED = "failed"
 
 
 def _exists(irods_path:str) -> None:
@@ -48,6 +42,9 @@ def _exists(irods_path:str) -> None:
 
     except CalledProcessError:
         raise IOError(f"Data object \"{irods_path}\" inaccessible")
+
+
+iGetStatus = Enum("iGetStatus", "queued started finished failed")
 
 
 class iRODS(Listener, LogWriter):
@@ -92,7 +89,7 @@ class iRODS(Listener, LogWriter):
 
         @note    *args will be a tuple of the status and iRODS path
         """
-        level = logging.WARNING if args[0] == IGET_FAILED else logging.INFO
+        level = logging.WARNING if args[0] == iGetStatus.failed else logging.INFO
         self.log(level, "iget: {} {}".format(*args))
 
     def get_dataobject(self, irods_path:str, local_path:str) -> None:
@@ -105,7 +102,7 @@ class iRODS(Listener, LogWriter):
         """
         _exists(irods_path)
         self._iget_queue.append((irods_path, local_path))
-        self.broadcast(IGET_QUEUED, irods_path)
+        self.broadcast(iGetStatus.queued, irods_path)
 
     def _iget(self, irods_path:str, local_path:str) -> None:
         """
@@ -117,12 +114,12 @@ class iRODS(Listener, LogWriter):
         @param   local_path  Local filesystem target file (string)
         """
         try:
-            self.broadcast(IGET_STARTED, irods_path)
+            self.broadcast(iGetStatus.started, irods_path)
             iget(irods_path, local_path)
-            self.broadcast(IGET_FINISHED, irods_path)
+            self.broadcast(iGetStatus.finished, irods_path)
 
         except CalledProcessError:
-            self.broadcast(IGET_FAILED, irods_path)
+            self.broadcast(iGetStatus.failed, irods_path)
 
     def get_metadata(self, irods_path:str) -> None:
         """
