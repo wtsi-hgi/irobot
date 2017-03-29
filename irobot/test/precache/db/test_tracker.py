@@ -235,14 +235,16 @@ class TestTrackingDB(unittest.TestCase):
         ])
 
         for stat, times in ("download", download_times), ("checksum", checksum_times):
+            rates = [data_size / (t - start_time) for t in times]
+
             self.assertAlmostEqual(
                 self.tracker.production_rates[stat].mean,
-                statistics.mean([data_size / (t - start_time) for t in times])
+                statistics.mean(rates)
             )
 
             self.assertAlmostEqual(
                 self.tracker.production_rates[stat].stderr,
-                statistics.stdev([data_size / (t - start_time) for t in times]) / math.sqrt(len(times))
+                statistics.stdev(rates) / math.sqrt(len(times))
             )
 
     def test_download_queue(self):
