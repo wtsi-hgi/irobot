@@ -82,7 +82,8 @@ class TrackingDB(LogWriter):
 
         schema = canon.path(join(dirname(__file__), "schema.sql"))
         self.log(logging.DEBUG, f"Initialising precache tracking database schema from {schema}")
-        schema_script = open(schema, "rt").read()
+        with open(schema, "rt") as schema_file:
+            schema_script = schema_file.read()
         _ = self._exec(schema_script).fetchall()
 
         # Sanity check our enumerations for parity
