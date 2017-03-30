@@ -22,7 +22,7 @@ from subprocess import CalledProcessError
 from unittest.mock import MagicMock, call
 
 import irobot.irods.irods as irods
-import irobot.common.listener as listener
+import irobot.common.listenable as listenable
 from irobot.config.irods import iRODSConfig
 
 
@@ -51,7 +51,7 @@ irods.ils = MagicMock()
 irods.iget = MagicMock()
 
 
-class ListenerInternals(object):
+class ListenableInternals(object):
     def __init__(self, original):
         self._orig = original
         self._orig_broadcast_time = original._broadcast_time
@@ -80,10 +80,10 @@ class TestiRODS(unittest.TestCase):
     def setUp(self):
         config = iRODSConfig(max_connections="1")
         self.irods = irods.iRODS(config)
-        self.listener_interals = ListenerInternals(listener)
+        self.listenable_interals = ListenableInternals(listenable)
     
     def tearDown(self):
-        self.listener_interals.reset()
+        self.listenable_interals.reset()
 
         irods.baton.reset_mock()
         irods.ils.reset_mock()
@@ -100,8 +100,8 @@ class TestiRODS(unittest.TestCase):
         self.assertFalse(self.irods._running)
 
     def test_enqueue_dataobject(self):
-        # Override listener internals
-        self.listener_interals.mock()
+        # Override listenable internals
+        self.listenable_interals.mock()
 
         # Stop the thread runner
         self.irods._running = False
@@ -145,8 +145,8 @@ class TestiRODS(unittest.TestCase):
         irods.Thread = _old_thread
 
     def test_iget_pass(self):
-        # Override listener internals
-        self.listener_interals.mock()
+        # Override listenable internals
+        self.listenable_interals.mock()
 
         _listener = MagicMock()
         self.irods.add_listener(_listener)
@@ -159,8 +159,8 @@ class TestiRODS(unittest.TestCase):
         ])
 
     def test_iget_fail(self):
-        # Override listener internals
-        self.listener_interals.mock()
+        # Override listenable internals
+        self.listenable_interals.mock()
 
         _listener = MagicMock()
         self.irods.add_listener(_listener)

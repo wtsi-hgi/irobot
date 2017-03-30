@@ -18,30 +18,21 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-import irobot.common.listener as listener
-
-
-class TestListenerInternals(unittest.TestCase):
-    def test_broadcast_time(self):
-        _orig_datetime, listener.datetime = listener.datetime, MagicMock()
-
-        listener._broadcast_time()
-        listener.datetime.utcnow.assert_called_once()
-
-        listener.datetime = _orig_datetime
+from irobot.common.listenable import Listenable, _broadcast_time
 
 
-class TestListener(unittest.TestCase):
-    def setUp(self):
-        self._orig_broadcast_time, listener._broadcast_time = listener._broadcast_time, MagicMock(return_value=1234)
+class TestListenableInternals(unittest.TestCase):
+    @patch("irobot.common.listenable.datetime", spec=True)
+    def test_broadcast_time(self, mock_datetime):
+        _broadcast_time()
+        mock_datetime.utcnow.assert_called_once()
 
-    def tearDown(self):
-        listener._broadcast_time = self._orig_broadcast_time
 
+class TestListenable(unittest.TestCase):
     def test_add_listener(self):
-        l = listener.Listener()
+        l = Listenable()
         self.assertEqual(len(l._listeners), 0)
 
         _listener = MagicMock()
@@ -50,14 +41,15 @@ class TestListener(unittest.TestCase):
         self.assertEqual(len(l._listeners), 1)
         self.assertEqual(l._listeners.pop(), _listener)
 
-    def test_broadcast(self):
-        l = listener.Listener()
+    @patch("irobot.common.listenable._broadcast_time", spec=True)
+    def test_broadcast(self, mock_broadcast_time):
+        l = Listenable()
 
         _listener = MagicMock()
         l.add_listener(_listener)
         l.broadcast("foo", "bar", quux="xyzzy")
 
-        _listener.assert_called_once_with(1234, "foo", "bar", quux="xyzzy")
+        _listener.assert_called_once_with(mock_broadcast_time(), "foo", "bar", quux="xyzzy")
 
 
 if __name__ == "__main__":

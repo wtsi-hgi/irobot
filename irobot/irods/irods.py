@@ -25,7 +25,7 @@ from subprocess import CalledProcessError
 from threading import BoundedSemaphore, Thread
 from typing import Optional
 
-from irobot.common import Listener
+from irobot.common import Listenable
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 from irobot.logging import LogWriter
@@ -47,7 +47,7 @@ def _exists(irods_path:str) -> None:
 iGetStatus = Enum("iGetStatus", "queued started finished failed")
 
 
-class iRODS(Listener, LogWriter):
+class iRODS(Listenable, LogWriter):
     """ High level iRODS interface with iget pool management """
     def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None) -> None:
         """
