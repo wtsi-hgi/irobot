@@ -19,78 +19,49 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from subprocess import CalledProcessError
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
-import irobot.irods.irods as irods
-import irobot.common.listenable as listenable
 from irobot.config.irods import iRODSConfig
+from irobot.irods.irods import _exists, iRODS, iGetStatus
 
 
 # Temporary data object for testing
 TEST_DATAOBJECT_METADATA = {
-  "collection": "/foo",
-  "data_object": "bar",
-  "checksum": "abcdef1234567890",
-  "size": 1234,
-  "avus": [
-    {"attribute": "foo", "value": "bar"},
-    {"attribute": "quux", "value": "xyzzy"}
-  ],
-  "access": [
-    {"owner": "someone", "level": "own", "zone": "myZone"}
-  ],
-  "timestamps": [
-    {"created": "1970-01-01T00:00:00", "replicates": 0},
-    {"modified": "1970-01-01T00:00:00", "replicates": 0}
-  ]
+    "collection": "/foo",
+    "data_object": "bar",
+    "checksum": "abcdef1234567890",
+    "size": 1234,
+    "avus": [
+        {"attribute": "foo", "value": "bar"},
+        {"attribute": "quux", "value": "xyzzy"}
+    ],
+    "access": [
+        {"owner": "someone", "level": "own", "zone": "myZone"}
+    ],
+    "timestamps": [
+        {"created": "1970-01-01T00:00:00", "replicates": 0},
+        {"modified": "1970-01-01T00:00:00", "replicates": 0}
+    ]
 }
 
 
-irods.baton = MagicMock(return_value=TEST_DATAOBJECT_METADATA)
-irods.ils = MagicMock()
-irods.iget = MagicMock()
-
-
-class ListenableInternals(object):
-    def __init__(self, original):
-        self._orig = original
-        self._orig_broadcast_time = original._broadcast_time
-
-    def mock(self):
-        self._orig._broadcast_time = MagicMock(return_value=1234)
-
-    def reset(self):
-        self._orig._broadcast_time = self._orig_broadcast_time
-
-
+@patch("irobot.irods.irods.ils", spec=True)
 class TestExists(unittest.TestCase):
-    def tearDown(self):
-        irods.ils.reset_mock(side_effect=True)
+    def test_exists_pass(self, mock_ils):
+        _exists("/foo/bar")
+        mock_ils.assert_called_once_with("/foo/bar")
 
-    def test_exists_pass(self):
-        irods._exists("/foo/bar")
-        irods.ils.assert_called_once_with("/foo/bar")
-
-    def test_exists_fail(self):
-        irods.ils.side_effect = CalledProcessError(1, None, None)
-        self.assertRaises(IOError, irods._exists, "/foo/bar")
+    def test_exists_fail(self, mock_ils):
+        mock_ils.side_effect = CalledProcessError(1, None, None)
+        self.assertRaises(IOError, _exists, "/foo/bar")
 
 
 class TestiRODS(unittest.TestCase):
     def setUp(self):
         config = iRODSConfig(max_connections="1")
-        self.irods = irods.iRODS(config)
-        self.listenable_interals = ListenableInternals(listenable)
-    
+        self.irods = iRODS(config)
+
     def tearDown(self):
-        self.listenable_interals.reset()
-
-        irods.baton.reset_mock()
-        irods.ils.reset_mock()
-        irods.ils.side_effect = None
-        irods.iget.reset_mock()
-        irods.iget.side_effect = None
-
         # Stop the thread runner
         self.irods._running = False
         self.irods._runner.join()
@@ -99,10 +70,9 @@ class TestiRODS(unittest.TestCase):
         self.irods.__del__()
         self.assertFalse(self.irods._running)
 
-    def test_enqueue_dataobject(self):
-        # Override listenable internals
-        self.listenable_interals.mock()
-
+    @patch("irobot.irods.irods.ils", spec=True)
+    @patch("irobot.common.listenable._broadcast_time", spec=True)
+    def test_enqueue_dataobject(self, mock_broadcast_time, *args):
         # Stop the thread runner
         self.irods._running = False
         self.irods._runner.join()
@@ -111,7 +81,7 @@ class TestiRODS(unittest.TestCase):
         self.irods.add_listener(_listener)
 
         self.irods.get_dataobject("/foo/bar", "/quux/xyzzy")
-        _listener.assert_called_once_with(1234, irods.iGetStatus.queued, "/foo/bar")
+        _listener.assert_called_once_with(mock_broadcast_time(), iGetStatus.queued, "/foo/bar")
         self.assertEqual(len(self.irods._iget_queue), 1)
         self.assertEqual(self.irods._iget_queue.pop(), ("/foo/bar", "/quux/xyzzy"))
 
@@ -120,64 +90,65 @@ class TestiRODS(unittest.TestCase):
         self.irods._running = False
         self.irods._runner.join()
 
-        _old_thread, irods.Thread = irods.Thread, MagicMock()
-        def _stop_running(*args, **kwargs):
-            self.irods._running = False
-        irods.Thread().start = _stop_running
+        with patch("irobot.irods.irods.Thread") as mock_thread:
+            def _stop_running(*args, **kwargs):
+                self.irods._running = False
+            mock_thread().start = _stop_running
 
-        # ...start it up again with two items in the queue
-        self.irods._iget_queue.append(("/foo/bar", "/quux/xyzzy"))
-        self.irods._iget_queue.append(("/another/test", "/fizz/buzz"))
-        self.irods._running = True
-        self.irods._thread_runner()
+            # ...start it up again with two items in the queue
+            self.irods._iget_queue.append(("/foo/bar", "/quux/xyzzy"))
+            self.irods._iget_queue.append(("/another/test", "/fizz/buzz"))
+            self.irods._running = True
+            self.irods._thread_runner()
 
-        irods.Thread.assert_has_calls([
-            call(args=("/foo/bar", "/quux/xyzzy"), target=self.irods._iget)
-        ])
+            mock_thread.assert_has_calls([
+                call(args=("/foo/bar", "/quux/xyzzy"), target=self.irods._iget)
+            ])
 
-        # Our instance only allows one iget at a time (i.e.,
-        # max_connections=1), therefore -- as the runner is forcefully
-        # terminated -- there should still be an element in the queue
-        # FIXME This will be true regardless of the resource locking
-        self.assertEqual(len(self.irods._iget_queue), 1)
-        self.assertEqual(self.irods._iget_queue.pop(), ("/another/test", "/fizz/buzz"))
+            # Our instance only allows one iget at a time (i.e.,
+            # max_connections=1), therefore -- as the runner is
+            # forcefully terminated -- there should still be an element
+            # in the queue
+            # FIXME This will be true regardless of the resource locking
+            self.assertEqual(len(self.irods._iget_queue), 1)
+            self.assertEqual(self.irods._iget_queue.pop(), ("/another/test", "/fizz/buzz"))
 
-        irods.Thread = _old_thread
-
-    def test_iget_pass(self):
-        # Override listenable internals
-        self.listenable_interals.mock()
-
+    @patch("irobot.irods.irods.iget", spec=True)
+    @patch("irobot.common.listenable._broadcast_time", spec=True)
+    def test_iget_pass(self, mock_broadcast_time, mock_iget):
         _listener = MagicMock()
         self.irods.add_listener(_listener)
 
         self.irods._iget("/foo/bar", "/quux/xyzzy")
-        irods.iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
+        mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(1234, irods.iGetStatus.started, "/foo/bar"),
-            call(1234, irods.iGetStatus.finished, "/foo/bar")
+            call(mock_broadcast_time(), iGetStatus.started, "/foo/bar"),
+            call(mock_broadcast_time(), iGetStatus.finished, "/foo/bar")
         ])
 
-    def test_iget_fail(self):
-        # Override listenable internals
-        self.listenable_interals.mock()
-
+    @patch("irobot.irods.irods.iget", spec=True)
+    @patch("irobot.common.listenable._broadcast_time", spec=True)
+    def test_iget_fail(self, mock_broadcast_time, mock_iget):
         _listener = MagicMock()
         self.irods.add_listener(_listener)
 
-        irods.iget.side_effect = CalledProcessError(1, "foo", "bar")
+        mock_iget.side_effect = CalledProcessError(1, "foo", "bar")
 
         self.irods._iget("/foo/bar", "/quux/xyzzy")
-        irods.iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
+        mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(1234, irods.iGetStatus.started, "/foo/bar"),
-            call(1234, irods.iGetStatus.failed, "/foo/bar")
+            call(mock_broadcast_time(), iGetStatus.started, "/foo/bar"),
+            call(mock_broadcast_time(), iGetStatus.failed, "/foo/bar")
         ])
 
-    def test_get_metadata(self):
+    @patch("irobot.irods.irods.baton", spec=True)
+    @patch("irobot.irods.irods.ils", spec=True)
+    def test_get_metadata(self, mock_ils, mock_baton):
+        mock_baton.return_value = TEST_DATAOBJECT_METADATA
+
         avu_metadata, fs_metadata = self.irods.get_metadata("/foo/bar")
-        irods.ils.assert_called_once_with("/foo/bar")
-        irods.baton.assert_called_once_with("/foo/bar")
+        mock_ils.assert_called_once_with("/foo/bar")
+        mock_baton.assert_called_once_with("/foo/bar")
 
         self.assertEqual(avu_metadata, TEST_DATAOBJECT_METADATA["avus"])
 
