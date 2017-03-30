@@ -38,8 +38,8 @@ def _broadcast_time() -> datetime:
     return datetime.utcnow()
 
 
-class Listener(object):
-    """ Listener base class """
+class Listenable(object):
+    """ Listenable base class """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._listeners:List[_ListenerCallable] = []
