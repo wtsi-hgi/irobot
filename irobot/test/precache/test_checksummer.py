@@ -17,7 +17,10 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import unittest
+from hashlib import md5
+from tempfile import TemporaryDirectory
 
 from irobot.config.precache import PrecacheConfig
 from irobot.precache._checksummer import Checksummer, _parse_checksum_record
@@ -55,20 +58,46 @@ class TestInternals(unittest.TestCase):
 
 class TestChecksummer(unittest.TestCase):
     def setUp(self):
-        config = PrecacheConfig("/foo", "bar", "unlimited", "unlimited", "10B")
+        chunk_size = 10 # bytes
+
+        config = PrecacheConfig("/foo", "bar", "unlimited", "unlimited", f"{chunk_size}B")
         self.checksummer = Checksummer(config)
 
-    def test_calculate_checksum_filesize(self):
-        data_size = 25
-        mock_checksum_file = "\n".join([
-            f"*\t{_mock_checksum}",
-            f"0-10\t{_mock_checksum}",
-            f"10-20\t{_mock_checksum}",
-            f"20-25\t{_mock_checksum}",
-            "",
-        ])
+        self.temp_precache = TemporaryDirectory()
 
-        self.assertEqual(self.checksummer.calculate_checksum_filesize(data_size), len(mock_checksum_file))
+        # Create mock data file (zero filled)
+        with open(os.path.join(self.temp_precache.name, "data"), "wb") as data_fd:
+            self.data_size = 25
+            data = b"\0" * self.data_size
+            data_fd.write(data)
+
+        # Create mock checksum file
+        with open(os.path.join(self.temp_precache.name, "checksums"), "wt") as checksums_fd:
+            whole_checksum = md5(data).hexdigest()
+            chunk_checksum = md5(b"\0" * chunk_size).hexdigest()
+
+            checksums_fd.write(f"*\t{whole_checksum}\n")
+
+            for x in range(self.data_size // chunk_size):
+                last_index = (x + 1) * chunk_size
+                checksums_fd.write(f"{x * chunk_size}-{last_index}\t{chunk_checksum}\n")
+
+            remainder = self.data_size % chunk_size
+            if remainder:
+                remainder_checksum = md5(b"\0" * remainder).hexdigest()
+                checksums_fd.write(f"{last_index}-{self.data_size}\t{remainder_checksum}\n")
+
+    def tearDown(self):
+        self.temp_precache.cleanup()
+    
+    def test_get_checksummed_blocks(self):
+        self.assertRaises(FileNotFoundError, self.checksummer.get_checksummed_blocks, "foo")
+
+        # TODO
+
+    def test_calculate_checksum_filesize(self):
+        checksum_file_size = os.stat(os.path.join(self.temp_precache.name, "checksums")).st_size
+        self.assertEqual(self.checksummer.calculate_checksum_filesize(self.data_size), checksum_file_size)
 
 
 if __name__ == "__main__":
