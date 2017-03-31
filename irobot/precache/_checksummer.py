@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
+import math
 import os
 import re
 from datetime import datetime
@@ -149,5 +150,14 @@ class Checksummer(Listenable, LogWriter):
         @param   data_size  Input data size in bytes (int)
         @return  Checksum file size in bytes (int)
         """
-        # TODO
-        pass
+        chunk_size = self._config.chunk_size
+        chunks = math.ceil(data_size / chunk_size)
+
+        chunk_index_bytes = sum(map(lambda x: len(f"{x * chunk_size}-{min(data_size, (x + 1) * chunk_size)}"), range(chunks)))
+        chunk_checksum_bytes = chunks * 32
+        chunk_whitespace_bytes = chunks * 2  # \t and \n
+
+        return ( 35 # = "*" + \t + <checksum> + \n
+               + chunk_index_bytes
+               + chunk_checksum_bytes
+               + chunk_whitespace_bytes )
