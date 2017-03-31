@@ -19,16 +19,19 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
-from irobot.precache._checksummer import _parse_checksum_record
+from irobot.config.precache import PrecacheConfig
+from irobot.precache._checksummer import Checksummer, _parse_checksum_record
+
+
+_mock_checksum = "0123456789abcdef0123456789abcdef"
 
 
 class TestInternals(unittest.TestCase):
     def test_parse_checksum_record(self):
-        test_checksum = "0123456789abcdef0123456789abcdef"
         passing_tests = [
-            (f"*\t{test_checksum}", (None, test_checksum)),
-            (f"0-10\t{test_checksum}", ((0, 10), test_checksum)),
-            (f"123-456\t{test_checksum}", ((123, 456), test_checksum)),
+            (f"*\t{_mock_checksum}", (None, _mock_checksum)),
+            (f"0-10\t{_mock_checksum}", ((0, 10), _mock_checksum)),
+            (f"123-456\t{_mock_checksum}", ((123, 456), _mock_checksum)),
         ]
 
         for record, expected in passing_tests:
@@ -38,16 +41,34 @@ class TestInternals(unittest.TestCase):
         failing_tests = [
             "",
             "*",
-            "* 0123456789abcdef0123456789abcdef",
+            f"* {_mock_checksum}",
             "*\tabc123",
             "*\t",
-            "\t0123456789abcdef0123456789abcdef",
-            "123-abc\t0123456789abcdef0123456789abcdef",
-            "123-456 0123456789abcdef0123456789abcdef"
+            f"\t{_mock_checksum}",
+            f"123-abc\t{_mock_checksum}",
+            f"123-456 {_mock_checksum}"
         ]
 
         for record in failing_tests:
             self.assertRaises(SyntaxError, _parse_checksum_record, record)
+
+
+class TestChecksummer(unittest.TestCase):
+    def setUp(self):
+        config = PrecacheConfig("/foo", "bar", "unlimited", "unlimited", "10B")
+        self.checksummer = Checksummer(config)
+
+    def test_calculate_checksum_filesize(self):
+        data_size = 25
+        mock_checksum_file = "\n".join([
+            f"*\t{_mock_checksum}",
+            f"0-10\t{_mock_checksum}",
+            f"10-20\t{_mock_checksum}",
+            f"20-25\t{_mock_checksum}",
+            "",
+        ])
+
+        self.assertEqual(self.checksummer.calculate_checksum_filesize(data_size), len(mock_checksum_file))
 
 
 if __name__ == "__main__":
