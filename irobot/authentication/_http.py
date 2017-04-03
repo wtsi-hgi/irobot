@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import atexit
 import logging
 from abc import abstractmethod
 from threading import Lock, Timer
@@ -80,6 +81,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
             self._cache:Dict[str, AuthenticatedUser] = {}
             self._cache_lock = Lock()
             self._schedule_cleanup()
+            atexit.register(self._cleanup_timer.cancel)
 
     def _schedule_cleanup(self) -> None:
         """ Initialise and start the clean up timer """

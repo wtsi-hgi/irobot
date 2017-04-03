@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import atexit
 import logging
 import math
 import os
@@ -138,6 +139,7 @@ class Checksummer(Listenable, LogWriter):
         self.add_listener(self._broadcast_to_log)
 
         self.pool = ThreadPoolExecutor()
+        atexit.register(self.pool.shutdown)
 
     def __del__(self) -> None:
         """ Shutdown the thread pool on GC """
