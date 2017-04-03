@@ -20,10 +20,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import os
 import unittest
 from hashlib import md5
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 from irobot.config.precache import PrecacheConfig
-from irobot.precache._checksummer import Checksummer, _parse_checksum_record
+from irobot.precache._checksummer import Checksummer, _checksum, _parse_checksum_record
 
 
 _mock_checksum = "0123456789abcdef0123456789abcdef"
@@ -54,6 +54,34 @@ class TestInternals(unittest.TestCase):
 
         for record in failing_tests:
             self.assertRaises(SyntaxError, _parse_checksum_record, record)
+
+    def test_checksummer(self):
+        data = b"\0" * 15
+
+        whole_checksum = md5(data).hexdigest()
+        chunk_checksum = md5(b"\0" * 10).hexdigest()
+        remainder_checksum = md5(b"\0" * 5).hexdigest()
+
+        tmp = NamedTemporaryFile(mode="w+b", delete=False)
+        tmp.write(data)
+        tmp.close()
+
+        filename, checksums = _checksum(tmp.name, 10)
+        self.assertEqual(filename, tmp.name)
+        self.assertEqual(checksums, [(None, whole_checksum),
+                                     ((0, 10), chunk_checksum),
+                                     ((10, 15), remainder_checksum)])
+
+        _, checksums = _checksum(tmp.name, 10, (5, 15))
+        self.assertEqual(checksums, [((5, 10), remainder_checksum),
+                                     ((10, 15), remainder_checksum)])
+
+        _, checksums = _checksum(tmp.name, 5, (0, 15))
+        self.assertEqual(checksums, [((0, 5), remainder_checksum),
+                                     ((5, 10), remainder_checksum),
+                                     ((10, 15), remainder_checksum)])
+
+        os.remove(tmp.name)
 
 
 class TestChecksummer(unittest.TestCase):
