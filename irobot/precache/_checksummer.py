@@ -21,7 +21,7 @@ import logging
 import math
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from hashlib import md5
 from typing import List, Optional, Tuple
@@ -152,6 +152,31 @@ class Checksummer(Listenable, LogWriter):
         """
         self.log(logging.INFO, f"Checksumming completed for {args[0]}")
 
+    def _write_checksum_file(self, checksum_future:Future) -> None:
+        """
+        Write checksums to file and broadcast completion to listeners
+
+        @param   checksum_future  Future passed from executor with
+                                  result from _checksum function (Future)
+        """
+        if checksum_future.done():
+            filename, chunk_checksums = checksum_future.result()
+
+            precache_path = os.path.dirname(filename)
+            checksum_file = os.path.join(precache_path, "checksums")
+
+            with open(checksum_file, "wt") as fd:
+                for byte_range, checksum in chunk_checksums:
+                    if byte_range is None:
+                        index = "*"
+                    else:
+                        index_from, index_to = byte_range
+                        index = f"{index_from}-{index_to}"
+
+                    fd.write(f"{index}\t{checksum}\n")
+
+            self.broadcast(precache_path)
+
     def generate_checksum_file(self, precache_path:str) -> None:
         """
         Start calculating the checksums (to file) for the precache data
@@ -168,8 +193,9 @@ class Checksummer(Listenable, LogWriter):
 
         @param   precache_path  Path to the precache data
         """
-        # TODO
-        pass
+        data_file = os.path.join(precache_path, "data")
+        future = self.pool.submit(_checksum, data_file, self._config.chunk_size)
+        future.add_done_callback(self._write_checksum_file)
 
     def get_checksummed_blocks(self, precache_path:str, byte_range:ByteRange = None) -> List[ByteRangeChecksum]:
         """
