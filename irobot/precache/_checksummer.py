@@ -21,9 +21,12 @@ import logging
 import math
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from hashlib import md5
 from typing import List, Optional, Tuple
 
+import irobot.common.canon as canon
 from irobot.common import Listenable
 from irobot.config.precache import PrecacheConfig
 from irobot.logging import LogWriter
@@ -65,6 +68,59 @@ def _parse_checksum_record(record:str) -> ByteRangeChecksum:
     return (byte_range, match.group("checksum"))
 
 
+def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tuple[str, List[ByteRangeChecksum]]:
+    """
+    Calculate the file chunk checksums
+
+    @param   filename    Full path of filename to checksum (string)
+    @param   chunk_size  Chunk size in bytes (int)
+    @param   byte_range  Byte range to checksum (ByteRange; None for all)
+    @return  Tuple of the filename and list of checksums covering the
+             specified range (Tuple of string and list of ByteRangeChecksum)
+    """
+    whole_file = (byte_range is None)
+    file_size = os.stat(filename).st_size
+
+    chunk_checksums:List[ByteRangeChecksum] = []
+    if whole_file:
+        whole_checksum = md5()
+        byte_range = (0, file_size)
+
+    # Calculate chunk boundaries
+    chunks:List[ByteRange] = []
+    range_from, range_to = byte_range
+    range_to = min(range_to, file_size)
+    for i in range(range_from // chunk_size, (range_to // chunk_size) + 1):
+        chunk_from = max(i * chunk_size, range_from)
+        chunk_to = min((i + 1) * chunk_size, range_to)
+
+        if chunk_from < chunk_to:
+            chunks.append((chunk_from, chunk_to))
+
+    # Do the checksumming
+    with open(filename, "rb") as fd:
+        for chunk in chunks:
+            chunk_from, chunk_to = chunk
+            chunk_length = chunk_to - chunk_from
+
+            fd.seek(chunk_from)
+            chunk_data = fd.read(chunk_length)
+            if len(chunk_data) == 0:
+                break
+
+            checksum = md5(chunk_data)
+            chunk_checksums.append((chunk, checksum.hexdigest()))
+
+            if whole_file:
+                whole_checksum.update(chunk_data)
+
+    if whole_file:
+        # Prepend checksum for whole file
+        chunk_checksums = [(None, whole_checksum.hexdigest())] + chunk_checksums
+
+    return filename, chunk_checksums
+
+
 class Checksummer(Listenable, LogWriter):
     """ Checksummer """
     def __init__(self, precache_config:PrecacheConfig, logger:Optional[logging.Logger] = None) -> None:
@@ -81,6 +137,12 @@ class Checksummer(Listenable, LogWriter):
         # Initialise logging superclass
         super().__init__(logger=logger)
         self.add_listener(self._broadcast_to_log)
+
+        self.pool = ThreadPoolExecutor()
+
+    def __del__(self) -> None:
+        """ Shutdown the thread pool on GC """
+        self.pool.shutdown()
 
     def _broadcast_to_log(self, timestamp:datetime, *args, **kwargs) -> None:
         """
