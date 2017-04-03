@@ -229,7 +229,30 @@ class Checksummer(Listenable, LogWriter):
         except AssertionError:
             raise IndexError("Invalid data range")
 
-        # TODO
+        with open(checksum_line, "rt") as fd:
+            _whole_checksum = fd.readline()
+            output:List[ByteRangeChecksum] = []
+
+            while True:
+                checksum_record = fd.readline()
+                if not checksum_record:
+                    break
+
+                (range_from, range_to), checksum = chunk_record = _parse_checksum_record(checksum_record)
+
+                # Chunk/Range Intersections
+                # Complete        ########|#######|
+                # Partial (left)      ####|#######|
+                # Partial (right)         |#######|####
+                # Partial (middle)        |  ###  |
+
+                if byte_from <= range_from < range_to <= byte_to:
+                    # Complete
+                    output.append(chunk_record)
+
+                # TODO Others...
+
+            return output
 
     def calculate_checksum_filesize(self, data_size:int) -> int:
         """
