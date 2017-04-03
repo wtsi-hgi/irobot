@@ -78,6 +78,8 @@ def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tupl
     @return  Tuple of the filename and list of checksums covering the
              specified range (Tuple of string and list of ByteRangeChecksum)
     """
+    assert chunk_size > 0
+
     whole_file = (byte_range is None)
     file_size = os.stat(filename).st_size
 
