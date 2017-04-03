@@ -105,8 +105,6 @@ def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tupl
 
             fd.seek(chunk_from)
             chunk_data = fd.read(chunk_length)
-            if len(chunk_data) == 0:
-                break
 
             checksum = md5(chunk_data)
             chunk_checksums.append((chunk, checksum.hexdigest()))
