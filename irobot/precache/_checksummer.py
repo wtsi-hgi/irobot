@@ -26,7 +26,6 @@ from datetime import datetime
 from hashlib import md5
 from typing import List, Optional, Tuple
 
-import irobot.common.canon as canon
 from irobot.common import Listenable
 from irobot.config.precache import PrecacheConfig
 from irobot.logging import LogWriter
