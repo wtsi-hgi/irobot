@@ -117,6 +117,7 @@ class TestChecksummer(unittest.TestCase):
 
     def tearDown(self):
         self.temp_precache.cleanup()
+        self.checksummer.pool.shutdown()
     
     def test_get_checksummed_blocks(self):
         self.assertRaises(FileNotFoundError, self.checksummer.get_checksummed_blocks, "foo")
