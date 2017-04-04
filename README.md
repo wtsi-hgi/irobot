@@ -24,8 +24,8 @@ managing a connection pool to iRODS.
 - [x] iRODS interface
 - [ ] Precache
   - [x] Tracking database
-  - [ ] Checksummer
-  - [ ] ...
+  - [x] Checksummer
+  - [ ] Plumb together
 - [x] Authentication handlers
   - [x] HTTP Basic
   - [x] Arvados
