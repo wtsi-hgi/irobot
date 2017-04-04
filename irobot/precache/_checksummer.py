@@ -24,6 +24,7 @@ import os
 import re
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
+from enum import Enum
 from hashlib import md5
 from typing import List, Optional, Tuple
 
@@ -34,6 +35,8 @@ from irobot.logging import LogWriter
 
 ByteRange = Optional[Tuple[int, int]]  # 0 <= from < to <= data size; None for everything
 ByteRangeChecksum = Tuple[ByteRange, str]
+
+ChecksumStatus = Enum("ChecksumStatus", "started finished")
 
 
 _RE_CHECKSUM_RECORD = re.compile(r"""
@@ -145,13 +148,26 @@ class Checksummer(Listenable, LogWriter):
         """ Shutdown the thread pool on GC """
         self.pool.shutdown()
 
-    def _broadcast_to_log(self, timestamp:datetime, *args, **kwargs) -> None:
+    def _broadcast_to_log(self, _timestamp:datetime, status:ChecksumStatus, precache_path:str) -> None:
         """
         Log all checksummer broadcasts (i.e., upon completion)
 
-        @note    *args will be the precache path
+        @param   status         Checksumming status (ChecksumStatus)
+        @param   precache_path  Precache path (string)
         """
-        self.log(logging.INFO, f"Checksumming completed for {args[0]}")
+        self.log(logging.INFO, f"Checksumming {status.name} for {precache_path}")
+
+    def _start_checksumming(self, precache_path:str) -> Tuple[str, List[ByteRangeChecksum]]:
+        """
+        Start calculating the checksums for the precache data and notify
+        listeners that we've started
+
+        @param   precache_path  Precache path (string)
+        """
+        self.broadcast(ChecksumStatus.started, precache_path)
+
+        data_file = os.path.join(precache_path, "data")
+        return _checksum(data_file, self._config.chunk_size)
 
     def _write_checksum_file(self, checksum_future:Future) -> None:
         """
@@ -176,7 +192,7 @@ class Checksummer(Listenable, LogWriter):
 
                     fd.write(f"{index}\t{checksum}\n")
 
-            self.broadcast(precache_path)
+            self.broadcast(ChecksumStatus.finished, precache_path)
 
     def generate_checksum_file(self, precache_path:str) -> None:
         """
@@ -194,8 +210,7 @@ class Checksummer(Listenable, LogWriter):
 
         @param   precache_path  Path to the precache data
         """
-        data_file = os.path.join(precache_path, "data")
-        future = self.pool.submit(_checksum, data_file, self._config.chunk_size)
+        future = self.pool.submit(self._start_checksumming, precache_path)
         future.add_done_callback(self._write_checksum_file)
 
     def get_checksummed_blocks(self, precache_path:str, byte_range:ByteRange = None) -> List[ByteRangeChecksum]:
