@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import unittest
+from unittest.mock import patch
 from hashlib import md5
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
@@ -118,6 +119,12 @@ class TestChecksummer(unittest.TestCase):
     def tearDown(self):
         self.temp_precache.cleanup()
         self.checksummer.pool.shutdown()
+
+    @patch("concurrent.futures.ThreadPoolExecutor", spec=True)
+    def test_cleanup(self, mock_executor):
+        self.checksummer.pool = mock_executor()
+        self.checksummer.__del__()
+        self.checksummer.pool.shutdown.assert_called_once()
 
     def test_generate_checksum_file(self):
         # TODO
