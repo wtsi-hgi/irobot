@@ -228,44 +228,54 @@ class Checksummer(Listenable, LogWriter):
         if not os.path.exists(checksum_file):
             raise FileNotFoundError(f"Checksums not available for {precache_path}")
 
-        if byte_range is None:
-            # Return checksum for whole file (i.e., first record)
-            with open(checksum_file, "rt") as fd:
-                checksum_line = fd.readline()
-            
-            return [_parse_checksum_record(checksum_line)]
+        with open(checksum_file, "rt") as fd:
+            whole_record = fd.readline()
 
-        data_size = os.stat(os.path.join(precache_path, "data")).st_size
-        byte_from, byte_to = byte_range
+            if byte_range is None:
+                # Return checksum for whole file (i.e., first record)
+                return [_parse_checksum_record(whole_record)]
 
-        try:
-            assert 0 <= byte_from < byte_to <= data_size
-        
-        except AssertionError:
-            raise IndexError("Invalid data range")
+            data_file = os.path.join(precache_path, "data")
+            data_size = os.stat(data_file).st_size
+            byte_from, byte_to = byte_range
 
-        with open(checksum_line, "rt") as fd:
-            _whole_checksum = fd.readline()
+            try:
+                assert 0 <= byte_from < byte_to <= data_size
+            except AssertionError:
+                raise IndexError("Invalid data range")
+
             output:List[ByteRangeChecksum] = []
 
+            # Read through records to find intersection
             while True:
-                checksum_record = fd.readline()
-                if not checksum_record:
+                # Read the next chunk record
+                chunk_record = fd.readline()
+                if not chunk_record:
                     break
 
-                (range_from, range_to), checksum = chunk_record = _parse_checksum_record(checksum_record)
+                # Parse the chunk and break if we've got all we want
+                (chunk_from, chunk_to), checksum = this_chunk = _parse_checksum_record(chunk_record)
+                if byte_to < chunk_from:
+                    break
 
-                # Chunk/Range Intersections
-                # Complete        ########|#######|
-                # Partial (left)      ####|#######|
-                # Partial (right)         |#######|####
-                # Partial (middle)        |  ###  |
+                if byte_from <= chunk_from < chunk_to <= byte_to:
+                    # Chunk is completely contained within range, so we
+                    # can just read it from file
+                    output.append(this_chunk)
 
-                if byte_from <= range_from < range_to <= byte_to:
-                    # Complete
-                    output.append(chunk_record)
+                else:
+                    # ...otherwise we need to calculate the checksums
+                    # for the overlapping/contained sections
+                    to_calculate = max(chunk_from, byte_from), min(chunk_to, byte_to)
 
-                # TODO Others...
+                    # Submit calculation of partial chunk checksum to
+                    # the pool and block on result for output
+                    # FIXME? Is this the behaviour we want, or should we
+                    # bypass the pool and calculate immediately?
+                    future = self.pool.submit(_checksum, data_file, self._config.chunk_size, to_calculate)
+                    _, checksums = future.result()
+
+                    output += checksums
 
             return output
 
