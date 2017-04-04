@@ -17,14 +17,16 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import filecmp
 import os
 import unittest
 from unittest.mock import patch
 from hashlib import md5
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+from threading import Lock
 
 from irobot.config.precache import PrecacheConfig
-from irobot.precache._checksummer import Checksummer, _checksum, _parse_checksum_record
+from irobot.precache._checksummer import ChecksumStatus, Checksummer, _checksum, _parse_checksum_record
 
 
 _mock_checksum = "0123456789abcdef0123456789abcdef"
@@ -101,7 +103,7 @@ class TestChecksummer(unittest.TestCase):
             data_fd.write(data)
 
         # Create mock checksum file
-        with open(os.path.join(self.temp_precache.name, "checksums"), "wt") as checksums_fd:
+        with open(os.path.join(self.temp_precache.name, "manual_checksums"), "wt") as checksums_fd:
             whole_checksum = md5(data).hexdigest()
             chunk_checksum = md5(b"\0" * chunk_size).hexdigest()
 
@@ -127,16 +129,37 @@ class TestChecksummer(unittest.TestCase):
         self.checksummer.pool.shutdown.assert_called_once()
 
     def test_generate_checksum_file(self):
-        # TODO
-        pass
-    
+        # NOTE This test actually checks that the checksumming works
+        # correctly, even though we test the checksummer individually
+        # elsewhere. This makes the test complicated (to synchronise
+        # everything), when really all we need to check is that the call
+        # graph is correct...
+        lock = Lock()
+
+        def _check_results(timestamp, status, precache_path):
+            if status == ChecksumStatus.finished:
+                generated = os.path.join(self.temp_precache.name, "checksums")
+                manual = os.path.join(self.temp_precache.name, "manual_checksums")
+
+                try:
+                    self.assertTrue(filecmp.cmp(generated, manual, shallow=False))
+                finally:
+                    lock.release()
+
+        self.checksummer.add_listener(_check_results)
+        self.checksummer.generate_checksum_file(self.temp_precache.name)
+
+        # Block until the _check_results function unlocks
+        lock.acquire()
+        lock.acquire()
+
     def test_get_checksummed_blocks(self):
         self.assertRaises(FileNotFoundError, self.checksummer.get_checksummed_blocks, "foo")
 
         # TODO
 
     def test_calculate_checksum_filesize(self):
-        checksum_file_size = os.stat(os.path.join(self.temp_precache.name, "checksums")).st_size
+        checksum_file_size = os.stat(os.path.join(self.temp_precache.name, "manual_checksums")).st_size
         self.assertEqual(self.checksummer.calculate_checksum_filesize(self.data_size), checksum_file_size)
 
 
