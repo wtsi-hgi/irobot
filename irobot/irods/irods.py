@@ -17,12 +17,12 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import atexit
 import logging
-from collections import deque
 from datetime import datetime
 from enum import Enum
+from concurrent.futures import ThreadPoolExecutor
 from subprocess import CalledProcessError
-from threading import BoundedSemaphore, Thread
 from typing import Optional
 
 from irobot.common import Listenable
@@ -62,35 +62,24 @@ class iRODS(Listenable, LogWriter):
         super().__init__(logger=logger)
         self.add_listener(self._broadcast_iget_to_log)
 
-        self._iget_queue = deque()  # n.b., collections.deque is thread-safe
-        self._iget_pool = BoundedSemaphore(self._config.max_connections)
-
-        self._running = True
-        self._runner = Thread(target=self._thread_runner, daemon=True)
-        self._runner.start()
-
-    def _thread_runner(self) -> None:
-        """ Thread runner to invoke igets """
         self.log(logging.DEBUG, "Starting iget pool")
-        while self._running:
-            if self._iget_queue:
-                iget_args = self._iget_queue.popleft()
-                with self._iget_pool:
-                    Thread(target=self._iget, args=iget_args).start()
+        self._iget_pool = ThreadPoolExecutor(max_workers=self._config.max_connections)
+        atexit.register(self._iget_pool.shutdown)
 
     def __del__(self) -> None:
-        """ Stop thread runner on GC """
+        """ Shutdown the thread pool on GC """
         self.log(logging.DEBUG, "Shutting down iget pool")
-        self._running = False
+        self._iget_pool.shutdown()
 
-    def _broadcast_iget_to_log(self, timestamp:datetime, *args, **kwargs) -> None:
+    def _broadcast_iget_to_log(self, _timestamp:datetime, status:iGetStatus, irods_path:str) -> None:
         """
         Log all broadcast iget messages
 
-        @note    *args will be a tuple of the status and iRODS path
+        @param   status      iGet status (iGetStatus)
+        @param   irods_path  Path to data object on iRODS (string)
         """
-        level = logging.WARNING if args[0] == iGetStatus.failed else logging.INFO
-        self.log(level, "iget: {} {}".format(*args))
+        level = logging.WARNING if status == iGetStatus.failed else logging.INFO
+        self.log(level, f"iget {status.name} for {irods_path}")
 
     def get_dataobject(self, irods_path:str, local_path:str) -> None:
         """
@@ -101,8 +90,8 @@ class iRODS(Listenable, LogWriter):
         @param   local_path  Local filesystem target file (string)
         """
         _exists(irods_path)
-        self._iget_queue.append((irods_path, local_path))
         self.broadcast(iGetStatus.queued, irods_path)
+        self._iget_pool.submit(self._iget, irods_path, local_path)
 
     def _iget(self, irods_path:str, local_path:str) -> None:
         """
