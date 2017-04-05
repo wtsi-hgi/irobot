@@ -18,8 +18,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from subprocess import CalledProcessError
 from unittest.mock import MagicMock, call, patch
+from subprocess import CalledProcessError
+from threading import Lock
 
 from irobot.config.irods import iRODSConfig
 from irobot.irods.irods import _exists, iRODS, iGetStatus
@@ -62,56 +63,45 @@ class TestiRODS(unittest.TestCase):
         self.irods = iRODS(config)
 
     def tearDown(self):
-        # Stop the thread runner
-        self.irods._running = False
-        self.irods._runner.join()
+        self.irods._iget_pool.shutdown()
 
-    def test_destructor(self):
+    @patch("concurrent.futures.ThreadPoolExecutor", spec=True)
+    def test_destructor(self, mock_executor):
+        self.irods._iget_pool = mock_executor()
         self.irods.__del__()
-        self.assertFalse(self.irods._running)
+        self.irods._iget_pool.shutdown.assert_called_once()
 
-    @patch("irobot.irods.irods.ils", spec=True)
+    @patch("irobot.irods.irods._exists", spec=True)
+    @patch("irobot.irods.irods.iget", spec=True)
     @patch("irobot.common.listenable._broadcast_time", spec=True)
-    def test_enqueue_dataobject(self, mock_broadcast_time, *args):
-        # Stop the thread runner
-        self.irods._running = False
-        self.irods._runner.join()
+    def test_get_dataobject(self, mock_broadcast_time, mock_iget, _mock_exists):
+        lock = Lock()
+        lock.acquire()
+
+        def _check_messages(timestamp, status, irods_path):
+            self.assertEqual(timestamp, mock_broadcast_time())
+            self.assertEqual(irods_path, "/foo/bar")
+
+            if status == iGetStatus.finished:
+                lock.release()
 
         _listener = MagicMock()
+
         self.irods.add_listener(_listener)
-
+        self.irods.add_listener(_check_messages)
         self.irods.get_dataobject("/foo/bar", "/quux/xyzzy")
-        _listener.assert_called_once_with(mock_broadcast_time(), iGetStatus.queued, "/foo/bar")
-        self.assertEqual(len(self.irods._iget_queue), 1)
-        self.assertEqual(self.irods._iget_queue.pop(), ("/foo/bar", "/quux/xyzzy"))
 
-    def test_iget_pool(self):
-        # Stop the thread runner...
-        self.irods._running = False
-        self.irods._runner.join()
+        # Block until the _check_messages function unblocks
+        lock.acquire()
 
-        with patch("irobot.irods.irods.Thread") as mock_thread:
-            def _stop_running(*args, **kwargs):
-                self.irods._running = False
-            mock_thread().start = _stop_running
+        mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
 
-            # ...start it up again with two items in the queue
-            self.irods._iget_queue.append(("/foo/bar", "/quux/xyzzy"))
-            self.irods._iget_queue.append(("/another/test", "/fizz/buzz"))
-            self.irods._running = True
-            self.irods._thread_runner()
-
-            mock_thread.assert_has_calls([
-                call(args=("/foo/bar", "/quux/xyzzy"), target=self.irods._iget)
-            ])
-
-            # Our instance only allows one iget at a time (i.e.,
-            # max_connections=1), therefore -- as the runner is
-            # forcefully terminated -- there should still be an element
-            # in the queue
-            # FIXME This will be true regardless of the resource locking
-            self.assertEqual(len(self.irods._iget_queue), 1)
-            self.assertEqual(self.irods._iget_queue.pop(), ("/another/test", "/fizz/buzz"))
+        # Make sure out listeners are getting the right messages
+        _listener.assert_has_calls([
+            call(mock_broadcast_time(), iGetStatus.queued, "/foo/bar"),
+            call(mock_broadcast_time(), iGetStatus.started, "/foo/bar"),
+            call(mock_broadcast_time(), iGetStatus.finished, "/foo/bar")
+        ])
 
     @patch("irobot.irods.irods.iget", spec=True)
     @patch("irobot.common.listenable._broadcast_time", spec=True)

@@ -136,6 +136,7 @@ class TestChecksummer(unittest.TestCase):
         # everything), when really all we need to check is that the call
         # graph is correct...
         lock = Lock()
+        lock.acquire()
 
         def _check_results(timestamp, status, precache_path):
             if status == ChecksumStatus.finished:
@@ -154,7 +155,6 @@ class TestChecksummer(unittest.TestCase):
         self.checksummer.generate_checksum_file(self.temp_precache.name)
 
         # Block until the _check_results function unlocks
-        lock.acquire()
         lock.acquire()
 
         # Make sure our listeners are getting the right messages
