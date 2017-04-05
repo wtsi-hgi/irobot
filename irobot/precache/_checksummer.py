@@ -141,11 +141,13 @@ class Checksummer(Listenable, LogWriter):
         super().__init__(logger=logger)
         self.add_listener(self._broadcast_to_log)
 
+        self.log(logging.INFO, "Starting checksumming pool")
         self.pool = ThreadPoolExecutor()
         atexit.register(self.pool.shutdown)
 
     def __del__(self) -> None:
         """ Shutdown the thread pool on GC """
+        self.log(logging.DEBUG, "Shutting down checksumming pool")
         self.pool.shutdown()
 
     def _broadcast_to_log(self, _timestamp:datetime, status:ChecksumStatus, precache_path:str) -> None:
