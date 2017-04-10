@@ -20,12 +20,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import logging
 import os
 import shutil
-from typing import Optional
+from typing import Dict, List, Optional
 from uuid import uuid4
 
 from irobot.config.precache import PrecacheConfig
+from irobot.irods import iRODS, iGetStatus
 from irobot.logging import LogWriter
-from irobot.precache._checksummer import ChecksumStatus, Checksummer
+from irobot.precache._checksummer import Checksummer, ChecksumStatus
+from irobot.precache._types import ByteRange, ByteRangeChecksum
 from irobot.precache.db import TrackingDB
 
 
@@ -66,17 +68,33 @@ def _delete_precache_dir(precache_dir:str) -> None:
 
 class Precache(LogWriter):
     """ High level precache interface """
-    def __init__(self, precache_config:PrecacheConfig, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, precache_config:PrecacheConfig, irods:iRODS, logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor
 
         @param   precache_config  Precache configuration (PrecacheConfig)
+        @param   irods            iRODS interface (iRODS)
         @param   logger           Logger
         """
         super().__init__(logger=logger)
-        self.config = precache_config
+        self.log(logging.DEBUG, "Starting precache")
 
-        self.checksummer = Checksummer(precache_config, logger)
+        self.config = precache_config
 
         db_in_precache = os.path.commonpath([precache_config.location, precache_config.index]) == precache_config.location
         self.tracker = TrackingDB(precache_config.index, db_in_precache, logger)
+
+        self.irods = irods
+        # TODO self.irods.add_listener(self.SOMETHING)
+
+        self.checksummer = Checksummer(precache_config, logger)
+        # TODO self.checksummer.add_listener(self.SOMETHING)
+
+    def fetch_data(self, irods_path:str, byte_range:ByteRange = None, force:bool = False) -> bytes:
+        pass
+
+    def fetch_metadata(self, irods_path:str, force:bool = False) -> Dict:
+        pass
+
+    def fetch_checksums(self, irods_path:str, byte_range:ByteRange = None) -> List[ByteRangeChecksum]:
+        pass

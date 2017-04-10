@@ -25,6 +25,7 @@ from .authentication import ArvadosAuthHandler, HTTPBasicAuthHandler
 from .config import Configuration
 from .config.log import LoggingConfig
 from .irods import iRODS
+from .precache import Precache
 from .logging import create_logger
 
 
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     _log_config(config, logger)
 
     irods = iRODS(config.irods, logger)
+    precache = Precache(config.precache, irods, logger)
 
     auth_handlers = _instantiate_authentication_handlers(config, logger)
-
-    # TODO Plumb in the precache and HTTP server, when they're ready
+    # TODO Plumb in HTTP server, once it's ready
