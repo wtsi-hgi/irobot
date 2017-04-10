@@ -69,7 +69,6 @@ def _parse_checksum_record(record:str) -> ByteRangeChecksum:
     return (byte_range, match.group("checksum"))
 
 
-
 def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tuple[str, List[ByteRangeChecksum]]:
     """
     Calculate the file chunk checksums
