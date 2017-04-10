@@ -31,10 +31,8 @@ from typing import List, Optional, Tuple
 from irobot.common import Listenable
 from irobot.config.precache import PrecacheConfig
 from irobot.logging import LogWriter
+from irobot.precache._types import ByteRange, ByteRangeChecksum
 
-
-ByteRange = Optional[Tuple[int, int]]  # 0 <= from < to <= data size; None for everything
-ByteRangeChecksum = Tuple[ByteRange, str]
 
 ChecksumStatus = Enum("ChecksumStatus", "started finished")
 
@@ -69,6 +67,7 @@ def _parse_checksum_record(record:str) -> ByteRangeChecksum:
 
     byte_range = None if match.group("whole") else (int(match.group("from")), int(match.group("to")))
     return (byte_range, match.group("checksum"))
+
 
 
 def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tuple[str, List[ByteRangeChecksum]]:
