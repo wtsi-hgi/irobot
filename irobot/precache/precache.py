@@ -90,11 +90,13 @@ class Precache(LogWriter):
         self.checksummer = Checksummer(precache_config, logger)
         # TODO self.checksummer.add_listener(self.SOMETHING)
 
-    def fetch_data(self, irods_path:str, byte_range:ByteRange = None, force:bool = False) -> bytes:
+    def fetch_data(self, irods_path:str, byte_range:ByteRange = None, force:bool = False) -> Optional[bytes]:
         pass
 
-    def fetch_metadata(self, irods_path:str, force:bool = False) -> Dict:
+    def fetch_metadata(self, irods_path:str, force:bool = False) -> Optional[Dict]:
         pass
 
-    def fetch_checksums(self, irods_path:str, byte_range:ByteRange = None) -> List[ByteRangeChecksum]:
+    def fetch_checksums(self, irods_path:str, byte_range:ByteRange = None) -> Optional[List[ByteRangeChecksum]]:
         pass
+
+    # TODO Public ETA functions for data and checksums
