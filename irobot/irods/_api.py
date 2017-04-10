@@ -21,7 +21,7 @@ import json
 import os
 import subprocess
 from tempfile import TemporaryFile
-from typing import Sequence, TextIO, Tuple, Union
+from typing import Any, Sequence, TextIO, Tuple, Union
 
 
 def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextIO] = None, shell:bool = False) -> Tuple[int, str, str]:
@@ -67,6 +67,9 @@ def ils(irods_path:str) -> None:
     """
     Wrapper for ils
 
+    @note    Doesn't return anything; just raises an exception if the
+             call fails (presumably due to access restrictions)
+
     @param   irods_path  Path to data object on iRODS (string)
     """
     command = ["ils", irods_path]
@@ -92,7 +95,7 @@ def iget(irods_path:str, local_path:str) -> None:
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
-def baton(irods_path:str) -> None:
+def baton(irods_path:str) -> Any:
     """
     Wrapper for baton-list
 
