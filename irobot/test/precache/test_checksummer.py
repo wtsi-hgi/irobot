@@ -22,6 +22,7 @@ import os
 import unittest
 from unittest.mock import MagicMock, call, patch
 from hashlib import md5
+from multiprocessing import cpu_count
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Lock
 
@@ -121,6 +122,9 @@ class TestChecksummer(unittest.TestCase):
     def tearDown(self):
         self.temp_precache.cleanup()
         self.checksummer.pool.shutdown()
+
+    def test_worker_count(self):
+        self.assertEqual(self.checksummer.workers, cpu_count() * 5)
 
     @patch("concurrent.futures.ThreadPoolExecutor", spec=True)
     def test_cleanup(self, mock_executor):
