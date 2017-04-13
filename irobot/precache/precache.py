@@ -20,7 +20,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import logging
 import os
 import shutil
-from typing import Dict, List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
 from uuid import uuid4
 
 from irobot.config.precache import PrecacheConfig
@@ -28,7 +29,10 @@ from irobot.irods import iRODS, iGetStatus
 from irobot.logging import LogWriter
 from irobot.precache._checksummer import Checksummer, ChecksumStatus
 from irobot.precache._types import ByteRange, ByteRangeChecksum
-from irobot.precache.db import TrackingDB
+from irobot.precache.db import (TrackingDB,
+                                Datatype, Mode, Status,
+                                SummaryStat, DataObjectFileStatus,
+                                StatusExists, SwitchoverExists, SwitchoverDoesNotExist, PrecacheExists)
 
 
 def _new_precache_dir(precache_path:str) -> str:
@@ -90,13 +94,58 @@ class Precache(LogWriter):
         self.checksummer = Checksummer(precache_config, logger)
         # TODO self.checksummer.add_listener(self.SOMETHING)
 
-    def fetch_data(self, irods_path:str, byte_range:ByteRange = None, force:bool = False) -> Optional[bytes]:
+        # Worker counts for iRODS and checksummer
+        self.workers = {
+            datatype: interface.workers
+            for datatype, interface in [(Datatype.data,      self.irods),
+                                        (Datatype.checksums, self.checksummer)]
+        }
+
+    # def fetch_data(self, irods_path:str, byte_range:ByteRange = None, force:bool = False) -> Optional[bytes]:
+    #     pass
+
+    # def fetch_metadata(self, irods_path:str, force:bool = False) -> Optional[Dict]:
+    #     pass
+
+    # def fetch_checksums(self, irods_path:str, byte_range:ByteRange = None) -> Optional[List[ByteRangeChecksum]]:
+    #     pass
+
+    # TODO? Make a "global" fetch function that returns an object with
+    # data, metadata and checksum properties
+    def fetch(self, irods_path:str) -> "SOMETHING":
         pass
 
-    def fetch_metadata(self, irods_path:str, force:bool = False) -> Optional[Dict]:
-        pass
+    def eta(self, irods_path:str, mode:Mode, datatype:Datatype) -> Optional[Tuple[datetime, timedelta]]:
+        """
+        Get the estimated completion time (and standard error) for long-
+        -running IO processes (igetting and checksumming)
 
-    def fetch_checksums(self, irods_path:str, byte_range:ByteRange = None) -> Optional[List[ByteRangeChecksum]]:
-        pass
+        @param   irods_path  iRODS data object (string)
+        @param   mode        Mode (mode)
+        @param   datatype    File type (Datatype)
+        @return  Estimated completion time, with standard error (Tuple
+                 of datetime and timedelta; None if already available)
+        """
 
-    # TODO Public ETA functions for data and checksums
+        if datatype == Datatype.metadata:
+            # Metadata is fetched immediately, so this method should
+            # never be called for it. Instead of raising an exception,
+            # just return None (i.e., it's available)
+            return None
+
+        do_id = self.tracker.get_data_object_id(irods_path)
+        if do_id is None:
+            raise ValueError("Data object has not been requested")
+
+        _ts, status = self.tracker.get_current_status(do_id, mode, datatype)
+        if status == Status.ready:
+            return None
+
+        # Estimate is calculated based on the size of data ahead of it
+        # in the queue (including things currently being processed, thus
+        # making it an over-estimate), divided by the number of workers,
+        # plus the size of the data in question:
+        #
+        #   ETA = Now + (((<Size Ahead> / Workers) + <DO Size>) / Rate)
+
+        # TODO...
