@@ -65,6 +65,9 @@ class TestiRODS(unittest.TestCase):
     def tearDown(self):
         self.irods._iget_pool.shutdown()
 
+    def test_worker_count(self):
+        self.assertEqual(self.irods.workers, 1)
+
     @patch("concurrent.futures.ThreadPoolExecutor", spec=True)
     def test_destructor(self, mock_executor):
         self.irods._iget_pool = mock_executor()

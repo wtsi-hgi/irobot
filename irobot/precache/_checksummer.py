@@ -194,6 +194,12 @@ class Checksummer(Listenable, LogWriter):
 
             self.broadcast(ChecksumStatus.finished, precache_path)
 
+    @property
+    def workers(self) -> int:
+        """ The total/maximum number of workers """
+        # FIXME This relies on an undocumented API call
+        return self.pool._max_workers
+
     def generate_checksum_file(self, precache_path:str) -> None:
         """
         Start calculating the checksums (to file) for the precache data

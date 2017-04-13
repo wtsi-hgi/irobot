@@ -81,6 +81,11 @@ class iRODS(Listenable, LogWriter):
         level = logging.WARNING if status == iGetStatus.failed else logging.INFO
         self.log(level, f"iget {status.name} for {irods_path}")
 
+    @property
+    def workers(self) -> int:
+        """ The total/maximum number of workers """
+        return self._config.max_connections
+
     def get_dataobject(self, irods_path:str, local_path:str) -> None:
         """
         Enqueue retrieval of data object from iRODS and store it in the
