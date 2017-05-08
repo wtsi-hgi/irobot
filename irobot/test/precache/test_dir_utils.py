@@ -18,44 +18,37 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os
-import shutil
 import unittest
-from uuid import uuid4
+from tempfile import TemporaryDirectory
 
-import irobot.common.canon as canon
-from irobot.precache.precache import _new_precache_dir, _create_precache_dir, _delete_precache_dir
+from irobot.precache._dir_utils import new_name, create, delete
 
 
-class TestPrecacheDir(unittest.TestCase):
+class TestDirUtils(unittest.TestCase):
     def setUp(self):
-        while True:
-            self.base = os.path.join(canon.path(os.curdir), f"test_precache_{uuid4().hex}")
-            if not os.path.exists(self.base):
-                break
-
-        os.makedirs(self.base, exist_ok=True)
+        self.base = TemporaryDirectory()
 
     def tearDown(self):
-        shutil.rmtree(self.base)
+        self.base.cleanup()
 
-    def test_new_precache_dir(self):
-        precache_dir = _new_precache_dir(self.base)
-        self.assertRegex(precache_dir, rf"^{self.base}(/[a-f0-9]{{2}}){{16}}$")
+    def test_new_name(self):
+        precache_dir = new_name(self.base.name)
+        self.assertRegex(precache_dir, rf"^{self.base.name}(/[a-f0-9]{{2}}){{16}}$")
 
-    def test_create_precache_dir(self):
-        precache_dir = _new_precache_dir(self.base)
+    def test_create(self):
+        precache_dir = new_name(self.base.name)
 
         self.assertFalse(os.path.exists(precache_dir))
-        _create_precache_dir(precache_dir)
+        create(precache_dir)
         self.assertTrue(os.path.exists(precache_dir))
         self.assertEqual(os.stat(precache_dir).st_mode & 0o777, 0o750)
 
-    def test_delete_precache_dir(self):
-        precache_dir = _new_precache_dir(self.base)
-        _create_precache_dir(precache_dir)
+    def test_delete(self):
+        precache_dir = new_name(self.base.name)
+        create(precache_dir)
         self.assertTrue(os.path.exists(precache_dir))
 
-        _delete_precache_dir(precache_dir)
+        delete(precache_dir)
         self.assertFalse(os.path.exists(precache_dir))
 
         parent, _top = os.path.split(precache_dir)
