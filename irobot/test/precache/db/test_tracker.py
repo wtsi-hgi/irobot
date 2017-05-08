@@ -274,6 +274,10 @@ class TestTrackingDB(unittest.TestCase):
         self.assertEqual(self.tracker.get_data_object_id("foo"), do_id)
         self.assertIsNone(self.tracker.get_data_object_id("quux"))
 
+    def test_get_precache_path(self):
+        do_id, mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        self.assertEqual(self.tracker.get_precache_path(do_id, mode), "bar")
+
     def test_has_switchover(self):
         do_id1, mode1 = self.tracker.new_request("foo", "bar", (0, 0, 0))
         self.assertEqual(mode1, Mode.master)
