@@ -199,6 +199,22 @@ class TrackingDB(LogWriter):
         """, (irods_path,)).fetchone() or _nuple()
         return do_id
 
+    def get_precache_path(self, data_object:int, mode:Mode) -> Optional[str]:
+        """
+        Get the precache path of the data object in a specific mode
+
+        @param   data_object  Data object ID (int)
+        @param   mode         Mode (Mode)
+        @return  Precache path (string; None if not found)
+        """
+        precache_path, = self._exec("""
+            select precache_path
+            from   do_modes
+            where  data_object = ?
+            and    mode        = ?
+        """, (data_object, mode)).fetchone() or _nuple()
+        return precache_path
+
     def has_switchover(self, data_object:int) -> bool:
         """
         Check to see if a given data object has a switchover record
