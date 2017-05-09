@@ -23,11 +23,12 @@ from datetime import datetime
 from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import CalledProcessError
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from irobot.common import Listenable
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
+from irobot.irods._types import Metadata
 from irobot.logging import LogWriter
 
 
@@ -115,7 +116,7 @@ class iRODS(Listenable, LogWriter):
         except CalledProcessError:
             self.broadcast(iGetStatus.failed, irods_path)
 
-    def get_metadata(self, irods_path:str) -> Tuple[List[Dict[str, str]], Dict[str, str]]:
+    def get_metadata(self, irods_path:str) -> Metadata:
         """
         Retrieve AVU and filesystem metadata for data object from iRODS
 
@@ -125,7 +126,4 @@ class iRODS(Listenable, LogWriter):
         _exists(irods_path)
 
         self.log(logging.INFO, f"Getting metadata for {irods_path}")
-        baton_output = baton(irods_path)
-
-        fs_keys = ["checksum", "size", "access", "timestamps"]
-        return baton_output["avus"], {k:v for k, v in baton_output.items() if k in fs_keys}
+        return baton(irods_path)
