@@ -22,25 +22,7 @@ import unittest
 from datetime import datetime
 
 from irobot.irods._types import Metadata, MetadataJSONDecoder, MetadataJSONEncoder
-
-
-TEST_BATON_JSON = json.dumps({
-    "collection": "/foo",
-    "data_object": "bar",
-    "checksum": "abcdef1234567890",
-    "size": 1234,
-    "avus": [
-        {"attribute": "foo", "value": "bar"},
-        {"attribute": "quux", "value": "xyzzy", "units": "baz"}
-    ],
-    "access": [
-        {"owner": "someone", "level": "own", "zone": "myZone"}
-    ],
-    "timestamps": [
-        {"created": "1970-01-01T00:00:00", "replicates": 0},
-        {"modified": "1970-01-02T03:04:05", "replicates": 0}
-    ]
-})
+from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
 
 class TestMetadata(unittest.TestCase):
@@ -56,32 +38,31 @@ class TestMetadata(unittest.TestCase):
         self.assertEqual(m.modified, modified)
         self.assertEqual(m.avus, avus)
 
+        m2 = Metadata("abc", 123, created, modified, avus)
+        self.assertEqual(m, m2)
+
     def test_decoding(self):
         m = json.loads(TEST_BATON_JSON, cls=MetadataJSONDecoder)
-        self.assertEqual(m.checksum, "abcdef1234567890")
-        self.assertEqual(m.size, 1234)
-        self.assertEqual(m.created, datetime(1970, 1, 1))
-        self.assertEqual(m.modified, datetime(1970, 1, 2, 3, 4, 5))
-        self.assertEqual(m.avus, [
-            {"attribute": "foo", "value": "bar"},
-            {"attribute": "quux", "value": "xyzzy", "units": "baz"}
-        ])
+        self.assertEqual(m.checksum, TEST_BATON_DICT["checksum"])
+        self.assertEqual(m.size, TEST_BATON_DICT["size"])
+        self.assertEqual(m.created, datetime(1970, 1, 1))  # FIXME Hardcoded
+        self.assertEqual(m.modified, datetime(1970, 1, 2, 3, 4, 5))  # FIXME Hardcoded
+        self.assertEqual(m.avus, TEST_BATON_DICT["avus"])
 
     def test_encoding(self):
         m = json.loads(TEST_BATON_JSON, cls=MetadataJSONDecoder)
         j = json.dumps(m, cls=MetadataJSONEncoder)
+
         raw = json.loads(j)
         self.assertEqual(raw, {
-            "checksum": "abcdef1234567890",
-            "size": 1234,
-            "avus": [
-                {"attribute": "foo", "value": "bar"},
-                {"attribute": "quux", "value": "xyzzy", "units": "baz"}
-            ],
             "timestamps": [
-                {"created": "1970-01-01T00:00:00"},
-                {"modified": "1970-01-02T03:04:05"}
-            ]
+                {k:v}
+                for ts in TEST_BATON_DICT["timestamps"]
+                for k, v in ts.items()
+                if k in ["created", "modified"]
+            ],
+
+            **{k: TEST_BATON_DICT[k] for k in ["checksum", "size", "avus"]}
         })
 
 
