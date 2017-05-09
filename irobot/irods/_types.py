@@ -57,6 +57,13 @@ class Metadata(object):
         self.modified = modified
         self.avus = avus
 
+    def __eq__(self, other:"Metadata") -> bool:
+        return self.checksum == other.checksum \
+           and self.size     == other.size \
+           and self.created  == other.created \
+           and self.modified == other.modified \
+           and self.avus     == other.avus
+
 
 class MetadataJSONDecoder(JSONDecoder):
     """ Decode baton's JSON output into a Metadata object """
