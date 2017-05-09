@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from subprocess import CalledProcessError
 from typing import Optional
 
-from irobot.common import Listenable
+from irobot.common import AsyncTaskStatus, Listenable
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import baton, iget, ils
 from irobot.irods._types import Metadata
@@ -43,9 +43,6 @@ def _exists(irods_path:str) -> None:
 
     except CalledProcessError:
         raise IOError(f"Data object \"{irods_path}\" inaccessible")
-
-
-iGetStatus = Enum("iGetStatus", "queued started finished failed")
 
 
 class iRODS(Listenable, LogWriter):
@@ -72,14 +69,14 @@ class iRODS(Listenable, LogWriter):
         self.log(logging.DEBUG, "Shutting down iget pool")
         self._iget_pool.shutdown()
 
-    def _broadcast_iget_to_log(self, _timestamp:datetime, status:iGetStatus, irods_path:str) -> None:
+    def _broadcast_iget_to_log(self, _timestamp:datetime, status:AsyncTaskStatus, irods_path:str) -> None:
         """
         Log all broadcast iget messages
 
-        @param   status      iGet status (iGetStatus)
+        @param   status      iGet status (AsyncTaskStatus)
         @param   irods_path  Path to data object on iRODS (string)
         """
-        level = logging.WARNING if status == iGetStatus.failed else logging.INFO
+        level = logging.WARNING if status == AsyncTaskStatus.failed else logging.INFO
         self.log(level, f"iget {status.name} for {irods_path}")
 
     @property
@@ -96,7 +93,7 @@ class iRODS(Listenable, LogWriter):
         @param   local_path  Local filesystem target file (string)
         """
         _exists(irods_path)
-        self.broadcast(iGetStatus.queued, irods_path)
+        self.broadcast(AsyncTaskStatus.queued, irods_path)
         self._iget_pool.submit(self._iget, irods_path, local_path)
 
     def _iget(self, irods_path:str, local_path:str) -> None:
@@ -109,12 +106,12 @@ class iRODS(Listenable, LogWriter):
         @param   local_path  Local filesystem target file (string)
         """
         try:
-            self.broadcast(iGetStatus.started, irods_path)
+            self.broadcast(AsyncTaskStatus.started, irods_path)
             iget(irods_path, local_path)
-            self.broadcast(iGetStatus.finished, irods_path)
+            self.broadcast(AsyncTaskStatus.finished, irods_path)
 
         except CalledProcessError:
-            self.broadcast(iGetStatus.failed, irods_path)
+            self.broadcast(AsyncTaskStatus.failed, irods_path)
 
     def get_metadata(self, irods_path:str) -> Metadata:
         """
