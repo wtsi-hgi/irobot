@@ -28,13 +28,10 @@ from enum import Enum
 from hashlib import md5
 from typing import List, Optional, Tuple
 
-from irobot.common import Listenable
+from irobot.common import AsyncTaskStatus, Listenable
 from irobot.config.precache import PrecacheConfig
 from irobot.logging import LogWriter
 from irobot.precache._types import ByteRange, ByteRangeChecksum
-
-
-ChecksumStatus = Enum("ChecksumStatus", "started finished")
 
 
 _RE_CHECKSUM_RECORD = re.compile(r"""
@@ -148,11 +145,11 @@ class Checksummer(Listenable, LogWriter):
         self.log(logging.DEBUG, "Shutting down checksumming pool")
         self.pool.shutdown()
 
-    def _broadcast_to_log(self, _timestamp:datetime, status:ChecksumStatus, precache_path:str) -> None:
+    def _broadcast_to_log(self, _timestamp:datetime, status:AsyncTaskStatus, precache_path:str) -> None:
         """
         Log all checksummer broadcasts (i.e., upon completion)
 
-        @param   status         Checksumming status (ChecksumStatus)
+        @param   status         Checksumming status (AsyncTaskStatus)
         @param   precache_path  Precache path (string)
         """
         self.log(logging.INFO, f"Checksumming {status.name} for {precache_path}")
@@ -164,7 +161,7 @@ class Checksummer(Listenable, LogWriter):
 
         @param   precache_path  Precache path (string)
         """
-        self.broadcast(ChecksumStatus.started, precache_path)
+        self.broadcast(AsyncTaskStatus.started, precache_path)
 
         data_file = os.path.join(precache_path, "data")
         return _checksum(data_file, self._config.chunk_size)
@@ -192,7 +189,7 @@ class Checksummer(Listenable, LogWriter):
 
                     fd.write(f"{index}\t{checksum}\n")
 
-            self.broadcast(ChecksumStatus.finished, precache_path)
+            self.broadcast(AsyncTaskStatus.finished, precache_path)
 
     @property
     def workers(self) -> int:

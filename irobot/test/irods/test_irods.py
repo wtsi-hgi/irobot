@@ -23,9 +23,10 @@ from unittest.mock import MagicMock, call, patch
 from subprocess import CalledProcessError
 from threading import Lock
 
+from irobot.common import AsyncTaskStatus
 from irobot.config.irods import iRODSConfig
 from irobot.irods._types import MetadataJSONDecoder
-from irobot.irods.irods import _exists, iRODS, iGetStatus
+from irobot.irods.irods import _exists, iRODS
 from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
 
@@ -68,7 +69,7 @@ class TestiRODS(unittest.TestCase):
             self.assertEqual(timestamp, mock_broadcast_time())
             self.assertEqual(irods_path, "/foo/bar")
 
-            if status == iGetStatus.finished:
+            if status == AsyncTaskStatus.finished:
                 lock.release()
 
         _listener = MagicMock()
@@ -84,9 +85,9 @@ class TestiRODS(unittest.TestCase):
 
         # Make sure out listeners are getting the right messages
         _listener.assert_has_calls([
-            call(mock_broadcast_time(), iGetStatus.queued, "/foo/bar"),
-            call(mock_broadcast_time(), iGetStatus.started, "/foo/bar"),
-            call(mock_broadcast_time(), iGetStatus.finished, "/foo/bar")
+            call(mock_broadcast_time(), AsyncTaskStatus.queued, "/foo/bar"),
+            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar"),
+            call(mock_broadcast_time(), AsyncTaskStatus.finished, "/foo/bar")
         ])
 
     @patch("irobot.irods.irods.iget", spec=True)
@@ -98,8 +99,8 @@ class TestiRODS(unittest.TestCase):
         self.irods._iget("/foo/bar", "/quux/xyzzy")
         mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(mock_broadcast_time(), iGetStatus.started, "/foo/bar"),
-            call(mock_broadcast_time(), iGetStatus.finished, "/foo/bar")
+            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar"),
+            call(mock_broadcast_time(), AsyncTaskStatus.finished, "/foo/bar")
         ])
 
     @patch("irobot.irods.irods.iget", spec=True)
@@ -113,8 +114,8 @@ class TestiRODS(unittest.TestCase):
         self.irods._iget("/foo/bar", "/quux/xyzzy")
         mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(mock_broadcast_time(), iGetStatus.started, "/foo/bar"),
-            call(mock_broadcast_time(), iGetStatus.failed, "/foo/bar")
+            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar"),
+            call(mock_broadcast_time(), AsyncTaskStatus.failed, "/foo/bar")
         ])
 
     @patch("irobot.irods.irods.baton", spec=True)

@@ -26,8 +26,9 @@ from multiprocessing import cpu_count
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Lock
 
+from irobot.common import AsyncTaskStatus
 from irobot.config.precache import PrecacheConfig
-from irobot.precache._checksummer import ChecksumStatus, Checksummer, _checksum, _parse_checksum_record
+from irobot.precache._checksummer import Checksummer, _checksum, _parse_checksum_record
 
 
 _mock_checksum = "0123456789abcdef0123456789abcdef"
@@ -143,7 +144,7 @@ class TestChecksummer(unittest.TestCase):
         lock.acquire()
 
         def _check_results(timestamp, status, precache_path):
-            if status == ChecksumStatus.finished:
+            if status == AsyncTaskStatus.finished:
                 generated = os.path.join(self.temp_precache.name, "checksums")
                 manual = os.path.join(self.temp_precache.name, "manual_checksums")
 
@@ -163,8 +164,8 @@ class TestChecksummer(unittest.TestCase):
 
         # Make sure our listeners are getting the right messages
         mock_listener.assert_has_calls([
-            call(mock_broadcast_time(), ChecksumStatus.started,  self.temp_precache.name),
-            call(mock_broadcast_time(), ChecksumStatus.finished, self.temp_precache.name)
+            call(mock_broadcast_time(), AsyncTaskStatus.started,  self.temp_precache.name),
+            call(mock_broadcast_time(), AsyncTaskStatus.finished, self.temp_precache.name)
         ])
 
     def test_get_checksummed_blocks(self):
