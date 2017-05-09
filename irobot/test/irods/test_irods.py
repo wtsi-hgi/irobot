@@ -17,14 +17,16 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import json
 import unittest
 from unittest.mock import MagicMock, call, patch
 from subprocess import CalledProcessError
 from threading import Lock
 
 from irobot.config.irods import iRODSConfig
+from irobot.irods._types import MetadataJSONDecoder
 from irobot.irods.irods import _exists, iRODS, iGetStatus
-
+from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
 # Temporary data object for testing
 TEST_DATAOBJECT_METADATA = {
@@ -137,16 +139,15 @@ class TestiRODS(unittest.TestCase):
     @patch("irobot.irods.irods.baton", spec=True)
     @patch("irobot.irods.irods.ils", spec=True)
     def test_get_metadata(self, mock_ils, mock_baton):
-        mock_baton.return_value = TEST_DATAOBJECT_METADATA
+        mock_baton.return_value = out = json.loads(TEST_BATON_JSON, cls=MetadataJSONDecoder)
 
-        avu_metadata, fs_metadata = self.irods.get_metadata("/foo/bar")
+        metadata = self.irods.get_metadata("/foo/bar")
         mock_ils.assert_called_once_with("/foo/bar")
         mock_baton.assert_called_once_with("/foo/bar")
 
-        self.assertEqual(avu_metadata, TEST_DATAOBJECT_METADATA["avus"])
-
-        for k in ["checksum", "size", "access", "timestamps"]:
-            self.assertEqual(fs_metadata[k], TEST_DATAOBJECT_METADATA[k])
+        # This doesn't prove much, but we've tested elsewhere that the
+        # baton output deserialisation works as expected
+        self.assertEqual(metadata, out)
 
 
 if __name__ == "__main__":
