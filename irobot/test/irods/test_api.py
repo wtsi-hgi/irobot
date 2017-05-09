@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import json
 import os
 import unittest
 from unittest.mock import patch
@@ -24,6 +25,8 @@ from subprocess import CalledProcessError
 from tempfile import TemporaryFile
 
 from irobot.irods._api import _invoke, ils, iget, baton
+from irobot.irods._types import MetadataJSONDecoder
+from irobot.test.irods._common import TEST_BATON_JSON
 
 
 class TestInvocation(unittest.TestCase):
@@ -99,8 +102,8 @@ class TestiRODSAPI(unittest.TestCase):
         self.assertRaises(CalledProcessError, iget, "/foo/bar", "/quux/xyzzy")
 
     def test_baton_pass(self, mock_invoke):
-        mock_invoke.return_value = self.mock_invoke_pass
-        self.assertEqual(baton("/foo/bar"), {"foo": "bar"})
+        mock_invoke.return_value = (0, TEST_BATON_JSON, "")
+        self.assertEqual(baton("/foo/bar"), json.loads(TEST_BATON_JSON, cls=MetadataJSONDecoder))
         mock_invoke.assert_called_once_with(["baton-list", "--avu", "--size", "--checksum", "--acl", "--timestamp"],
                                             "{\"collection\":\"/foo\",\"data_object\":\"bar\"}")
 

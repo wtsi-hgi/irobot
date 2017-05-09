@@ -23,6 +23,8 @@ import subprocess
 from tempfile import TemporaryFile
 from typing import Any, Sequence, TextIO, Tuple, Union
 
+from irobot.irods._types import Metadata, MetadataJSONDecoder
+
 
 def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextIO] = None, shell:bool = False) -> Tuple[int, str, str]:
     """
@@ -95,12 +97,12 @@ def iget(irods_path:str, local_path:str) -> None:
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
 
-def baton(irods_path:str) -> Any:
+def baton(irods_path:str) -> Metadata:
     """
     Wrapper for baton-list
 
     @param   irods_path  Path to data object on iRODS (string)
-    @return  Deserialised JSON (various)
+    @return  baton metadata (Metadata)
     """
     baton_json = "{{\"collection\":\"{}\",\"data_object\":\"{}\"}}".format(*os.path.split(irods_path))
     command = ["baton-list", "--avu", "--size", "--checksum", "--acl", "--timestamp"]
@@ -110,4 +112,5 @@ def baton(irods_path:str) -> Any:
         raise subprocess.CalledProcessError(returncode=exit_code,
                                             cmd=" ".join(command),
                                             output=(stdout, stderr))
-    return json.loads(stdout)
+
+    return json.loads(stdout, cls=MetadataJSONDecoder)
