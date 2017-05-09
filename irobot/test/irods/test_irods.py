@@ -28,25 +28,6 @@ from irobot.irods._types import MetadataJSONDecoder
 from irobot.irods.irods import _exists, iRODS, iGetStatus
 from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
-# Temporary data object for testing
-TEST_DATAOBJECT_METADATA = {
-    "collection": "/foo",
-    "data_object": "bar",
-    "checksum": "abcdef1234567890",
-    "size": 1234,
-    "avus": [
-        {"attribute": "foo", "value": "bar"},
-        {"attribute": "quux", "value": "xyzzy"}
-    ],
-    "access": [
-        {"owner": "someone", "level": "own", "zone": "myZone"}
-    ],
-    "timestamps": [
-        {"created": "1970-01-01T00:00:00", "replicates": 0},
-        {"modified": "1970-01-01T00:00:00", "replicates": 0}
-    ]
-}
-
 
 @patch("irobot.irods.irods.ils", spec=True)
 class TestExists(unittest.TestCase):
