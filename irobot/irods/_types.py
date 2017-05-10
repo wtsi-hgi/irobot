@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import re
 from datetime import datetime
 from json import JSONDecoder, JSONEncoder
-from typing import Dict, List
+from typing import Any, Dict, List, NamedTuple, Optional
 
 
 # iRODS timestamps are of the form "YYYY-MM-DDTHH:MM:SS" and
@@ -35,40 +35,35 @@ _IRODS_TIMESTAMP_RE = re.compile(r"""
 """, re.VERBOSE)
 
 
-class Metadata(object):
+class AVU(NamedTuple):
     """
-    Everything you wanted to know about metadata, but were too afraid to ask...
-
-    iRODS filesystem metadata:
-    * checksum  MD5 checksum reported by iRODS; we also calculate this
-                locally and use it as a sanity check
-    * size      File size in bytes
-    * created   Creation timestamp (UTC)
-    * modified  Last modified timestamp (UTC)
-
-    iRODS AVU metadata:
-    * avus      Array of dictionaries with "attribute", "value" and
-                (optionally) "units" keys
+    iRODS AVU (attribute, value, units) tuple
     """
-    def __init__(self, checksum:str, size:int, created:datetime, modified:datetime, avus:List[Dict]) -> None:
-        self.checksum = checksum
-        self.size = size
-        self.created = created
-        self.modified = modified
-        self.avus = avus
+    attribute:str
+    value:str
+    units:Optional[str] = None
 
-    def __eq__(self, other:"Metadata") -> bool:
-        return self.checksum == other.checksum \
-           and self.size     == other.size \
-           and self.created  == other.created \
-           and self.modified == other.modified \
-           and self.avus     == other.avus
+
+class Metadata(NamedTuple):
+    """
+    Everything you wanted to know about iRODS metadata, but were too
+    afraid to ask...
+    """
+    # iRODS filesystem metadata
+    checksum:str       # MD5 checksum reported by iRODS
+    size:int           # File size in bytes
+    created:datetime   # Creation timestamp (UTC)
+    modified:datetime  # Last modified timestamp (UTC)
+
+    # iRODS AVU metadata
+    avus:List[AVU]     # List of AVUs
 
 
 class MetadataJSONDecoder(JSONDecoder):
     """ Decode baton's JSON output into a Metadata object """
     def decode(self, s:str) -> Metadata:
         base = super().decode(s)
+
         timestamps = {
             k: datetime.strptime(v, _IRODS_TIMESTAMP_FORMAT)
             for ts in base["timestamps"]
@@ -77,20 +72,37 @@ class MetadataJSONDecoder(JSONDecoder):
         }
 
         return Metadata(base["checksum"],
-                        base["size"], 
+                        base["size"],
                         timestamps["created"],
                         timestamps["modified"],
-                        base["avus"])
+                        [AVU(**avu) for avu in base["avus"]])
 
 class MetadataJSONEncoder(JSONEncoder):
     """ Encode a Metadata object into JSON """
-    def default(self, m:Metadata) -> Dict:
-        return {
-            "checksum": m.checksum,
-            "size": m.size,
-            "timestamps": [
-                {"created": m.created.strftime(_IRODS_TIMESTAMP_FORMAT)},
-                {"modified": m.modified.strftime(_IRODS_TIMESTAMP_FORMAT)}
-            ],
-            "avus": m.avus
-        }
+    # FIXME? This works in our specific case, but I don't think it's
+    # generally correct. The way custom encoders are supposed to work is
+    # *really* badly documented, even by Python standards!
+    def default(self, o:Any) -> Any:
+        if isinstance(o, datetime):
+            return o.strftime(_IRODS_TIMESTAMP_FORMAT)
+
+        if isinstance(o, AVU):
+            return {
+                "attribute": o.attribute,
+                "value": o.value,
+                **({"units": o.units} if o.units else {})
+            }
+
+        # FIXME? This is never being called...
+        # return super().default(o)
+
+    def encode(self, o:Any) -> str:
+        if isinstance(o, Metadata):
+            return super().encode({
+                "checksum": o.checksum,
+                "size": o.size,
+                "timestamps": [{"created": o.created}, {"modified": o.modified}],
+                "avus": [self.default(avu) for avu in o.avus]
+            })
+
+        return super().encode(o)
