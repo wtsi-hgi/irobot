@@ -21,15 +21,15 @@ import json
 import unittest
 from datetime import datetime
 
-from irobot.irods._types import Metadata, MetadataJSONDecoder, MetadataJSONEncoder
+from irobot.irods._types import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder
 from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
 
 class TestMetadata(unittest.TestCase):
-    def test_type(self):
+    def test_types(self):
         created = datetime(1981, 9, 25)
         modified = datetime.utcnow()
-        avus = [{"attribute": "foo", "value": "bar"}]
+        avus = [AVU("foo", "bar")]
 
         m = Metadata("abc", 123, created, modified, avus)
         self.assertEqual(m.checksum, "abc")
@@ -47,7 +47,7 @@ class TestMetadata(unittest.TestCase):
         self.assertEqual(m.size, TEST_BATON_DICT["size"])
         self.assertEqual(m.created, datetime(1970, 1, 1))  # FIXME Hardcoded
         self.assertEqual(m.modified, datetime(1970, 1, 2, 3, 4, 5))  # FIXME Hardcoded
-        self.assertEqual(m.avus, TEST_BATON_DICT["avus"])
+        self.assertEqual(m.avus, [AVU(**avu) for avu in TEST_BATON_DICT["avus"]])
 
     def test_encoding(self):
         m = json.loads(TEST_BATON_JSON, cls=MetadataJSONDecoder)
@@ -64,6 +64,9 @@ class TestMetadata(unittest.TestCase):
 
             **{k: TEST_BATON_DICT[k] for k in ["checksum", "size", "avus"]}
         })
+
+        # Test pass-through encoding
+        self.assertEqual(json.dumps("foo", cls=MetadataJSONEncoder), "\"foo\"")
 
 
 if __name__ == "__main__":
