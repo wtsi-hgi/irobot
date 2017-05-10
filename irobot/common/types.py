@@ -19,4 +19,4 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum
 
-AsyncTaskStatus = Enum("AsyncTaskStatus", "queued started finished failed")
+AsyncTaskStatus = Enum("AsyncTaskStatus", "queued started finished unknown failed")
