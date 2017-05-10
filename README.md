@@ -274,7 +274,8 @@ ranges thereof), a `202 Accepted` response will be returned with the
 `text/plain` content of the estimated finish time (per ISO8601), or
 empty content if this estimate cannot be calculated. A data object can
 be forcibly refetched by sending the `Cache-Control: no-cache` request
-header.
+header; although, if none of the filesystem metadata have changed (file
+size, checksum, timestamps), then no refetch will be performed.
 
 #### `POST`
 
@@ -300,8 +301,9 @@ as `application/json`.
 
 Note that the metadata for the requested data object will be cached from
 the first fetch. To forcibly refetch the metadata (and update the cache)
-the `Cache-Control: no-cache` request header can be sent. This will not
-refetch the data object.
+the `Cache-Control: no-cache` request header can be sent; if any of the
+filesystem metadata have changed (file size, checksum, timestamps), this
+will trigger a refetching of the data.
 
 ### `/checksum/?do=<iRODS Data Object Path>`
 
