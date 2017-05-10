@@ -22,10 +22,14 @@ managing a connection pool to iRODS.
   - [x] Logging
 - [x] Logging
 - [x] iRODS interface
+  - [x] Metadata model
+  - [x] iCommand and baton wrappers
 - [ ] Precache
   - [x] Tracking database
   - [x] Checksummer
-  - [ ] Plumb together
+  - [x] Filesystem directory handlers
+  - [ ] Precache entity
+  - [ ] Precache manager
 - [x] Authentication handlers
   - [x] HTTP Basic
   - [x] Arvados
