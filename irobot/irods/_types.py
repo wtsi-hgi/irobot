@@ -78,10 +78,14 @@ class MetadataJSONDecoder(JSONDecoder):
                         [AVU(**avu) for avu in base["avus"]])
 
 class MetadataJSONEncoder(JSONEncoder):
-    """ Encode a Metadata object into JSON """
-    # FIXME? This works in our specific case, but I don't think it's
-    # generally correct. The way custom encoders are supposed to work is
-    # *really* badly documented, even by Python standards!
+    """
+    Encode a Metadata object into JSON
+
+    Note that this is very specific to Metadata (and AVU) objects
+    because json.JSONEncoder will serialise supported types (of which,
+    tuple is one; all named tuples are tuples) before delegating to the
+    default method, which serialises custom types.
+    """
     def default(self, o:Any) -> Any:
         if isinstance(o, datetime):
             return o.strftime(_IRODS_TIMESTAMP_FORMAT)
@@ -93,8 +97,8 @@ class MetadataJSONEncoder(JSONEncoder):
                 **({"units": o.units} if o.units else {})
             }
 
-        # FIXME? This is never being called...
-        # return super().default(o)
+        # If all else fails
+        super().default(o)
 
     def encode(self, o:Any) -> str:
         if isinstance(o, Metadata):
