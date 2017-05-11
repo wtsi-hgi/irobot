@@ -272,7 +272,9 @@ trying to fetch a data object that's bigger than the precache), then a
 
 Fetch the data object from iRODS as `application/octet-stream`. This
 method accepts range requests to return requested byte ranges of the
-data object.
+data object. (Note that a range request will still fetch the entirety of
+the data into the precache, if it's not there already, and then serve
+the requested range; there is no short-cutting.)
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
