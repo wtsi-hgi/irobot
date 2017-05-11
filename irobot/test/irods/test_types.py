@@ -65,8 +65,9 @@ class TestMetadata(unittest.TestCase):
             **{k: TEST_BATON_DICT[k] for k in ["checksum", "size", "avus"]}
         })
 
-        # Test pass-through encoding
+        # Test pass-through encoding and type errors
         self.assertEqual(json.dumps("foo", cls=MetadataJSONEncoder), "\"foo\"")
+        self.assertRaises(TypeError, json.dumps, json, cls=MetadataJSONEncoder)
 
 
 if __name__ == "__main__":
