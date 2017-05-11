@@ -81,8 +81,11 @@ def _canon_timeout(timeout:str) -> Optional[timedelta]:
     if match.group("seconds"):
         output = timedelta(seconds=float(match.group("seconds")))
 
-    # 0 timeout is alias for unlimited
-    return output or None
+    # zero timeout is not allowed
+    if not output:
+        raise ParsingError("Timeout must be greater than zero")
+
+    return output
 
 
 def _canon_authentication(authentication:str) -> List[str]:
