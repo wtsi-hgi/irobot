@@ -50,8 +50,10 @@ class Entity(object):
         Maintain the state of each precache entity and provide proxy
         methods back to the precache manager to do the donkey work
 
-        @param   irods_path  iRODS data object path (string)
-        @param   ...
+        @param   irods_path      iRODS data object path (string)
+        @param   data_proxy      Precache manager data fetching function
+        @param   metadata_proxy  Precache manager metadata fetching function
+        @param   checksum_proxy  Precache manager checksumming function
         """
         self.master:Optional[DataObject] = None
         self.switchover:Optional[DataObject] = None

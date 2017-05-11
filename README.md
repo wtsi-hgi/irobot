@@ -28,7 +28,7 @@ managing a connection pool to iRODS.
   - [x] Tracking database
   - [x] Checksummer
   - [x] Filesystem directory handlers
-  - [ ] Precache entity
+  - [x] Precache entity
   - [ ] Precache manager
 - [x] Authentication handlers
   - [x] HTTP Basic
