@@ -157,7 +157,14 @@ configuration can be found in `irobot.conf.sample`.
   `unlimited` to keep the connection alive until the response content is
   available (not recommended), or to a specific number of milliseconds
   (with an optional `ms` suffix) or seconds (with a mandatory `s`
-  suffix).
+  suffix), greater than zero.
+
+  Note that every request that triggers data fetching from iRODS will
+  almost certainly exceed the timeout (unless the data is very small or
+  the timeout very large). As such, this will necessarily introduce
+  artificial latency to this type of request. To minimise this effect,
+  the timeout ought to be set low, but not so low that any operational
+  overhead doesn't have time to complete.
 
 * **`authentication`** The available authentication handlers, which is a
   comma-separated list of at least one of `basic` and `arvados`, in any

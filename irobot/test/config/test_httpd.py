@@ -38,14 +38,14 @@ class TestHTTPdConfig(unittest.TestCase):
 
         self.assertRaises(ParsingError, canon_timeout, "foo")
         self.assertRaises(ParsingError, canon_timeout, "-1")
+        self.assertRaises(ParsingError, canon_timeout, "0")
+        self.assertRaises(ParsingError, canon_timeout, "0ms")
+        self.assertRaises(ParsingError, canon_timeout, "0s")
         self.assertEqual(canon_timeout("1000"), timedelta(milliseconds=1000))
         self.assertEqual(canon_timeout("1000ms"), timedelta(milliseconds=1000))
         self.assertEqual(canon_timeout("1000 ms"), timedelta(milliseconds=1000))
         self.assertEqual(canon_timeout("1s"), timedelta(milliseconds=1000))
         self.assertEqual(canon_timeout("1.1 s"), timedelta(milliseconds=1100))
-        self.assertIsNone(canon_timeout("0"))
-        self.assertIsNone(canon_timeout("0ms"))
-        self.assertIsNone(canon_timeout("0s"))
         self.assertIsNone(canon_timeout("unlimited"))
 
     def test_authentication_parsing(self):
