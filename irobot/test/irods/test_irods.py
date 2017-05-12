@@ -65,9 +65,10 @@ class TestiRODS(unittest.TestCase):
         lock = Lock()
         lock.acquire()
 
-        def _check_messages(timestamp, status, irods_path):
+        def _check_messages(timestamp, status, irods_path, local_path):
             self.assertEqual(timestamp, mock_broadcast_time())
             self.assertEqual(irods_path, "/foo/bar")
+            self.assertEqual(local_path, "/quux/xyzzy")
 
             if status == AsyncTaskStatus.finished:
                 lock.release()
@@ -85,9 +86,9 @@ class TestiRODS(unittest.TestCase):
 
         # Make sure out listeners are getting the right messages
         _listener.assert_has_calls([
-            call(mock_broadcast_time(), AsyncTaskStatus.queued, "/foo/bar"),
-            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar"),
-            call(mock_broadcast_time(), AsyncTaskStatus.finished, "/foo/bar")
+            call(mock_broadcast_time(), AsyncTaskStatus.queued, "/foo/bar", "/quux/xyzzy"),
+            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar", "/quux/xyzzy"),
+            call(mock_broadcast_time(), AsyncTaskStatus.finished, "/foo/bar", "/quux/xyzzy")
         ])
 
     @patch("irobot.irods.irods.iget", spec=True)
@@ -99,8 +100,8 @@ class TestiRODS(unittest.TestCase):
         self.irods._iget("/foo/bar", "/quux/xyzzy")
         mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar"),
-            call(mock_broadcast_time(), AsyncTaskStatus.finished, "/foo/bar")
+            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar", "/quux/xyzzy"),
+            call(mock_broadcast_time(), AsyncTaskStatus.finished, "/foo/bar", "/quux/xyzzy")
         ])
 
     @patch("irobot.irods.irods.iget", spec=True)
@@ -114,8 +115,8 @@ class TestiRODS(unittest.TestCase):
         self.irods._iget("/foo/bar", "/quux/xyzzy")
         mock_iget.assert_called_once_with("/foo/bar", "/quux/xyzzy")
         _listener.assert_has_calls([
-            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar"),
-            call(mock_broadcast_time(), AsyncTaskStatus.failed, "/foo/bar")
+            call(mock_broadcast_time(), AsyncTaskStatus.started, "/foo/bar", "/quux/xyzzy"),
+            call(mock_broadcast_time(), AsyncTaskStatus.failed, "/foo/bar", "/quux/xyzzy")
         ])
 
     @patch("irobot.irods.irods.baton", spec=True)

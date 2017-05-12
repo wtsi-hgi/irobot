@@ -69,15 +69,16 @@ class iRODS(Listenable, LogWriter):
         self.log(logging.DEBUG, "Shutting down iget pool")
         self._iget_pool.shutdown()
 
-    def _broadcast_iget_to_log(self, _timestamp:datetime, status:AsyncTaskStatus, irods_path:str) -> None:
+    def _broadcast_iget_to_log(self, _timestamp:datetime, status:AsyncTaskStatus, irods_path:str, local_path:str) -> None:
         """
         Log all broadcast iget messages
 
         @param   status      iGet status (AsyncTaskStatus)
         @param   irods_path  Path to data object on iRODS (string)
+        @param   local_path  Local filesystem target file (string)
         """
         level = logging.WARNING if status == AsyncTaskStatus.failed else logging.INFO
-        self.log(level, f"iget {status.name} for {irods_path}")
+        self.log(level, f"iget {status.name} for {irods_path} to {local_path}")
 
     @property
     def workers(self) -> int:
@@ -93,7 +94,7 @@ class iRODS(Listenable, LogWriter):
         @param   local_path  Local filesystem target file (string)
         """
         _exists(irods_path)
-        self.broadcast(AsyncTaskStatus.queued, irods_path)
+        self.broadcast(AsyncTaskStatus.queued, irods_path, local_path)
         self._iget_pool.submit(self._iget, irods_path, local_path)
 
     def _iget(self, irods_path:str, local_path:str) -> None:
@@ -106,12 +107,12 @@ class iRODS(Listenable, LogWriter):
         @param   local_path  Local filesystem target file (string)
         """
         try:
-            self.broadcast(AsyncTaskStatus.started, irods_path)
+            self.broadcast(AsyncTaskStatus.started, irods_path, local_path)
             iget(irods_path, local_path)
-            self.broadcast(AsyncTaskStatus.finished, irods_path)
+            self.broadcast(AsyncTaskStatus.finished, irods_path, local_path)
 
         except CalledProcessError:
-            self.broadcast(AsyncTaskStatus.failed, irods_path)
+            self.broadcast(AsyncTaskStatus.failed, irods_path, local_path)
 
     def get_metadata(self, irods_path:str) -> Metadata:
         """
