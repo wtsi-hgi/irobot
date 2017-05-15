@@ -183,7 +183,7 @@ class TestTrackingDB(unittest.TestCase):
             self.assertEqual(tracker.commitment, os.stat(db_file).st_size)
 
     def test_production_rates(self):
-        self.assertEqual(self.tracker.production_rates, {"download": None, "checksum": None})
+        self.assertEqual(self.tracker.production_rates, {Datatype.data: None, Datatype.checksums: None})
 
         data_size      = random.randint(500, 2000)
         start_time     = random.randint(0, 3600)
@@ -234,7 +234,7 @@ class TestTrackingDB(unittest.TestCase):
             in  enumerate(checksum_times, 1)
         ])
 
-        for stat, times in ("download", download_times), ("checksum", checksum_times):
+        for stat, times in (Datatype.data, download_times), (Datatype.checksums, checksum_times):
             rates = [data_size / (t - start_time) for t in times]
 
             self.assertAlmostEqual(

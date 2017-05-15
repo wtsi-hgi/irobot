@@ -208,7 +208,7 @@ create view if not exists production_rates as
     where  started.status      = 2
     and    finished.status     = 3
   )
-  select   case when datatype = 1 then "download" else "checksum" end as process,
+  select   datatype as process,
            avg(1.0 * size / duration) as rate,
            stderr(1.0 * size / duration) as stderr
   from     _processing

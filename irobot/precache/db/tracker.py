@@ -152,18 +152,18 @@ class TrackingDB(LogWriter):
         return db_size + precache_commitment
 
     @property
-    def production_rates(self) -> Dict[str, Optional[SummaryStat]]:
+    def production_rates(self) -> Dict[Datatype, Optional[SummaryStat]]:
         """
         Retrieve the current production rates
 
         @return  Dictionary of production rates, where available (dict)
         """
         return {
-            "download": None,
-            "checksum": None,
+            Datatype.data: None,
+            Datatype.checksums: None,
 
             **{
-                process: SummaryStat(rate, stderr)
+                Datatype(process): SummaryStat(rate, stderr)
                 for process, rate, stderr
                 in  self._exec("""
                     select process,
