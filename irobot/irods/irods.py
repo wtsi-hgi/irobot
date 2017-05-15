@@ -27,7 +27,7 @@ from typing import Optional
 
 from irobot.common import AsyncTaskStatus, Listenable
 from irobot.config.irods import iRODSConfig
-from irobot.irods._api import baton, iget, ils
+from irobot.irods._api import iRODSError, baton, iget, ils
 from irobot.irods._types import Metadata
 from irobot.logging import LogWriter
 
@@ -41,8 +41,15 @@ def _exists(irods_path:str) -> None:
     try:
         ils(irods_path)
 
-    except CalledProcessError:
-        raise IOError(f"Data object \"{irods_path}\" inaccessible")
+    except iRODSError as e:
+        if e.error == (317000, "USER_INPUT_PATH_ERR"):
+            raise FileNotFoundError(f"Data object \"{irods_path}\" not found")
+
+        elif e.error == (818000, "CAT_NO_ACCESS_PERMISSION"):
+            raise PermissionError(f"Not authorised to access data object \"{irods_path}\"")
+
+        else:
+            raise IOError(f"Data object \"{irods_path}\" inaccessible")
 
 
 class iRODS(Listenable, LogWriter):

@@ -24,7 +24,7 @@ from unittest.mock import patch
 from subprocess import CalledProcessError
 from tempfile import TemporaryFile
 
-from irobot.irods._api import _invoke, ils, iget, baton
+from irobot.irods._api import iRODSError, _invoke, ils, iget, baton
 from irobot.irods._types import MetadataJSONDecoder
 from irobot.test.irods._common import TEST_BATON_JSON
 
@@ -90,7 +90,7 @@ class TestiRODSAPI(unittest.TestCase):
 
     def test_ils_fail(self, mock_invoke):
         mock_invoke.return_value = self.mock_invoke_fail
-        self.assertRaises(CalledProcessError, ils, "/foo/bar")
+        self.assertRaises(iRODSError, ils, "/foo/bar")
 
     def test_iget_pass(self, mock_invoke):
         mock_invoke.return_value = self.mock_invoke_pass
@@ -99,7 +99,7 @@ class TestiRODSAPI(unittest.TestCase):
 
     def test_iget_fail(self, mock_invoke):
         mock_invoke.return_value = self.mock_invoke_fail
-        self.assertRaises(CalledProcessError, iget, "/foo/bar", "/quux/xyzzy")
+        self.assertRaises(iRODSError, iget, "/foo/bar", "/quux/xyzzy")
 
     def test_baton_pass(self, mock_invoke):
         mock_invoke.return_value = (0, TEST_BATON_JSON, "")
