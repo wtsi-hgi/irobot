@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import json
 import os
+import re
 import subprocess
 from tempfile import TemporaryFile
 from typing import Any, Sequence, TextIO, Tuple, Union
@@ -65,6 +66,48 @@ def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextI
     return exit_code, out, err
 
 
+_RE_IRODS_ERROR = re.compile(r"""
+    ^
+    ERROR:
+    .*
+    -( \d{4,8} )  # Error number
+    \s
+    ( \w+ )       # Error name
+    $
+""", re.VERBOSE | re.MULTILINE)
+
+class iRODSError(Exception):
+    def __init__(self, exit_code:int, stderr:str, *args, **kwargs) -> None:
+        """
+        iRODS errors are defined in lib/core/include/rodsErrorTable.h
+
+        @param   exit_code  Exit code (int)
+        @param   stderr     Contents of stderr (string)
+        """
+        self._exit_code = exit_code
+        self._stderr = stderr
+
+        # Attempt to extract error identifier and code from stderr
+        # (use the last one in the stderr output)
+        found = _RE_IRODS_ERROR.findall(stderr)
+        if found:
+            self._errno, self._errname = found[-1]
+            self._errno = int(self._errno)
+        else:
+            self._errno, self._errname = None, None
+
+        super().__init__(*args, **kwargs)
+
+    @property
+    def error(self):
+        """
+        iRODS error identifier
+
+        @return  Error number and name (tuple of int, string)
+        """
+        return self._errno, self._errname
+
+
 def ils(irods_path:str) -> None:
     """
     Wrapper for ils
@@ -78,9 +121,7 @@ def ils(irods_path:str) -> None:
 
     exit_code, stdout, stderr = _invoke(command)
     if exit_code:
-        raise subprocess.CalledProcessError(returncode=exit_code,
-                                            cmd=" ".join(command),
-                                            output=(stdout, stderr))
+        raise iRODSError(exit_code, stderr)
 
 def iget(irods_path:str, local_path:str) -> None:
     """
@@ -93,9 +134,7 @@ def iget(irods_path:str, local_path:str) -> None:
 
     exit_code, stdout, stderr = _invoke(command)
     if exit_code:
-        raise subprocess.CalledProcessError(returncode=exit_code,
-                                            cmd=" ".join(command),
-                                            output=(stdout, stderr))
+        raise iRODSError(exit_code, stderr)
 
 def baton(irods_path:str) -> Metadata:
     """

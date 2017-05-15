@@ -26,7 +26,7 @@ from threading import Lock
 from irobot.common import AsyncTaskStatus
 from irobot.config.irods import iRODSConfig
 from irobot.irods._types import MetadataJSONDecoder
-from irobot.irods.irods import _exists, iRODS
+from irobot.irods.irods import _exists, iRODS, iRODSError
 from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
 
@@ -37,7 +37,13 @@ class TestExists(unittest.TestCase):
         mock_ils.assert_called_once_with("/foo/bar")
 
     def test_exists_fail(self, mock_ils):
-        mock_ils.side_effect = CalledProcessError(1, None, None)
+        mock_ils.side_effect = iRODSError(1, "ERROR: -317000 USER_INPUT_PATH_ERR")
+        self.assertRaises(FileNotFoundError, _exists, "/foo/bar")
+
+        mock_ils.side_effect = iRODSError(1, "ERROR: -818000 CAT_NO_ACCESS_PERMISSION")
+        self.assertRaises(PermissionError, _exists, "/foo/bar")
+
+        mock_ils.side_effect = iRODSError(1, "Something has gone horribly wrong!")
         self.assertRaises(IOError, _exists, "/foo/bar")
 
 
