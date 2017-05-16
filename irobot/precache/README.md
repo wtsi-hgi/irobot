@@ -38,8 +38,8 @@ we are more discriminating.
     raise an appropriate exception.
 
   * Fetch its metadata and check it against the master metadata. If the
-    modification date hasn't changed, then raise a cancellation
-    interrupt.
+    modification date and/or checksum haven't changed, then raise a
+    cancellation interrupt.
 
   * Check there is space to accommodate the switchover data, metadata
     and checksums. If not:
@@ -62,6 +62,8 @@ we are more discriminating.
 
   When data is available and a data request is made:
 
+  * Update the entity's last access time.
+
   * Stream the data (or ranges, thereof) to the requestor.
 
 * When data fetching is complete, check we have, are planning to or are
@@ -77,6 +79,8 @@ we are more discriminating.
 
   When checksums are available and a checksum request is made:
 
+  * Update the entity's last access time.
+
   * Return the checksums (or ranges, thereof) to the requestor.
 
 * When checksumming is complete, check our calculated checksum matches
@@ -87,6 +91,16 @@ we are more discriminating.
   * Log a checksum mismatch failure.
 
   * Restart the data fetching (and, implicitly, checksumming) processes.
+
+n.b., Metadata for data objects is relatively small and, while it is
+persisted to disk, it remains part of the entity's in-memory state. When
+it is not available, a blocking call -- rather than an asynchronous one
+-- is used to fetch it from iRODS, as it won't block for long. Any
+metadata request will update the entity's last access time and a forced
+metadata request, when appropriate, will only refetch data (and
+checksumming) if the modification timestamp and/or checksum have changed
+from the original; otherwise, the master metadata will be updated
+in-place.
 
 ## Cache Invalidation
 
