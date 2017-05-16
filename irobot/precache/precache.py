@@ -37,26 +37,6 @@ from irobot.precache.db import (TrackingDB,
                                 StatusExists, SwitchoverExists, SwitchoverDoesNotExist, PrecacheExists)
 
 
-# PRECACHE PLAN
-# =============
-# ...because it's super-complicated, so better to have a target to work
-# towards than blindly stabbing in the dark :P
-#
-# TODO Write this out completely before implementing anything!!
-#
-# How to Calculate ETA
-# --------------------
-# Estimate is calculated based on the size of data ahead of it in the
-# queue (including things currently being processed, thus making it an
-# over-estimate), divided by the number of workers, plus the size of the
-# data in question:
-#
-#   ETA = Now + (((<Size Ahead> / Workers) + <DO Size>) / Rate)
-#
-# FIXME We shouldn't base from now, but rather the start times of async
-# processes
-
-
 class _WorkerMetrics(object):
     """ Simple container for worker metrics """
     def __init__(self, workers:int, rate:Optional[SummaryStat] = None) -> None:
