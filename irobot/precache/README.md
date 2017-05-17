@@ -141,14 +141,6 @@ This is only relevant if temporal invalidation is enabled:
   checksumming. The justification being that, while the data *is* in the
   precache, it has expired per the configured policy.
 
-### Manual Invalidation
-
-A force request is effectively manual invalidation. However, unlike in
-the previous instances, the original data is not removed until the new
-data is complete. It is assumed that manual invalidation will be an
-exceptional case, so the original data ought to remain for continuous
-service.
-
 ### Capacity Invalidation
 
 This is only relevant if the precache size is limited:
@@ -163,6 +155,14 @@ This is only relevant if the precache size is limited:
     will be culled first. In this instance, data should only be deleted
     if enough space can be freed to accomodate the new request;
     otherwise, the invalidation is cancelled.
+
+### Manual Invalidation
+
+A force request is effectively manual invalidation. However, unlike in
+the previous instances, the original data is not removed until the new
+data is complete. It is assumed that manual invalidation will be an
+exceptional case, so the original data ought to remain for continuous
+service.
 
 ## Miscellany
 
