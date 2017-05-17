@@ -92,6 +92,12 @@ we are more discriminating.
 
   * Restart the data fetching (and, implicitly, checksumming) processes.
 
+* When checksumming is complete for an entity's switchover state:
+
+  * Delete the master state (data, metadata and checksums).
+
+  * Switch the switchover state to master.
+
 n.b., Metadata for data objects is relatively small and, while it is
 persisted to disk, it remains part of the entity's in-memory state. When
 it is not available, a blocking call -- rather than an asynchronous one
@@ -134,6 +140,14 @@ This is only relevant if temporal invalidation is enabled:
   that should trigger the cull and thus restart data fetching and
   checksumming. The justification being that, while the data *is* in the
   precache, it has expired per the configured policy.
+
+### Manual Invalidation
+
+A force request is effectively manual invalidation. However, unlike in
+the previous instances, the original data is not removed until the new
+data is complete. It is assumed that manual invalidation will be an
+exceptional case, so the original data ought to remain for continuous
+service.
 
 ### Capacity Invalidation
 
