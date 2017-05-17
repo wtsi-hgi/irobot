@@ -22,7 +22,7 @@ size = unlimited
 # Age threshold (in terms of access time) for files in the precache to
 # be culled in the event of a capacity overflow (i.e., this does not
 # apply to an unlimited precache). The threshold can be set to
-# "unlimited" to avoid this behaviour (assumed if this setting is
+# "unlimited" to avoid this behaviour (assumed, if this setting is
 # omitted), or a value suffixed with any of the following units:
 # h(our(s)), d(ay(s)), w(eek(s)) or y(ear(s)).
 age_threshold = unlimited
