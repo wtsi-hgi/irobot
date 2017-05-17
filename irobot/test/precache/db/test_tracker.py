@@ -247,28 +247,6 @@ class TestTrackingDB(unittest.TestCase):
                 statistics.stdev(rates) / math.sqrt(len(times))
             )
 
-    def test_download_queue(self):
-        self.assertEqual(self.tracker.download_queue, [])
-
-        req = self.tracker.new_request("foo", "bar", (123, 0, 0))
-        q = self.tracker.download_queue
-
-        self.assertEqual(len(q), 1)
-        self.assertEqual(q[0][0], Status.requested)
-        self.assertEqual((q[0][2], q[0][3]), req)
-        self.assertEqual(q[0][4], 123)
-
-        self.tracker.set_status(req[0], req[1], Datatype.data, Status.producing)
-        q = self.tracker.download_queue
-
-        self.assertEqual(self.tracker.get_current_status(req[0], req[1], Datatype.data).status, Status.producing)
-
-        self.assertEqual(len(q), 1)
-        self.assertEqual(q[0][0], Status.producing)
-
-        self.tracker.set_status(req[0], req[1], Datatype.data, Status.ready)
-        self.assertEqual(self.tracker.download_queue, [])
-
     def test_get_do_id(self):
         do_id, _mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
         self.assertEqual(self.tracker.get_data_object_id("foo"), do_id)

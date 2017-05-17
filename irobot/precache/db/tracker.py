@@ -96,10 +96,9 @@ class TrackingDB(LogWriter):
                 """, (member.value, member.name)).fetchone() == (1, len(enum_type))
 
         # NOTE Tracked files that are in an inconsistent state need to
-        # be handled upstream; it shouldn't be done at this level. The
-        # download_queue property can be used to determine this and the
-        # database will sanitise files in a bad state (i.e., producing)
-        # at initialisation time
+        # be handled upstream; it shouldn't be done at this level,
+        # although the database will sanitise files in a bad state
+        # (i.e., producing) at initialisation time
         self.log(logging.INFO, "Precache tracking database ready")
 
         self._schedule_vacuum()
@@ -173,17 +172,6 @@ class TrackingDB(LogWriter):
                 """)
             }
         }
-
-    @property
-    def download_queue(self) -> List[Tuple[Status, datetime, int, Mode, int]]:
-        """
-        Get the list of files being downloaded or waiting to be
-        downloaded
-
-        @return  List of current status, timestamp, data object, mode
-                 and size in bytes, ordered by status then timestamp
-        """
-        return self._exec("select * from download_queue").fetchall()
 
     def get_data_object_id(self, irods_path:str) -> Optional[int]:
         """
