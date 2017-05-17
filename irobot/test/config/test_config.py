@@ -131,6 +131,7 @@ class TestConfiguration(unittest.TestCase):
         self.assertEqual(config.precache.location, "/foo")
         self.assertEqual(config.precache.index, "/foo/bar")
         self.assertIsNone(config.precache.size)
+        self.assertIsNone(config.precache.age_threshold)
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
         self.assertEqual(config.precache.chunk_size, 64 * (1000**2))
 
