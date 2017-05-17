@@ -131,13 +131,14 @@ configuration can be found in `irobot.conf.sample`.
 
   This option is only relevant if `size` is not `unlimited`, otherwise
   it will be ignored. The threshold can be set to `unlimited` to avoid
-  this behaviour (the default, if omitted). Otherwise, the its value
-  should be suffixed with any of the following units: `h` (`hour`), `d`
+  this behaviour (the default, if omitted). Otherwise, its value should
+  be numeric suffixed with any of the following units: `h` (`hour`), `d`
   (`day`), `w` (`week`) or `y` (`year`); fully spelt units may be
   pluralised.
 
   It is recommended that this should be set to `unlimited` or a large
-  value, otherwise the precache is at risk of DoS attacks.
+  value, otherwise the precache is at risk of DoS attacks from requests
+  that saturate it.
 
 * **`expiry`** The maximum age (in terms of access time) of files in the
   precache. It can be set to `unlimited`, so that files never expire, or

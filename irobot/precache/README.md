@@ -130,6 +130,11 @@ This is only relevant if temporal invalidation is enabled:
 * When run, any entities that exceed the expiration limit are
   invalidated and freed.
 
+* If a request for an invalid entity is made before it is culled, then
+  that should trigger the cull and thus restart data fetching and
+  checksumming. The justification being that, while the data *is* in the
+  precache, it has expired per the configured policy.
+
 ### Capacity Invalidation
 
 This is only relevant if the precache size is limited:
