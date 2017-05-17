@@ -3,8 +3,6 @@
 The precache mechanism is super-complicated, so how it's intended to
 work is documented here.
 
-<!-- TODO Write this out completely before implementing anything!! -->
-
 ## Anatomy of a Request
 
 A request is made for a data object. While iRobot could be used for just
@@ -28,8 +26,8 @@ we are more discriminating.
       the request. If there's still not enough space, raise an
       exception.
 
-  * Instantiate a master entity on the basis of the metadata and add it
-    to the precache.
+  * Instantiate a master entity on the basis of the metadata and the
+    current time (for the last access time) and add it to the precache.
 
   ...If it does exist and a force (data) request is made when no
   switchover state is present:
@@ -48,7 +46,8 @@ we are more discriminating.
       the request. If there's still not enough space, raise an
       exception.
 
-  * Set the switchover state of the entity on the basis of the metadata.
+  * Set the switchover state of the entity on the basis of the metadata
+    and update the last access time.
 
 * Check we have, are planning to or are in the process of fetching data
   (or switchover data, for a force request) for the entity. If not:
@@ -69,7 +68,7 @@ we are more discriminating.
 * When data fetching is complete, check we have, are planning to or are
   in the process of calculating its checksums. If not:
 
-  * Enqueue the asynchronous checksumming.
+  * Enqueue the asynchronous checksumming job.
 
   If/when checksumming is queued or in progress and a checksum request
   is made:
@@ -104,7 +103,48 @@ in-place.
 
 ## Cache Invalidation
 
-*TODO*
+The caching policy allows invalidation based either on time and/or
+capacity. It should function similar to a stop-the-world garbage
+collector, in terms of locking, for simplicity's sake.
+
+### Temporal Invalidation
+
+This is only relevant if temporal invalidation is enabled:
+
+* A process should be scheduled to run periodically; say, with a period
+  of half the expiration limit.
+
+* When run, any entities that exceed the expiration limit are
+  invalidated and freed.
+
+### Capacity Invalidation
+
+This is only relevant if the precache size is limited:
+
+* When a new request is received that overflows the precache, entities
+  may be invalidated and freed based on their age (i.e., oldest get
+  culled first).
+
+* Data should only be deleted if enough space can be freed to
+  accommodate the request. If not (or if the data is bigger than the
+  precache limit), then the invalidation is cancelled.
+
+**Questions...**
+
+1. Is this a good idea? You could DoS attack iRobot by always requesting
+   data that is slightly smaller than the precache, thus causing it to
+   delete everything (or almost everything). If we allow this, perhaps
+   we can define a threshold for old-age culling.
+
+2. Should queued/in progress data be invalidatable? (This also applies
+   to temporal invalidation.)
+
+## Miscellany
+
+* Upon instantiation, the precache must handle any currently existing
+  entities from a previous run that is in a queued or in progress state.
+  These entities must be cancelled and requeued; any partial data that
+  has already been fetched should be deleted.
 
 ## Calculating the ETA
 
@@ -147,3 +187,7 @@ plus the average wait time for the data ahead of it, plus the time to
 process itself:
 
     ETA = Now + W + Q + T
+
+Note that this estimate is not necessarily accurate, in terms of how the
+concurrency makes a more accurate estimate intractable to calculate.
+This is seen as a reasonable compromise.
