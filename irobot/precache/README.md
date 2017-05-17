@@ -22,9 +22,9 @@ we are more discriminating.
   * Check there is space within the defined limits of the precache to
     accommodate the entity's data, metadata and checksums. If not:
 
-    * Attempt to clear invalidated data from the precache to accommodate
-      the request. If there's still not enough space, raise an
-      exception.
+    * Attempt to clear invalidatable data from the precache to
+      accommodate the request. If there's still not enough space, raise
+      an exception.
 
   * Instantiate a master entity on the basis of the metadata and the
     current time (for the last access time) and add it to the precache.
@@ -42,9 +42,9 @@ we are more discriminating.
   * Check there is space to accommodate the switchover data, metadata
     and checksums. If not:
 
-    * Attempt to clear invalidated data from the precache to accommodate
-      the request. If there's still not enough space, raise an
-      exception.
+    * Attempt to clear invalidatable data from the precache to
+      accommodate the request. If there's still not enough space, raise
+      an exception.
 
   * Set the switchover state of the entity on the basis of the metadata
     and update the last access time.
@@ -54,7 +54,8 @@ we are more discriminating.
 
   * Enqueue the asynchronous data fetching job.
 
-  If/when data fetching is queued or in progress:
+  If/when data fetching is queued or in progress and a data or checksum
+  request is made:
 
   * Raise an interrupt to alert the requestor that the fetching job has
     been submitted, with an estimated completion time (if possible).
@@ -94,18 +95,30 @@ we are more discriminating.
 n.b., Metadata for data objects is relatively small and, while it is
 persisted to disk, it remains part of the entity's in-memory state. When
 it is not available, a blocking call -- rather than an asynchronous one
--- is used to fetch it from iRODS, as it won't block for long. Any
-metadata request will update the entity's last access time and a forced
-metadata request, when appropriate, will only refetch data (and
-checksumming) if the modification timestamp and/or checksum have changed
-from the original; otherwise, the master metadata will be updated
-in-place.
+-- is used to fetch it from iRODS, as it won't block for long.
+
+* Any metadata request will update the entity's last access time.
+
+* A metadata request for a newly instantiated entity will return the
+  metadata, rather than an estimated completion time for the data;
+  however, the data fetching (and subsequent checksumming) will still be
+  enqueued.
+
+* A forced metadata request, when appropriate, will only refetch data
+  (and checksumming) if the modification timestamp and/or checksum have
+  changed from the original; otherwise, the master metadata will be
+  updated in-place.
 
 ## Cache Invalidation
 
 The caching policy allows invalidation based either on time and/or
 capacity. It should function similar to a stop-the-world garbage
 collector, in terms of locking, for simplicity's sake.
+
+New entities can only be put in the precache if they are known to fit.
+Only entities that are not currently being processed (i.e., not fetching
+or checksumming data for either their master or switchover states) may
+be invalidated.
 
 ### Temporal Invalidation
 
@@ -122,24 +135,21 @@ This is only relevant if temporal invalidation is enabled:
 This is only relevant if the precache size is limited:
 
 * When a new request is received that overflows the precache, entities
-  may be invalidated and freed based on their age (i.e., oldest get
-  culled first).
+  may be invalidated and freed based on:
 
-* Data should only be deleted if enough space can be freed to
-  accommodate the request. If not (or if the data is bigger than the
-  precache limit), then the invalidation is cancelled.
+  * Any temporal invalidation (where appropriate) that has yet to be
+    freed in the scheduled cull.
 
-**Questions...**
-
-1. Is this a good idea? You could DoS attack iRobot by always requesting
-   data that is slightly smaller than the precache, thus causing it to
-   delete everything (or almost everything). If we allow this, perhaps
-   we can define a threshold for old-age culling.
-
-2. Should queued/in progress data be invalidatable? (This also applies
-   to temporal invalidation.)
+  * Their age, where the oldest entities (beyond some defined threshold)
+    will be culled first. In this instance, data should only be deleted
+    if enough space can be freed to accomodate the new request;
+    otherwise, the invalidation is cancelled.
 
 ## Miscellany
+
+* Upon instantiation, the precache must load its in-memory state from
+  the tracking database. All state changes during runtime must be
+  persisted back to the tracking database.
 
 * Upon instantiation, the precache must handle any currently existing
   entities from a previous run that is in a queued or in progress state.
@@ -159,16 +169,16 @@ entity size divided by the processing rate, as our ETA.
 
 Otherwise:
 
-    QUEUED
-    QUEUED   * Estimate required
-    QUEUED   ┬
-    ...      │ Ahead in the queue
-    QUEUED   ┴
-    QUEUED   ┬
-    STARTED  │
-    STARTED  │ Worker pool
-    ...      │
-    STARTED  ┴
+            QUEUED
+            QUEUED   * Estimate required
+            QUEUED   ┬
+            ...      │ Ahead in the queue
+            QUEUED   ┴
+            QUEUED   ┬
+            STARTED  │
+            STARTED  │ Worker pool
+            ...      │
+    Head →  STARTED  ┴
 
 Consider the entities in the queue that have started to be processed, or
 are about to be. The wait time for the next available slot will be the
@@ -182,12 +192,16 @@ calculate the processing time based on the rate. Call this duration *Q*.
 
 The processing time for the requested entity, *T*, is easily calculated
 as that entity's size divided by the processing rate. Thus the ETA for
-that entity is the current time, plus the duration for the next slot,
-plus the average wait time for the data ahead of it, plus the time to
-process itself:
+that entity is the base time, plus the duration for the next slot, plus
+the average wait time for the data ahead of it, plus the time to process
+itself:
 
-    ETA = Now + W + Q + T
+    ETA = Base + W + Q + T
 
-Note that this estimate is not necessarily accurate, in terms of how the
-concurrency makes a more accurate estimate intractable to calculate.
-This is seen as a reasonable compromise.
+* The base time for fetching data is the current time.
+
+* The base time for checksumming time is the fetching ETA.
+
+Note that this estimate is not necessarily accurate, insofar as the
+concurrency makes accuracy intractable. This is seen as a reasonable
+compromise.
