@@ -189,15 +189,15 @@ entity size divided by the processing rate, as our ETA.
 Otherwise:
 
             QUEUED
-            QUEUED   * Estimate required
-            QUEUED   ┬
-            ...      │ Ahead in the queue
-            QUEUED   ┴
-            QUEUED   ┬
-            STARTED  │
-            STARTED  │ Worker pool
-            ...      │
-    Head →  STARTED  ┴
+            QUEUED   ← Estimate required
+            QUEUED   ⎫
+            …        ⎬ Ahead in the queue
+            QUEUED   ⎭
+            QUEUED   ⎫
+            STARTED  ⎪
+            STARTED  ⎬ Worker pool
+            …        ⎪
+    Head →  STARTED  ⎭
 
 Consider the entities in the queue that have started to be processed, or
 are about to be. The wait time for the next available slot will be the
@@ -216,6 +216,8 @@ the average wait time for the data ahead of it, plus the time to process
 itself:
 
     ETA = Base + W + Q + T
+
+Where:
 
 * The base time for fetching data is the current time.
 
