@@ -77,11 +77,18 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEqual(canon_expiry("1 year"), 1)
         self.assertEqual(canon_expiry("1.2 years"), 1.2)
 
+    def test_age_threshold_parsing(self):
+        canon_age_threshold = precache._canon_age_threshold
+
+        self.assertIsNone(canon_age_threshold(None))
+        self.assertEqual(canon_age_threshold("1 year"), timedelta(days=365))
+
     def test_instance(self):
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited", "64MB")
         self.assertEqual(config.location, "/foo")
         self.assertEqual(config.index, "/foo/bar")
         self.assertEqual(config.size, 123 * (1000**3))
+        self.assertIsNone(config.age_threshold)
         self.assertIsNone(config.expiry(self.now))
         self.assertEqual(config.chunk_size, 64 * (1000**2))
         self.assertRegex(str(config), r"expiry = unlimited")
@@ -93,6 +100,9 @@ class TestPrecacheConfig(unittest.TestCase):
         config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB")
         self.assertEqual(config.expiry(self.now), add_years(self.now, 1.2))
         self.assertRegex(str(config), r"expiry = 1.2 years")
+
+        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB", age_threshold="3 years")
+        self.assertEqual(config.age_threshold, 3 * timedelta(days=365))
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ PRECACHE = "precache"
 PRECACHE_LOCATION = "location"
 PRECACHE_INDEX = "index"
 PRECACHE_SIZE = "size"
+PRECACHE_AGE_THRESHOLD = "*age_threshold"
 PRECACHE_EXPIRY = "expiry"
 PRECACHE_CHUNK_SIZE = "chunk_size"
 
@@ -97,7 +98,8 @@ class Configuration(object):
                                                                      PRECACHE_INDEX,
                                                                      PRECACHE_SIZE,
                                                                      PRECACHE_EXPIRY,
-                                                                     PRECACHE_CHUNK_SIZE)
+                                                                     PRECACHE_CHUNK_SIZE,
+                                                                     PRECACHE_AGE_THRESHOLD)
 
         # Build iRODS configuration
         self.irods = self._build_config(iRODSConfig, IRODS, IRODS_MAX_CONNECTIONS)
@@ -139,7 +141,7 @@ class Configuration(object):
             if isinstance(getattr(self, config), BaseConfig)
         }
 
-    def _build_config(self, constructor:ClassVar[BaseConfig], section:str, *options:Tuple[str, ...]) -> BaseConfig:
+    def _build_config(self, constructor:ClassVar[BaseConfig], section:str, *options) -> BaseConfig:
         """
         Build configuration
 
@@ -150,6 +152,17 @@ class Configuration(object):
         @return  Instantiated configuration (object inheriting BaseConfig)
         """
         return constructor(**{
-            k:self.config.get(section, k)
-            for k in options
+            # Required values
+            **{
+                k: self.config.get(section, k)
+                for k in options
+                if not k.startswith("*")
+            },
+
+            # Optional values
+            **{
+                k[1:]: self.config.get(section, k[1:], fallback=None)
+                for k in options
+                if k.startswith("*")
+            }
         })

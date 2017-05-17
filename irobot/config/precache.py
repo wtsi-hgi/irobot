@@ -136,23 +136,44 @@ def _canon_expiry(expiry:str) -> Union[timedelta, Number, None]:
     }[unit]
 
 
+def _canon_age_threshold(age_threshold:Optional[str]) -> Optional[timedelta]:
+    """
+    Canonicalise age threshold for cache invalidation based on the logic
+    for temporal invalidation, converting "year" values into a timedelta
+    based on a nominal year of 365 days
+
+    @param   age_threshold  Age threshold (sting)
+    @return  None for unlimited; duration, otherwise (timedelta)
+    """
+    threshold = _canon_expiry(age_threshold or "unlimited")
+
+    if isinstance(threshold, Number):
+        # Convert numeric expiry into years (based on 365 days/year)
+        threshold = threshold * timedelta(days=365)
+
+    return threshold
+
+
 class PrecacheConfig(BaseConfig):
     """ Precache configuration """
-    def __init__(self, location:str, index:str, size:str, expiry:str, chunk_size:str) -> None:
+    def __init__(self, location:str, index:str, size:str, expiry:str, chunk_size:str, age_threshold:Optional[str] = None) -> None:
         """
         Parse precache configuration
 
-        @param   location    Precache directory (string)
-        @param   index       Tracking database filename (string)
-        @param   size        Maximum precache size (string)
-        @param   expiry      Maximum file age (string)
-        @param   chunk_size  File block size for checksumming (string)
+        @param   location       Precache directory (string)
+        @param   index          Tracking database filename (string)
+        @param   size           Maximum precache size (string)
+        @param   expiry         Maximum file age (string)
+        @param   chunk_size     File block size for checksumming (string)
+        @param   age_threshold  Age threshold for forcible invalidation (optional string)
         """
         self._location = _canon_location(location)
         self._index = _canon_index(self._location, index)
         self._size = _canon_unlimited_size(size)
         self._expiry = _canon_expiry(expiry)
         self._chunk_size = _canon_limited_size(chunk_size)
+
+        self._age_threshold = _canon_age_threshold(age_threshold) if self._size else None
 
     def __str__(self) -> None:
         if self._expiry is None:
@@ -198,6 +219,15 @@ class PrecacheConfig(BaseConfig):
         @return  Precache size in bytes (numeric); or None for unlimited
         """
         return self._size
+
+    @property
+    def age_threshold(self) -> Optional[timedelta]:
+        """
+        Get age threshold
+
+        @return  Age threshold (timedelta); or None for unlimited
+        """
+        return self._age_threshold
 
     def expiry(self, from_atime:datetime) -> Optional[datetime]:
         """

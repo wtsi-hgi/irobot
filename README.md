@@ -124,6 +124,21 @@ configuration can be found in `irobot.conf.sample`.
   If the precache size limit is not large enough to accommodate a
   requested file, the request will fail.
 
+* **`age_threshold`** If the precache size is limited (using the above),
+  then older data may be culled to accommodate newer requests; the age
+  threshold defines the minimum age (in terms of access time) data must
+  be for it to be forcefully invalidated.
+
+  This option is only relevant if `size` is not `unlimited`, otherwise
+  it will be ignored. The threshold can be set to `unlimited` to avoid
+  this behaviour (the default, if omitted). Otherwise, the its value
+  should be suffixed with any of the following units: `h` (`hour`), `d`
+  (`day`), `w` (`week`) or `y` (`year`); fully spelt units may be
+  pluralised.
+
+  It is recommended that this should be set to `unlimited` or a large
+  value, otherwise the precache is at risk of DoS attacks.
+
 * **`expiry`** The maximum age (in terms of access time) of files in the
   precache. It can be set to `unlimited`, so that files never expire, or
   to a defined limit. Upon reaching the limit, files are removed.
