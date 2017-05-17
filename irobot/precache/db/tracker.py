@@ -162,7 +162,7 @@ class TrackingDB(LogWriter):
             Datatype.checksums: None,
 
             **{
-                Datatype(process): SummaryStat(rate, stderr)
+                process: SummaryStat(rate, stderr)
                 for process, rate, stderr
                 in  self._exec("""
                     select process,
