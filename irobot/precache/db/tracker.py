@@ -95,6 +95,9 @@ class TrackingDB(LogWriter):
                     from   {table}
                 """, (member.value, member.name)).fetchone() == (1, len(enum_type))
 
+        # Fetch the initial state
+        self._init_state = self._exec("select * from denormalised_state").fetchall()
+
         # NOTE Tracked files that are in an inconsistent state need to
         # be handled upstream; it shouldn't be done at this level,
         # although the database will sanitise files in a bad state
@@ -131,6 +134,44 @@ class TrackingDB(LogWriter):
         self.log(logging.DEBUG, "Vacuuming precache tracking database")
         self._exec("vacuum")
         self._schedule_vacuum()
+
+    @property
+    def initial_state(self) -> List:
+        """
+        Return the initial database state, so it can be reconstructed
+        in-memory by the precache manager
+
+        @note    A full dump of denormalised state involves 22 fields.
+                 They are, in the following order:
+
+              1. iRODS data object path                (string)
+              2. Last access time                      (datetime)
+              3. Master precache path                  (string)
+              4. Master data status                    (Status)
+              5. Master data status timestamp          (datetime)
+              6. Master data size                      (int)
+              7. Master metadata status                (Status)
+              8. Master metadata status timestamp      (datetime)
+              9. Master metadata size                  (int)
+             10. Master checksum status                (Status)
+             11. Master checksum status timestamp      (datetime)
+             12. Master checksum size                  (int)
+             13. Switchover precache path              (string)
+             14. Switchover data status                (Status)
+             15. Switchover data status timestamp      (datetime)
+             16. Switchover data size                  (int)
+             17. Switchover metadata status            (Status)
+             18. Switchover metadata status timestamp  (datetime)
+             19. Switchover metadata size              (int)
+             20. Switchover checksum status            (Status)
+             21. Switchover checksum status timestamp  (datetime)
+             22. Switchover checksum size              (int)
+
+                 ...Good luck with that :P
+
+        @return  Precache entities' state (List)
+        """
+        return self._init_state
 
     @property
     def commitment(self) -> int:

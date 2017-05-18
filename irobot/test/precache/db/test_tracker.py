@@ -149,6 +149,10 @@ class TestDBMagic(unittest.TestCase):
             sanity_check, = after._exec("select count(*) from current_status where status = 1").fetchone()
             self.assertEqual(sanity_check, len(Datatype))
 
+    def test_denormalised_state(self):
+        # TODO
+        pass
+
 
 class TestTrackingDB(unittest.TestCase):
     def setUp(self):
