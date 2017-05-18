@@ -196,6 +196,83 @@ create view if not exists production_rates as
   from     _processing
   group by datatype;
 
+-- Full denormalisation of the currently tracked state
+-- This only really needs to be used once, but it's better to have it
+-- here rather than cluttering up/coupling it to the implementation
+create view if not exists denormalised_state as
+  with _pivot_status as (
+    select   do_modes.id                                             as dom_file,
+             max(case datatype when 1 then status else null end)     as data_status,
+             max(case datatype when 1 then timestamp else null end)  as data_timestamp,
+             max(case datatype when 2 then status else null end)     as metadata_status,
+             max(case datatype when 2 then timestamp else null end)  as metadata_timestamp,
+             max(case datatype when 3 then status else null end)     as checksum_status,
+             max(case datatype when 3 then timestamp else null end)  as checksum_timestamp
+    from     current_status
+    join     do_modes
+    on       do_modes.data_object = current_status.data_object
+    and      do_modes.mode = current_status.mode
+    group by do_modes.id
+  ),
+  _pivot_size as (
+    select   dom_file,
+             max(case datatype when 1 then size else null end)       as data_size,
+             max(case datatype when 2 then size else null end)       as metadata_size,
+             max(case datatype when 3 then size else null end)       as checksum_size
+    from     data_sizes
+    group by dom_file
+  ),
+  _pivot_state as (
+    select  _pivot_status.dom_file,
+            _pivot_status.data_status,
+            _pivot_status.data_timestamp,
+            _pivot_size.data_size,
+            _pivot_status.metadata_status,
+            _pivot_status.metadata_timestamp,
+            _pivot_size.metadata_size,
+            _pivot_status.checksum_status,
+            _pivot_status.checksum_timestamp,
+            _pivot_size.checksum_size
+    from    _pivot_status
+    join    _pivot_size
+    on      _pivot_size.dom_file = _pivot_status.dom_file
+  )
+  select    data_objects.irods_path,
+            last_access.last_access,
+            master.precache_path                                     as master_precache_path,
+            master_state.data_status                                 as master_data_status,
+            master_state.data_timestamp                              as master_data_timestamp,
+            master_state.data_size                                   as master_data_size,
+            master_state.metadata_status                             as master_metadata_status,
+            master_state.metadata_timestamp                          as master_metadata_timestamp,
+            master_state.metadata_size                               as master_metadata_size,
+            master_state.checksum_status                             as master_checksum_status,
+            master_state.checksum_timestamp                          as master_checksum_timestamp,
+            master_state.checksum_size                               as master_checksum_size,
+            switchover.precache_path                                 as switchover_precache_path,
+            switchover_state.data_status                             as switchover_data_status,
+            switchover_state.data_timestamp                          as switchover_data_timestamp,
+            switchover_state.data_size                               as switchover_data_size,
+            switchover_state.metadata_status                         as switchover_metadata_status,
+            switchover_state.metadata_timestamp                      as switchover_metadata_timestamp,
+            switchover_state.metadata_size                           as switchover_metadata_size,
+            switchover_state.checksum_status                         as switchover_checksum_status,
+            switchover_state.checksum_timestamp                      as switchover_checksum_timestamp,
+            switchover_state.checksum_size                           as switchover_checksum_size
+  from      data_objects
+  join      last_access
+  on        last_access.data_object       = data_objects.id
+  join      do_modes as master
+  on        master.data_object            = data_objects.id
+  and       master.mode                   = 1
+  join      _pivot_state as master_state
+  on        master_state.dom_file         = master.id
+  left join do_modes as switchover
+  on        master.data_object            = data_objects.id
+  and       master.mode                   = 2
+  left join _pivot_state as switchover_state
+  on        switchover_state.dom_file     = switchover.id;
+
 -- Reset files in a bad state (i.e., "producing")
 with _bad_records as (
   select status_log.id
