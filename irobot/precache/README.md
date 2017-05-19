@@ -7,9 +7,10 @@ work is documented here.
 
 A request is made for a data object. While iRobot could be used for just
 fetching metadata against a data object, its main purpose is to be a
-data provider; as such, we get everything on an initial request,
-regardless of its type. In subsequent requests for the same data object,
-we are more discriminating.
+data provider; as such, we schedule the fetching/production of
+everything upon an initial request, regardless of the request type. In
+subsequent requests for the same data object, we are more
+discriminating.
 
 * First we check if an entity for that data object exists within the
   precache. If it doesn't:
@@ -26,41 +27,21 @@ we are more discriminating.
       accommodate the request. If there's still not enough space, raise
       an exception.
 
-  * Instantiate a master entity on the basis of the metadata and the
-    current time (for the last access time) and add it to the precache.
-
-  ...If it does exist and a force (data) request is made when no
-  switchover state is present:
-
-  * Check we still have access to the data object in iRODS. If not,
-    raise an appropriate exception.
-
-  * Fetch its metadata and check it against the master metadata. If the
-    modification date and/or checksum haven't changed, then raise a
-    cancellation interrupt.
-
-  * Check there is space to accommodate the switchover data, metadata
-    and checksums. If not:
-
-    * Attempt to clear invalidatable data from the precache to
-      accommodate the request. If there's still not enough space, raise
-      an exception.
-
-  * Set the switchover state of the entity on the basis of the metadata
-    and update the last access time.
+  * Instantiate an entity on the basis of the metadata and the current
+    time (for the last access time) and add it to the precache.
 
 * Check we have, are planning to or are in the process of fetching data
-  (or switchover data, for a force request) for the entity. If not:
+  for the entity. If not:
 
   * Enqueue the asynchronous data fetching job.
 
-  If/when data fetching is queued or in progress and a data or checksum
-  request is made:
+  If/when data fetching is queued and a data request is made:
 
   * Raise an interrupt to alert the requestor that the fetching job has
     been submitted, with an estimated completion time (if possible).
 
-  When data is available and a data request is made:
+  When data is available (or partially available) and a data request is
+  made:
 
   * Update the entity's last access time.
 
@@ -70,12 +51,6 @@ we are more discriminating.
   in the process of calculating its checksums. If not:
 
   * Enqueue the asynchronous checksumming job.
-
-  If/when checksumming is queued or in progress and a checksum request
-  is made:
-
-  * Raise an interrupt to alert the requestor that the checksumming job
-    has been submitted, with an estimated completion time (if possible).
 
   When checksums are available and a checksum request is made:
 
@@ -92,12 +67,6 @@ we are more discriminating.
 
   * Restart the data fetching (and, implicitly, checksumming) processes.
 
-* When checksumming is complete for an entity's switchover state:
-
-  * Delete the master state (data, metadata and checksums).
-
-  * Switch the switchover state to master.
-
 n.b., Metadata for data objects is relatively small and, while it is
 persisted to disk, it remains part of the entity's in-memory state. When
 it is not available, a blocking call -- rather than an asynchronous one
@@ -111,8 +80,8 @@ it is not available, a blocking call -- rather than an asynchronous one
   enqueued.
 
 * A forced metadata request, when appropriate, will only refetch data
-  (and checksumming) if the modification timestamp and/or checksum have
-  changed from the original; otherwise, the master metadata will be
+  (and checksumming) if the modification timestamp, size and/or checksum
+  have changed from the original; otherwise, the metadata will be
   updated in-place.
 
 ## Cache Invalidation
@@ -123,8 +92,7 @@ collector, in terms of locking, for simplicity's sake.
 
 New entities can only be put in the precache if they are known to fit.
 Only entities that are not currently being processed (i.e., not fetching
-or checksumming data for either their master or switchover states) may
-be invalidated.
+or checksumming data) may be invalidated.
 
 ### Temporal Invalidation
 
@@ -158,11 +126,11 @@ This is only relevant if the precache size is limited:
 
 ### Manual Invalidation
 
-A force request is effectively manual invalidation. However, unlike in
-the previous instances, the original data is not removed until the new
-data is complete. It is assumed that manual invalidation will be an
-exceptional case, so the original data ought to remain for continuous
-service.
+A force request is effectively manual invalidation. It will delete any
+state already existing in the precache, presuming its metadata indicate
+that it's changed, regardless of any current users. It is assumed that
+manual invalidation will be an exceptional case, hence not protecting
+against this kind of DoS attack.
 
 ## Miscellany
 
