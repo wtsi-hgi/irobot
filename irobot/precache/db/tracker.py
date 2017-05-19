@@ -341,7 +341,7 @@ class TrackingDB(LogWriter):
 
                 select id
                 from   data_objects
-                where  irods_path = :irods_path
+                where  irods_path = :irods_path;
 
                 commit;
             """, {
