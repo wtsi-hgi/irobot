@@ -20,11 +20,5 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 class StatusExists(Exception):
     """ Raised when a new status is set that is not unique to that file  """
 
-class SwitchoverExists(Exception):
-    """ Raised when a switchover record already exists """
-
-class SwitchoverDoesNotExist(Exception):
-    """ Raised when a switchover record doesn't exist """
-
 class PrecacheExists(Exception):
     """ Raised when a precache entity already exists """
