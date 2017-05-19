@@ -201,7 +201,7 @@ class TestTrackingDB(unittest.TestCase):
         for i in range(10):
             do_ids.append(self.tracker.new_request(f"foo{i}", f"bar{i}", (0, 0, 0)))
 
-        self.assertEqual(sorted(self.tracker.precache_entities), sorted(do_ids))
+        self.assertCountEqual(self.tracker.precache_entities, do_ids)
 
     def test_get_do_id(self):
         do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
