@@ -252,12 +252,6 @@ message records.
 
 ## API
 
-Note that, due to iRODS data objects' full paths starting with a slash,
-HTTP resource addressing makes productive use of the query string,
-rather than embedding paths into the URL. If the requested data object
-does not exist in iRODS, then a `404 Not Found` response will be
-returned.
-
 ### Authentication
 
 All HTTP requests must include the `Authorization` header with a value
@@ -273,8 +267,9 @@ handlers. That is:
 If the respective authentication handler cannot authenticate the payload
 it's given (or no `Authorization` header exists), a `401 Unauthorized`
 response will be returned. If the payload can be authenticated, but the
-user does not have the necessary access to the requested resource, a
-`403 Forbidden` response will be returned.
+user (that is, the iRODS account under which iRobot operates) does not
+have the necessary access to the requested resource, a `403 Forbidden`
+response will be returned.
 
 ### Precache Failure
 
@@ -282,74 +277,145 @@ If the constraints of the precache are impossible to satisfy (e.g.,
 trying to fetch a data object that's bigger than the precache), then a
 `507 Insufficient Storage` response will be returned.
 
-### `/data/?do=<iRODS Data Object Path>`
+### Data Object Endpoint
+
+iRobot exposes a single, parametrised endpoint at its root, taking the
+iRODS full path (collection name and data object, interspersed with
+slash characters) as its parameter. Note that, as the absolute path is
+taken as the parameter, the initial slash is assumed to be there so
+shouldn't be used in the URL.
+
+That is, for example, for data object `data_object` in collection
+`/full/path/to/my`:
+
+<dl>
+  <dt>Correct</dt>
+  <dd><pre><code>https://irobot:5000/full/path/to/my/data_object</code></pre></dd>
+
+  <dt>Incorrect</dt>
+  <dd><pre><code>https://irobot:5000//full/path/to/my/data_object</code></pre></dd>
+</dl>
+
+Any special characters in the iRODS path should be percent encoded.  If
+the requested data object does not exist in iRODS, then a `404 Not
+Found` response will be returned.
 
 #### `GET`
 
-Fetch the data object from iRODS as `application/octet-stream`. This
-method accepts range requests to return requested byte ranges of the
-data object. (Note that a range request will still fetch the entirety of
-the data into the precache, if it's not there already, and then serve
-the requested range; there is no short-cutting.)
+##### Response Summary
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
  200    | Return data object
- 202    | Data object still being fetched from iRODS
- 206    | Return ranges of data object
+ 202    | Data object still being fetched from iRODS; ETA returned, if possible
+ 206    | Return ranges of data object, with ETA part (if possible) for missing ranges
+ 304    | Data object matches that expected by client
+ 401    | Authentication failure
+ 403    | Access denied to iRobot iRODS user
+ 404    | No such data object on iRODS
+ 406    | Unsupported requested media type
+ 416    | Invalid range request
+ 507    | Precache full
 
-Note that if iRobot has yet to fetch the data object (or any specified
-ranges thereof), a `202 Accepted` response will be returned with the
-`text/plain` content of the estimated finish time (per ISO8601), or
-empty content if this estimate cannot be calculated. A data object can
-be forcibly refetched by sending the `Cache-Control: no-cache` request
-header; although, if none of the filesystem metadata have changed (file
-size, checksum, timestamps), then no refetch will be performed.
+##### Using the `Accept` Request Header
+
+The `Accept` request header is used productively to fetch an appropriate
+representation of the specific data object:
+
+* If it is omitted, or `application/octet-stream` is the primarily
+  accepted media type, then the data (or ranges, thereof) for the
+  specified data object will be returned, with checksums if available.
+
+* If the primarily accepted media type is
+  `application/vnd.irobot.metadata+json`, then a JSON representation of
+  the metadata for the specified data object will be returned.
+
+* Otherwise, a `406 Not Acceptable` response will be returned.
+
+##### Client Cache Validity
+
+The response will always include the `ETag` header with its value
+corresponding to the MD5 checksum of the data object cached by iRobot.
+This will allow the client to verify it is requesting the same version
+of the data object that it is expecting.
+
+A client can ensure this programmatically by using the `If-None-Match`
+request header, with the given ETag. If the tags match, a `304 Not
+Modified` response will be returned; otherwise, a full response will be
+returned.
+
+This behaviour will also be true of a range request, so if a client
+wishes to fetch a range it doesn't have from a source it's seen before,
+then it would either make two requests -- first with the `If-None-Match`
+header then the second without -- or a single request without the
+`If-None-Match` header, that would need to be analysed by the client.
+
+##### Manual Cache Invalidation
+
+A data object can be forcibly refetched by sending the `Cache-Control:
+no-cache` request header. This will delete the currently stored data
+object state and refetch it from iRODS if none of the filesystem
+metadata have changed (file size, checksum and timestamps); otherwise,
+the invalidation will be cancelled.
+
+If the cache control header is used on a metadata request, then the
+metadata will be refetched from iRODS. Again, if any of the filesystem
+metadata have changed, this will also trigger an invalidation of the
+data and its refetching from iRODS.
+
+##### Fetching Data
+
+Fetching of the data supports range requests using the `Accept-Ranges`
+request header. If this header is present and the data exists, it will
+be returned with a `206 Partial Content` response under the
+`multipart/byteranges` media type, where byte ranges in the response
+will have the media type `application/octet-stream` and include a
+`Content-MD5` if one exists. The ranges may therefore be chunked
+differently than specified, so that they align with the precache
+checksum chunk size.
+
+If the `Accept-Ranges` request header is omitted, then the entirety of
+the data will be returned as a `200 OK` response, with media type
+`application/octet-stream` and a `Content-MD5` header, if available.
+
+If a range request is not satisfiable due to the request being
+out-of-bounds, then a `416 Range Not Satisfiable` response will be
+issued. If a request (full or ranged) is valid, but some of the
+requested data has yet to be fetched, a `206 Parial Content` multipart
+response will be issued that includes as much data as there is currently
+available and a final ETA response part; if no data is available (e.g.,
+upon initial request), then a `202 Accepted` ETA response will be
+issued.
+
+Note that an initial range request (i.e., for data that has yet to be
+precached) will still fetch the entirety of the data into the precache;
+there is no short-cutting.
+
+##### ETA Reponses
+
+An ETA response indicates when data may be available. It will have media
+type `application/vnd.irobot.eta`, which is a single line of plain text
+comprising of an ISO8601 UTC timestamp and an indication of confidence
+(in whole seconds). For example:
+
+    2017-09-25T12:34:56Z+00:00 +/- 123
+
+If an estimate cannot be calculated, then the content body will be
+empty.
 
 #### `POST`
 
-Seed the precache with the data object and its metadata.
+Seed the precache with the data object, its metadata and calculate
+checksums.
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
- 202    | Seed the precache with data object
+ 202    | Seed the precache with data object; ETA returned, if possible
+ 401    | Authentication failure
+ 403    | Access denied to iRobot iRODS user
+ 404    | No such data object on iRODS
+ 507    | Precache full
 
-Note that if the data object and its metadata are already cached or
-partially cached, this action will forcibly refetch them.
-
-### `/metadata/?do=<iRODS Data Object Path>`
-
-#### `GET`
-
-Fetch the iRODS AVU and filesystem metadata of the requested data object
-as `application/json`.
-
- Status | Semantics
-:------:|:--------------------------------------------------------------
- 200    | Return iRODS metadata of data object
-
-Note that the metadata for the requested data object will be cached from
-the first fetch. To forcibly refetch the metadata (and update the cache)
-the `Cache-Control: no-cache` request header can be sent; if any of the
-filesystem metadata have changed (file size, checksum, timestamps), this
-will trigger a refetching of the data.
-
-### `/checksum/?do=<iRODS Data Object Path>`
-
-#### `GET`
-
-Fetch the MD5 checksum of the requested data object, as computed by
-iRobot, as `text/plain`. This method accepts range requests to return
-the MD5 checksums of requested byte ranges of the data object.
-
- Status | Semantics
-:------:|:--------------------------------------------------------------
- 200    | Return MD5 checksum of entire data object
- 202    | MD5 checksum calculation pending
- 206    | Return MD5 checksums of ranges of data object
-
-Note that if iRobot has yet to compute the MD5 sum for the data object,
-a `202 Accepted` response will be returned with the `text/plain` content
-of the estimated finish time (per ISO8601), or empty content if this
-estimate cannot be calculated. MD5 checksums of range requests will be
-chunked according to the precache chunk size.
+Note that if the data object's state is already in the precache, this
+action will forcibly refetch it, providing the filesystem metadata has
+changed.
