@@ -143,33 +143,27 @@ class TestTrackingDB(unittest.TestCase):
         data_size      = random.randint(500, 2000)
         start_time     = random.randint(0, 3600)
         download_times = [t + start_time + 1 for t in random.sample(range(100), 3)]
-        checksum_times = [t + start_time + 1 for t in random.sample(range(100), 4)]
+        checksum_times = [t + start_time + 1 for t in random.sample(range(100), 3)]
 
         # Set initial state
         self.tracker._exec("""
             begin immediate transaction;
 
-            insert into data_objects (id, irods_path)
-                              values (1,  "foo"),
-                                     (2,  "bar"),
-                                     (3,  "quux");
+            insert into data_objects (id, irods_path, precache_path)
+                              values (1,  "foo",      "foo"),
+                                     (2,  "bar",      "bar"),
+                                     (3,  "quux",     "quux");
 
-            insert into do_modes (id, data_object, mode, precache_path)
-                          values (1,  1,           1,    "foo"),
-                                 (2,  2,           1,    "bar"),
-                                 (3,  3,           1,    "quux"),
-                                 (4,  3,           2,    "baz");
-
-            insert into data_sizes (dom_file, datatype, size)
-                select do_modes.id, 1, ?
-                from   do_modes;
+            insert into data_sizes (data_object, datatype, size)
+                select id, 1, ?
+                from   data_objects;
 
             update status_log set timestamp = 0;
 
             -- Set the producing time
-            insert into status_log (timestamp, dom_file, datatype, status)
-                select     ?, do_modes.id, datatypes.id, 2
-                from       do_modes
+            insert into status_log (timestamp, data_object, datatype, status)
+                select     ?, data_objects.id, datatypes.id, 2
+                from       data_objects
                 cross join datatypes;
 
             commit;
@@ -177,15 +171,15 @@ class TestTrackingDB(unittest.TestCase):
 
         # Set ready times
         self.tracker.conn.cursor().executemany("""
-            insert into status_log (timestamp, dom_file, datatype, status)
-                        values     (?,         ?,        ?,        ?)
+            insert into status_log (timestamp, data_object, datatype, status)
+                        values     (?,         ?,          ?,        ?)
         """, [
-            (timestamp, dom_file, Datatype.data, Status.ready)
-            for dom_file, timestamp
+            (timestamp, data_object, Datatype.data, Status.ready)
+            for data_object, timestamp
             in  enumerate(download_times, 1)
         ] + [
-            (timestamp, dom_file, Datatype.checksums, Status.ready)
-            for dom_file, timestamp
+            (timestamp, data_object, Datatype.checksums, Status.ready)
+            for data_object, timestamp
             in  enumerate(checksum_times, 1)
         ])
 
@@ -202,118 +196,73 @@ class TestTrackingDB(unittest.TestCase):
                 statistics.stdev(rates) / math.sqrt(len(times))
             )
 
+    def test_state(self):
+        do_ids = []
+        for i in range(10):
+            do_ids.append(self.tracker.new_request(f"foo{i}", f"bar{i}", (0, 0, 0)))
+
+        self.assertEqual(sorted(self.tracker.precache_entities), sorted(do_ids))
+
     def test_get_do_id(self):
-        do_id, _mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
         self.assertEqual(self.tracker.get_data_object_id("foo"), do_id)
         self.assertIsNone(self.tracker.get_data_object_id("quux"))
 
     def test_get_precache_path(self):
-        do_id, mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
-        self.assertEqual(self.tracker.get_precache_path(do_id, mode), "bar")
-
-    def test_has_switchover(self):
-        do_id1, mode1 = self.tracker.new_request("foo", "bar", (0, 0, 0))
-        self.assertEqual(mode1, Mode.master)
-        self.assertFalse(self.tracker.has_switchover(do_id1))
-
-        do_id2, mode2 = self.tracker.new_request("foo", "quux", (0, 0, 0))
-        self.assertEqual(do_id1, do_id2)
-        self.assertEqual(mode2, Mode.switchover)
-        self.assertTrue(self.tracker.has_switchover(do_id1))
+        do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        self.assertEqual(self.tracker.get_precache_path(do_id), "bar")
 
     def test_last_access(self):
-        self.assertEqual(self.tracker.get_last_access(), [])
+        self.assertIsNone(self.tracker.get_last_access(1))
 
-        do_id, mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
-        last_access, = self.tracker._exec("select last_access from last_access where data_object = ?", (do_id,)).fetchone()
-        self.assertEqual(self.tracker.get_last_access(), [(do_id, last_access)])
-        self.assertEqual(self.tracker.get_last_access(do_id), [(do_id, last_access)])
-        self.assertEqual(self.tracker.get_last_access(do_id + 123), [])
-
-        with patch("irobot.precache.db.tracker.datetime") as mock_datetime:
-            delta = timedelta(seconds=10)
-            mock_datetime.utcnow.return_value = last_access + delta
-            self.assertEqual(self.tracker.get_last_access(do_id, delta), [(do_id, last_access)])
-            self.assertEqual(self.tracker.get_last_access(do_id, timedelta(seconds=11)), [])
-
-        do_id2, _mode = self.tracker.new_request("quux", "xyzzy", (0, 0, 0))
-        self.tracker._exec("update last_access set last_access = ? - 123 where data_object = ?", (last_access, do_id2))
-        self.assertEqual(len(self.tracker.get_last_access()), 2)
-        self.assertEqual(self.tracker.get_last_access()[0][0], do_id2)
-        self.assertEqual(self.tracker.get_last_access()[1][0], do_id)
+        do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        last_access, = self.tracker._exec("select last_access from data_objects where id = ?", (do_id,)).fetchone()
+        self.assertEqual(self.tracker.get_last_access(do_id), last_access)
 
     def test_update_last_access(self):
         start = datetime.utcnow()
 
-        do_id, _mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
-        [(_, first_access)] = self.tracker.get_last_access(do_id)
+        do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
+        first_access = self.tracker.get_last_access(do_id)
 
         self.tracker.update_last_access(do_id)
-        [(_, last_access)] = self.tracker.get_last_access(do_id)
+        last_access = self.tracker.get_last_access(do_id)
 
         op_duration = datetime.utcnow() - start
         self.assertLessEqual(last_access - first_access, op_duration)
 
     def test_status(self):
-       self.assertIsNone(self.tracker.get_current_status(123, Mode.master, Datatype.data))
+       self.assertIsNone(self.tracker.get_current_status(123, Datatype.data))
 
-       do_id, mode = self.tracker.new_request("foo", "bar", (0, 0, 0))
-       self.assertEqual(self.tracker.get_current_status(do_id, mode, Datatype.data).status, Status.requested)
+       do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
+       self.assertEqual(self.tracker.get_current_status(do_id, Datatype.data).status, Status.requested)
 
-       self.tracker.set_status(do_id, mode, Datatype.data, Status.producing)
-       self.assertEqual(self.tracker.get_current_status(do_id, mode, Datatype.data).status, Status.producing)
+       self.tracker.set_status(do_id, Datatype.data, Status.producing)
+       self.assertEqual(self.tracker.get_current_status(do_id, Datatype.data).status, Status.producing)
 
-       self.assertRaises(StatusExists, self.tracker.set_status, do_id, mode, Datatype.data, Status.producing)
+       self.assertRaises(StatusExists, self.tracker.set_status, do_id, Datatype.data, Status.producing)
 
     def test_size(self):
-        self.assertIsNone(self.tracker.get_size(123, Mode.master, Datatype.data))
+        self.assertIsNone(self.tracker.get_size(123, Datatype.data))
 
-        do_id, mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
-        self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.data), 123)
-        self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.metadata), 456)
-        self.assertEqual(self.tracker.get_size(do_id, mode, Datatype.checksums), 789)
+        do_id = self.tracker.new_request("foo", "bar", (123, 456, 789))
+        self.assertEqual(self.tracker.get_size(do_id, Datatype.data), 123)
+        self.assertEqual(self.tracker.get_size(do_id, Datatype.metadata), 456)
+        self.assertEqual(self.tracker.get_size(do_id, Datatype.checksums), 789)
 
     def test_new_request(self):
-        do_id, mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
-        self.assertEqual(mode, Mode.master)
+        do_id = self.tracker.new_request("foo", "bar", (123, 456, 789))
 
-        self.assertRaises(PrecacheExists, self.tracker.new_request, "foo", "bar", (123, 456, 789))
-
-        do_id2, mode2 = self.tracker.new_request("foo", "quux", (123, 456, 789))
-        self.assertEqual(do_id, do_id2)
-        self.assertEqual(mode2, Mode.switchover)
-
-        self.assertRaises(SwitchoverExists, self.tracker.new_request, "foo", "baz", (123, 456, 789))
-
-    def test_do_switchover(self):
-        do_id, _mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
-        self.assertRaises(SwitchoverDoesNotExist, self.tracker.do_switchover, do_id)
-
-        precache_path, = self.tracker._exec("select precache_path from do_requests where  id = ?", (do_id,)).fetchone()
-        self.assertEqual(precache_path, "bar")
-
-        do_id2, mode2 = self.tracker.new_request("foo", "quux", (123, 456, 789))
-        self.assertEqual(do_id, do_id2)
-        self.assertEqual(mode2, Mode.switchover)
-        self.assertTrue(self.tracker.has_switchover(do_id))
-
-        self.tracker.do_switchover(do_id)
-        self.assertFalse(self.tracker.has_switchover(do_id))
-
-        new_precache_path, = self.tracker._exec("select precache_path from do_requests where  id = ?", (do_id,)).fetchone()
-        self.assertEqual(new_precache_path, "quux")
+        self.assertRaises(PrecacheExists, self.tracker.new_request, "foo", "quux", (123, 456, 789))
+        self.assertRaises(PrecacheExists, self.tracker.new_request, "quux", "bar", (123, 456, 789))
 
     def test_delete_object(self):
-        do_id, _mode = self.tracker.new_request("foo", "bar", (123, 456, 789))
+        do_id = self.tracker.new_request("foo", "bar", (123, 456, 789))
         self.tracker.delete_data_object(do_id)
 
         records, = self.tracker._exec("""
             with _counts as (
                 select count(*) as c from data_objects
-                union all
-                select count(*) as c from do_modes
-                union all
-                select count(*) as c from last_access
                 union all
                 select count(*) as c from data_sizes
                 union all
