@@ -31,10 +31,9 @@ from irobot.precache._checksummer import Checksummer
 from irobot.precache._dir_utils import new_name, create, delete
 from irobot.precache._entity import DataObject, Entity
 from irobot.precache._types import ByteRange, ByteRangeChecksum
-from irobot.precache.db import (TrackingDB,
-                                Datatype, Mode, Status,
+from irobot.precache.db import (TrackingDB, Datatype, Status,
                                 SummaryStat, DataObjectFileStatus,
-                                StatusExists, SwitchoverExists, SwitchoverDoesNotExist, PrecacheExists)
+                                StatusExists, PrecacheExists)
 
 
 class _WorkerMetrics(object):
