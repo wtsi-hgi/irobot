@@ -19,8 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-from datetime import datetime
-from typing import Any, Dict, Optional
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional, Tuple
 
 # A *lot* of moving parts come together here...
 from irobot.common import AsyncTaskStatus
@@ -45,6 +45,33 @@ class _WorkerMetrics(object):
     @property
     def workers(self):
         return self._workers
+
+
+class PrecacheFull(Exception):
+    """ Exception raised when the precache is full and can't be GC'd """
+
+class InProgress(Exception):
+    """ Interrupt raised when data fetching is in progress """
+    def __init__(self, size:int, started:datetime, rate:SummaryStat, *args, **kwargs) -> None:
+        """
+        Constructor
+
+        @param   size     File size (int bytes)
+        @param   started  Start time (datetime)
+        @param   rate     Fetching rate (SummaryStat)
+        """
+        rate_mean, rate_stderr = rate
+        self._eta = started + timedelta(seconds=size / rate_mean), int(rate_stderr)
+        super().__init__(*args, **kwargs)
+
+    @property
+    def eta(self) -> Tuple[datetime, int]:
+        """
+        ETA for data
+
+        @return  Tuple of ETA (datetime) and standard error of seconds (int)
+        """
+        return self._eta
 
 
 class Precache(LogWriter):
