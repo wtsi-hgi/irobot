@@ -21,11 +21,11 @@ import atexit
 import logging
 import os
 from os.path import dirname, join
-from collections import namedtuple
 from datetime import datetime, timedelta
 from enum import Enum
+from numbers import Number
 from threading import Timer
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import irobot.common.canon as canon
 from irobot.logging import LogWriter
@@ -43,8 +43,13 @@ def _nuple(n:int = 1) -> Tuple:
 Datatype = Enum("Datatype", "data metadata checksums")
 Status = Enum("Status", "requested producing ready")
 
-SummaryStat = namedtuple("SummaryStat", ["mean", "stderr"])
-DataObjectFileStatus = namedtuple("DataObjectFileStatus", ["timestamp", "status"])
+class SummaryStat(NamedTuple):
+    mean:Number
+    stderr:Number
+
+class DataObjectFileStatus(NamedTuple):
+    timestamp:datetime
+    status:Status
 
 
 class TrackingDB(LogWriter):
