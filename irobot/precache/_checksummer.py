@@ -28,7 +28,7 @@ from enum import Enum
 from hashlib import md5
 from typing import List, Optional, Tuple
 
-from irobot.common import AsyncTaskStatus, Listenable
+from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
 from irobot.config.precache import PrecacheConfig
 from irobot.logging import LogWriter
 from irobot.precache._types import ByteRange, ByteRangeChecksum
@@ -119,7 +119,7 @@ def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tupl
     return filename, chunk_checksums
 
 
-class Checksummer(Listenable, LogWriter):
+class Checksummer(Listenable, LogWriter, WorkerPool):
     """ Checksummer """
     def __init__(self, precache_config:PrecacheConfig, logger:Optional[logging.Logger] = None) -> None:
         """

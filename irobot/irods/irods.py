@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from subprocess import CalledProcessError
 from typing import Optional
 
-from irobot.common import AsyncTaskStatus, Listenable
+from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
 from irobot.config.irods import iRODSConfig
 from irobot.irods._api import iRODSError, baton, iget, ils
 from irobot.irods._types import Metadata
@@ -52,7 +52,7 @@ def _exists(irods_path:str) -> None:
             raise IOError(f"Data object \"{irods_path}\" inaccessible")
 
 
-class iRODS(Listenable, LogWriter):
+class iRODS(Listenable, LogWriter, WorkerPool):
     """ High level iRODS interface with iget pool management """
     def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None) -> None:
         """
