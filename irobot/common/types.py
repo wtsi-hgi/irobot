@@ -17,6 +17,16 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from abc import ABCMeta, abstractproperty
 from enum import Enum
 
+
 AsyncTaskStatus = Enum("AsyncTaskStatus", "queued started finished unknown failed")
+
+
+class WorkerPool(metaclass=ABCMeta):
+    """ Interface for worker pools """
+    # FIXME? Our WorkerPools are also Listenables (and LogWriters)
+    @abstractproperty
+    def workers(self) -> int:
+        """ Number of workers in the pool """
