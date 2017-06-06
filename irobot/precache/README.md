@@ -45,18 +45,14 @@ discriminating.
 
   * Update the entity's last access time.
 
-  * Stream the data (or ranges, thereof) to the requestor.
+  * Stream the data (or ranges, thereof) to the requestor. If checksums
+    are available for the data (or ranges, thereof), include them in the
+    output.
 
 * When data fetching is complete, check we have, are planning to or are
   in the process of calculating its checksums. If not:
 
   * Enqueue the asynchronous checksumming job.
-
-  When checksums are available and a checksum request is made:
-
-  * Update the entity's last access time.
-
-  * Return the checksums (or ranges, thereof) to the requestor.
 
 * When checksumming is complete, check our calculated checksum matches
   the iRODS checksum. If not:
@@ -143,16 +139,26 @@ against this kind of DoS attack.
   These entities must be cancelled and requeued; any partial data that
   has already been fetched should be deleted.
 
+* Processing rates are calculated by the tracking database, but only
+  cover the current items being tracked. As such, the precache must
+  maintain a "last known" rate in-memory, in the case when the precache
+  is emptied.
+
 ## Calculating the ETA
 
-We know the rates for fetching and checksumming, as well as the size of
-the data we're processing and what's ahead of it in the queue. As such,
-we can estimate processing times.
+We know the rates for fetching (and checksumming), as well as the size
+of the data we're processing and what's ahead of it in the queue. As
+such, we can estimate processing times.
+
+(Note that, while we have enough data to do so, we don't need to
+calculate checksum ETAs as they're not used downstream.)
 
 If an estimate is required for an entity that is currently being
 processed or about to enter the queue (i.e., that overlaps the available
 number of workers), then we use the processing start time, plus the
-entity size divided by the processing rate, as our ETA.
+entity size divided by the processing rate, as our ETA:
+
+    ETA = Start + (Size / Rate)
 
 Otherwise:
 
@@ -185,11 +191,8 @@ itself:
 
     ETA = Base + W + Q + T
 
-Where:
-
-* The base time for fetching data is the current time.
-
-* The base time for checksumming time is the fetching ETA.
+Where the base time for fetching data is the current time. (The base
+time for checksumming would be the fetching ETA.)
 
 Note that this estimate is not necessarily accurate, insofar as the
 concurrency makes accuracy intractable. This is seen as a reasonable

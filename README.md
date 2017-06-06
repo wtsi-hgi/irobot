@@ -412,7 +412,7 @@ empty.
 #### `POST`
 
 Seed the precache with the data object, its metadata and calculate
-checksums.
+checksums; thus warranting its title of "precache"!
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
