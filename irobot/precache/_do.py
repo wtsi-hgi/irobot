@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from datetime import datetime
 from functools import partial
 from typing import Optional
 
@@ -45,7 +46,7 @@ class DataObject(object):
 
 class Entity(object):
     """ Precache entity """
-    def __init__(self, irods_path:str, data_proxy, metadata_proxy, checksum_proxy) -> None:
+    def __init__(self, irods_path:str, precache_path:str,  data_proxy, metadata_proxy, checksum_proxy) -> None:
         """
         Maintain the state of each precache entity and provide proxy
         methods back to the precache manager to do the donkey work
@@ -55,8 +56,12 @@ class Entity(object):
         @param   metadata_proxy  Precache manager metadata fetching function
         @param   checksum_proxy  Precache manager checksumming function
         """
-        self.master:Optional[DataObject] = None
-        self.switchover:Optional[DataObject] = None
+        self.precache_path = precache_path
+        self.last_accessed = last_accessed
+        self.metadata = metadata
+
+        self.data_status = AsyncTaskStatus.unknown
+        self.checksum_status = AsyncTaskStatus.unknown
 
         # Manager function proxies
         self.data = partial(data_proxy, irods_path)
