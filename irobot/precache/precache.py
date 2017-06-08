@@ -196,7 +196,7 @@ class Precache(LogWriter):
                 (irods_path, do.last_accessed, do.metadata.size)
                 for irods_path, do in self.data_objects.items()
                 if  invalidation_time - do.last_accessed > self.config.age_threshold
-            ], key=lambda x: x[1].last_accessed, reverse=True)
+            ], key=lambda x: x[1], reverse=True)
 
             freed_space:int = 0
             while freed_space < accommodation and invalidatable:
@@ -208,14 +208,14 @@ class Precache(LogWriter):
                 raise PrecacheFull(f"Precache cannot accommodate {accommodation} bytes")
 
             for do in to_invalidate:
-                self.data_objects[do].invalid = True
+                self.data_objects[do].invalidate()
 
         if to_invalidate:
             self._gc()
 
     def invalidate(self, irods_path:str) -> None:
         """
-        Manually invalidate a data object and call the GC
+        Manually invalidate a data object and call the GC if needs be
 
         @param   irods_path  Data object iRODS path (string)
         """
@@ -224,7 +224,7 @@ class Precache(LogWriter):
         with self._do_lock:
             if irods_path in self.data_objects:
                 call_gc = True
-                self.data_objects[irods_path].invalid = True
+                self.data_objects[irods_path].invalidate()
 
         if call_gc:
             self._gc()
