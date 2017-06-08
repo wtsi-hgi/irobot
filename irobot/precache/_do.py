@@ -22,13 +22,12 @@ from typing import Optional
 
 from irobot.common import AsyncTaskStatus
 from irobot.irods import Metadata
-from irobot.precache import Precache
 
 
 # TODO Flesh this out based on the usage in irobot.precache.Precache
 class DataObject(object):
     """ Data object state """
-    def __init__(self, irods_path:str, precache:Precache) -> None:
+    def __init__(self, irods_path:str, precache:"Precache") -> None:
         """
         Constructor
 
