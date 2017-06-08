@@ -18,52 +18,68 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from datetime import datetime
-from functools import partial
 from typing import Optional
 
 from irobot.common import AsyncTaskStatus
 from irobot.irods import Metadata
+from irobot.precache import Precache
 
 
+# TODO Flesh this out based on the usage in irobot.precache.Precache
 class DataObject(object):
-    """ Data object """
-    def __init__(self, precache_path:str, metadata:Metadata) -> None:
+    """ Data object state """
+    def __init__(self, irods_path:str, precache:Precache) -> None:
         """
         Constructor
 
-        We can't subclass from NamedTuple because the data and checksum
-        status properties need to be mutable
-
-        @param   precache_path  Location in precache (string)
-        @param   metadata       iRODS metadata (Metadata)
+        @param   irods_path  iRODS data object path (string)
+        @param   precache    Precache manager (Precache)
         """
-        self.precache_path = precache_path
-        self.metadata = metadata
+        # TODO? We don't need to bring in the entirety of the precache
+        # manager just for the sake of doing DB operations, etc.
+        # However, for now it's just easier to do so...
+        self._precache = precache
 
-        self.data_status = AsyncTaskStatus.unknown
-        self.checksum_status = AsyncTaskStatus.unknown
+        # DataObject is an active record, so the exposed properties need
+        # to update the tracking DB (where appropriate) upon setting
+        self._irods_path = irods_path
+        self._do_id:Optional[int] = None
+        self._precache_path:Optional[str] = None
+        self._last_accessed:Optional[datetime] = None
+        self._metadata:Optional[Metadata] = None
 
+        self._invalid = False
 
-class Entity(object):
-    """ Precache entity """
-    def __init__(self, irods_path:str, precache_path:str,  data_proxy, metadata_proxy, checksum_proxy) -> None:
-        """
-        Maintain the state of each precache entity and provide proxy
-        methods back to the precache manager to do the donkey work
+    @property
+    def invalid(self) -> bool:
+        """ Return the DO's validity """
+        return self._invalid
 
-        @param   irods_path      iRODS data object path (string)
-        @param   data_proxy      Precache manager data fetching function
-        @param   metadata_proxy  Precache manager metadata fetching function
-        @param   checksum_proxy  Precache manager checksumming function
-        """
-        self.precache_path = precache_path
-        self.last_accessed = last_accessed
-        self.metadata = metadata
+    def invalidate(self) -> None:
+        """ Invalidate the DO """
+        self._invalid = True
 
-        self.data_status = AsyncTaskStatus.unknown
-        self.checksum_status = AsyncTaskStatus.unknown
+    @property
+    def last_accessed(self) -> datetime:
+        """ Get the DO's last access time """
+        return self._last_accessed
 
-        # Manager function proxies
-        self.data = partial(data_proxy, irods_path)
-        self.metadata = partial(metadata_proxy, irods_path)
-        self.checksum = partial(checksum_proxy, irods_path)
+    def update_last_access(self) -> None:
+        """ Update the DO's last access time """
+        pass
+
+    @property
+    def precache_path(self) -> Optional[str]:
+        return self._precache_path
+
+    @precache_path.setter
+    def precache_path(self, path:str) -> None:
+        pass
+
+    @property
+    def metadata(self) -> Optional[Metadata]:
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, metadata:Metadata) -> None:
+        pass
