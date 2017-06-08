@@ -44,10 +44,16 @@ class DataObject(object):
         self._irods_path = irods_path
         self._do_id:Optional[int] = None
         self._precache_path:Optional[str] = None
-        self._last_accessed:Optional[datetime] = None
         self._metadata:Optional[Metadata] = None
 
         self._invalid = False
+
+    @property
+    def _is_tracked(self) -> bool:
+        """ Whether the DO is tracked """
+        return self._do_id is not None
+
+    ## Validity ########################################################
 
     @property
     def invalid(self) -> bool:
@@ -58,27 +64,54 @@ class DataObject(object):
         """ Invalidate the DO """
         self._invalid = True
 
-    @property
-    def last_accessed(self) -> datetime:
-        """ Get the DO's last access time """
-        return self._last_accessed
-
-    def update_last_access(self) -> None:
-        """ Update the DO's last access time """
-        pass
+    ## Precache Path ###################################################
 
     @property
-    def precache_path(self) -> Optional[str]:
+    def precache_path(self) -> str:
+        if self._precache_path is None:
+            raise ValueError(f"Precache path for {self._irods_path} not set")
+
         return self._precache_path
 
     @precache_path.setter
     def precache_path(self, path:str) -> None:
-        pass
+        if self._is_tracked:
+            raise ValueError(f"Data object {self._irods_path} is already tracked")
+
+        # TODO Attempt to set the precache path in the tracking DB. This
+        # may fail with a constraint error (i.e., non-unique), but if
+        # not, then we can now get the data object ID from the DB; if it
+        # does fail, we handle this upstream
+
+    ## Last Access Time ################################################
 
     @property
-    def metadata(self) -> Optional[Metadata]:
+    def last_accessed(self) -> datetime:
+        """ Get the DO's last access time """
+        if not self._is_tracked:
+            raise ValueError(f"Data object {self._irods_path} is not tracked")
+
+        # TODO Get last access time from tracking DB
+
+    def update_last_access(self) -> None:
+        """ Update the DO's last access time """
+        if not self._is_tracked:
+            raise ValueError(f"Data object {self._irods_path} is not tracked")
+
+        # TODO Set last access time in tracking DB
+
+    ## Metadata ########################################################
+
+    @property
+    def metadata(self) -> Metadata:
+        if self._metadata is None:
+            raise ValueError(f"Metadata for {self._irods_path} not set")
+
         return self._metadata
 
     @metadata.setter
     def metadata(self, metadata:Metadata) -> None:
-        pass
+        if not self._is_tracked:
+            raise ValueError(f"Data object {self._irods_path} is not tracked")
+
+        # TODO Set metadata
