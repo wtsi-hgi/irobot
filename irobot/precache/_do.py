@@ -38,13 +38,26 @@ class DataObject(object):
         # manager just for the sake of doing DB operations, etc.
         # However, for now it's just easier to do so...
         self._precache = precache
+        tracker = precache.tracker
 
         # DataObject is an active record, so the exposed properties need
         # to update the tracking DB (where appropriate) upon setting
         self._irods_path = irods_path
-        self._do_id:Optional[int] = None
+        self._do_id:Optional[int] = tracker.get_data_object_id(irods_path)
+
         self._precache_path:Optional[str] = None
         self._metadata:Optional[Metadata] = None
+        self._last_accessed:Optional[datetime] = None
+
+        if self._is_tracked:
+            # Load state from persistent storage
+            self._precache_path = tracker.get_precache_path(self._do_id)
+            self._last_accessed = tracker.get_last_access(self._do_id)
+
+            # TODO Load metadata from JSON
+            # TODO Load checksums from file
+
+        # TODO Data fetching and checksum statuses
 
         self._invalid = False
 
@@ -75,8 +88,15 @@ class DataObject(object):
 
     @precache_path.setter
     def precache_path(self, path:str) -> None:
+        # NOTE The data object metadata must be set before we set the
+        # precache. This is because the tracking DB expects file sizes
+        # in its new_request method and (besides) we'll already have got
+        # the metadata to ensure it will fit in the precache.
         if self._is_tracked:
             raise ValueError(f"Data object {self._irods_path} is already tracked")
+
+        if self._metadata is None:
+            raise ValueError(f"Metadata for {self._irods_path} is not yet set in-memory")
 
         # TODO Attempt to set the precache path in the tracking DB. This
         # may fail with a constraint error (i.e., non-unique), but if
@@ -91,14 +111,16 @@ class DataObject(object):
         if not self._is_tracked:
             raise ValueError(f"Data object {self._irods_path} is not tracked")
 
-        # TODO Get last access time from tracking DB
+        return self._last_accessed
 
     def update_last_access(self) -> None:
         """ Update the DO's last access time """
         if not self._is_tracked:
             raise ValueError(f"Data object {self._irods_path} is not tracked")
 
-        # TODO Set last access time in tracking DB
+        tracker = self._precache.tracker
+        tracker.update_last_access(self._do_id)
+        self._last_accessed = tracker.get_last_access(self._do_id)
 
     ## Metadata ########################################################
 
@@ -111,7 +133,9 @@ class DataObject(object):
 
     @metadata.setter
     def metadata(self, metadata:Metadata) -> None:
-        if not self._is_tracked:
-            raise ValueError(f"Data object {self._irods_path} is not tracked")
+        # TODO Set metadata: if tracked, then update the persistent
+        # state; otherwise just keep in-memory
 
-        # TODO Set metadata
+        # if not self._is_tracked:
+        #     raise ValueError(f"Data object {self._irods_path} is not tracked")
+        pass
