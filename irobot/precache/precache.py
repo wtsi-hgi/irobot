@@ -167,6 +167,16 @@ class Precache(LogWriter):
         if self.temporal_gc:
             self._schedule_temporal_gc()
 
+    def __call__(self, irods_path:str) -> DataObject:
+        # Convenience wrapper
+        return self.get_data_object(irods_path)
+
+    def get_data_object(self, irods_path:str) -> DataObject:
+        """
+        TODO
+        """
+        pass
+
     def accommodate(self, accommodation:int) -> None:
         """
         Attempt to invalidate data objects to fulfil the specified space
