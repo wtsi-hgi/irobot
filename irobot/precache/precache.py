@@ -101,43 +101,46 @@ class Precache(LogWriter):
         # TODO We need a function that cleans-up/sanitises bad state on
         # initialisation
 
-        _interface_map:Dict[Datatype, WorkerPool] = {}
-
-        self.irods = _interface_map[Datatype.data] = irods
+        self.irods = irods
         # TODO We need an iRODS listener that updates the state of the
         # precache appropriately as-and-when iRODS broadcasts come in
 
-        self.checksummer = _interface_map[Datatype.checksums] = Checksummer(precache_config, logger)
+        self.checksummer = Checksummer(precache_config, logger)
         # TODO We also need a checksummer listener, for the same reason
 
         # Statistics for workers
         self.worker_stats = {
-            datatype: _WorkerMetrics(_interface_map[datatype].workers, rate)
-            for datatype, rate in self.tracker.production_rates.items()
+            Datatype.data:      _WorkerMetrics(self.irods.workers),
+            Datatype.checksums: _WorkerMetrics(self.checksummer.workers)
         }
+        self._update_worker_stats()
 
         # Garbage collection setup
         self.temporal_gc = self.config.expiry(datetime.utcnow()) is not None
         self.capacity_gc = self.config.size is not None and self.config.age_threshold is not None
 
         if self.temporal_gc:
-            # FIXME? This is a bit contrived :P
+            # FIXME? This is a bit contrived :P i.e., GC period is half
+            # the temporal expiry limit...
             now = datetime.utcnow()
             self._gc_period = (self.config.expiry(now) - now) / 2
 
             self._schedule_temporal_gc()
             atexit.register(self._gc_timer.cancel)
 
+    def __del__(self) -> None:
+        """ Cancel any running timers on python GC """
+        if self.temporal_gc and self._gc_timer.is_alive():
+            self._gc_timer.cancel()
+
+        if self._update_stats_timer.is_alive():
+            self._update_stats_timer.cancel()
+
     def _schedule_temporal_gc(self) -> None:
         """ Initialise and start the GC timer """
         self._gc_timer = Timer(self._gc_period.total_seconds(), self._gc)
         self._gc_timer.daemon = True
         self._gc_timer.start()
-
-    def __del__(self) -> None:
-        """ Cancel any running GC timer on python GC """
-        if self.temporal_gc and self._gc_timer.is_alive():
-            self._gc_timer.cancel()
 
     def _gc(self) -> None:
         """ Garbage collect invalidated entries from the precache """
@@ -166,6 +169,22 @@ class Precache(LogWriter):
 
         if self.temporal_gc:
             self._schedule_temporal_gc()
+
+    def _update_worker_stats(self, period:timedelta = timedelta(minutes=15)) -> None:
+        """
+        Update the worker production stats, if available, and refresh
+        them periodically.
+
+        @param   period  Refresh period (timedelta; default 15 minutes)
+        """
+        for datatype, rate in self.tracker.production_rates.items():
+            if rate:
+                self.worker_stats[datatype].rate = rate
+
+        # Schedule next update
+        self._update_stats_timer = Timer(period.total_seconds(), self._update_worker_stats, [period])
+        self._update_stats_timer.daemon = True
+        self._update_stats_timer.start()
 
     def __call__(self, irods_path:str) -> DataObject:
         # Convenience wrapper
