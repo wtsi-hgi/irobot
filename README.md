@@ -302,7 +302,7 @@ Any special characters in the iRODS path should be percent encoded.  If
 the requested data object does not exist in iRODS, then a `404 Not
 Found` response will be returned.
 
-#### `GET`
+#### `GET` and `HEAD`
 
 ##### Response Summary
 
@@ -318,6 +318,11 @@ Found` response will be returned.
  406    | Unsupported requested media type
  416    | Invalid range request
  507    | Precache full
+
+A `HEAD` request can be made to the data object endpoint to facilitate
+discovery and status tracking, without the overhead of a full `GET`.
+That is, the same actions described below will be invoked on a `HEAD`
+request, but only the response headers will be returned.
 
 ##### Using the `Accept` Request Header
 
