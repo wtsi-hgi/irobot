@@ -431,3 +431,21 @@ checksums; thus warranting its title of "precache"!
 Note that if the data object's state is already in the precache, this
 action will forcibly refetch it, providing the filesystem metadata has
 changed.
+
+#### `DELETE`
+
+Delete a data object and its associated metadata from the precache. This
+**does not** delete data from iRODS and is only for precache management;
+it should be used sparingly -- in exceptional circumstances -- as the
+precache is designed to manage itself automatically.
+
+ Status | Semantics
+:------:|:--------------------------------------------------------------
+ 204    | Data object removed from precache
+ 401    | Authentication failure
+ 409    | Inflight data object could not be deleted from the precache
+ 404    | No such data object in precache
+
+A data object can only be deleted from the precache if it is currently
+not inflight. That is, it is not being fetched from iRODS or being
+pushed by iRobot to a connected client.
