@@ -273,12 +273,6 @@ user (that is, the iRODS account under which iRobot operates) does not
 have the necessary access to the requested resource, a `403 Forbidden`
 response will be returned.
 
-### Precache Failure
-
-If the constraints of the precache are impossible to satisfy (e.g.,
-trying to fetch a data object that's bigger than the precache), then a
-`507 Insufficient Storage` response will be returned.
-
 ### Data Object Endpoint
 
 iRobot exposes a single, parametrised endpoint at its root, taking the
@@ -403,6 +397,12 @@ issued.
 Note that an initial range request (i.e., for data that has yet to be
 precached) will still fetch the entirety of the data into the precache;
 there is no short-cutting.
+
+##### Precache Exhaustion
+
+If the constraints of the precache are impossible to satisfy (e.g.,
+trying to fetch a data object that's bigger than the precache), then a
+`507 Insufficient Storage` response will be returned.
 
 ##### ETA Reponses
 
