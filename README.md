@@ -28,8 +28,10 @@ managing a connection pool to iRODS.
   - [x] Tracking database
   - [x] Checksummer
   - [x] Filesystem directory handlers
-  - [x] Precache entity
   - [ ] Precache manager
+    - [x] Garbage collector/cache invalidator
+    - [ ] Precache entity
+    - [ ] [Request workflow](irobot/precache/README.md)
 - [x] Authentication handlers
   - [x] HTTP Basic
   - [x] Arvados
