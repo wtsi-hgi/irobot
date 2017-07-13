@@ -284,13 +284,12 @@ shouldn't be used in the URL.
 That is, for example, for data object `data_object` in collection
 `/full/path/to/my`:
 
-<dl>
-  <dt>Correct</dt>
-  <dd><pre><code>https://irobot:5000/full/path/to/my/data_object</code></pre></dd>
-
-  <dt>Incorrect</dt>
-  <dd><pre><code>https://irobot:5000//full/path/to/my/data_object</code></pre></dd>
-</dl>
+```
+👍 https://irobot:5000/full/path/to/my/data_object
+```
+```
+❌ https://irobot:5000//full/path/to/my/data_object
+```
 
 Any special characters in the iRODS path should be percent encoded.  If
 the requested data object does not exist in iRODS, then a `404 Not
