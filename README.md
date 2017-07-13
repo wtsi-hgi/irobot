@@ -449,3 +449,60 @@ precache is designed to manage itself automatically.
 A data object can only be deleted from the precache if it is currently
 not inflight. That is, it is not being fetched from iRODS or being
 pushed by iRobot to a connected client.
+
+### Administrative Endpoints
+
+Administrative endpoints are exposed at the root and prefixed with an
+underscore. They have a higher priority in the routing tree than the
+data object endpoints, but should never mask data objects as they cannot
+be contained within the iRODS "root collection". Only `GET` and `HEAD`
+requests can be made to these endpoints, which can return the following:
+
+ Status | Semantics
+:------:|:--------------------------------------------------------------
+ 200    | Return the administrative data
+ 401    | Authentication failure
+ 406    | Unsupported requested media type
+
+Administrative endpoints will only ever return `application/json`. If
+the `Accept` request header diverges from this, a `406 Not Acceptable`
+response will be returned.
+
+#### `_status`
+
+iRobot's current state:
+
+* `connections`
+  * `active` The current number of active connections.
+  * `total` The total number of requests made to iRobot.
+* `precache`
+  * `commitment` The size, in bytes, committed to the precache.
+  * `checksum_rate`
+    * `average` The average checksumming rate, in bytes/second,
+      performed by iRobot.
+    * `stderr` The standard error, in bytes/second, of the checksumming
+      rate.
+* `irods`
+  * `active` The current number of active downloads from iRODS.
+  * `download_rate` The rate, in bytes/second,
+    * `average` The average download rate, in bytes/second, achieved by
+      iRODS.
+    * `stderr` The standard error, in bytes/second, of the download
+      rate.
+
+<!-- TODO: More?... -->
+
+#### `_config`
+
+iRobot's current configuration:
+
+<!-- TODO -->
+
+#### `_precache`
+
+An overview of the contents of the precache. This will return an array
+of objects of the following form:
+
+* `path` Full path of the data object.
+
+<!-- TODO: Other precache entity properties; MD5, status, ETA, etc. -->
