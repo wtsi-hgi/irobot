@@ -1,2 +1,9 @@
+# Deprecated: Move to using aiohttp
 requests==2.13.0
-https://github.com/rogerbinns/apsw/releases/download/3.17.0-r1/apsw-3.17.0-r1.zip --global-option=fetch --global-option=--version --global-option=3.17.0 --global-option=--all --global-option=build --global-option=--enable-all-extensions
+
+# aiohttp
+aiohttp==2.2.3
+aiodns==1.1.1
+cchardet==2.1.1
+
+https://github.com/rogerbinns/apsw/releases/download/3.19.3-r1/apsw-3.19.3-r1.zip --global-option=fetch --global-option=--version --global-option=3.19.3 --global-option=--all --global-option=build --global-option=--enable-all-extensions
