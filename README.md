@@ -36,7 +36,16 @@ managing a connection pool to iRODS.
   - [x] HTTP Basic
   - [x] Arvados
 - [ ] HTTP interface
-  - [ ] ...
+  - [ ] Authentication middleware
+  - [ ] Data object endpoint
+    - [ ] `GET` and `HEAD`
+    - [ ] `POST`
+    - [ ] `DELETE`
+  - [ ] Administrative endpoints
+    - [ ] Common middleware
+    - [ ] Status endpoint
+    - [ ] Configuration endpoint (is this necessary?...)
+    - [ ] Precache manifest endpoint
 - [ ] Installation/containerisation
   - [x] Base system
   - [x] Kerberos support
