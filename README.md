@@ -36,6 +36,7 @@ managing a connection pool to iRODS.
   - [x] HTTP Basic
   - [x] Arvados
 - [ ] HTTP interface
+  - [ ] Response timeout middleware
   - [x] Authentication middleware
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
@@ -319,6 +320,7 @@ Found` response will be returned.
  404    | No such data object on iRODS
  406    | Unsupported requested media type
  416    | Invalid range request
+ 504    | Response timeout
  507    | Precache full
 
 A `HEAD` request can be made to the data object endpoint to facilitate
