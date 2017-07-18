@@ -17,4 +17,13 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from typing import Callable
+
+from aiohttp.web import Request, Response
+
+
+# Constants
 ENCODING = "utf-8"
+
+# Type definition for HTTP request handlers
+HandlerT = Callable[[Request], Response]
