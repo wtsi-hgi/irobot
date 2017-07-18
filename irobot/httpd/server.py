@@ -55,9 +55,16 @@ class APIServer(LogWriter):
         self._thread.start()
 
         with self._loop_lock:
-            # TODO Start the listener on the event loop once it's ready
+            # Set up the web application and start listening on the
+            # event loop once everything's ready
             middleware = [authentication_middleware(auth_handlers)]
-            # etc., etc....
+            app = web.Application(logger=logger, middlewares=middleware)
+            app["timeout"] = httpd_config.timeout
+            # TODO etc., etc....
+            web.run_app(app, host=httpd_config.bind_address,
+                             port=httpd_config.listen,
+                             print=lambda *_a, **_kw: None,  # i.e. noop
+                             loop=self._loop)
 
         # We don't need the loop lock any more
         del self._loop_lock
