@@ -21,7 +21,7 @@ import logging
 import os
 from typing import List
 
-from .authentication import ArvadosAuthHandler, HTTPBasicAuthHandler
+from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
 from .config import Configuration
 from .config.log import LoggingConfig
 from .irods import iRODS
@@ -40,7 +40,7 @@ def _log_config(config:Configuration, logger:logging.Logger) -> None:
         logger.info("%s Authentication Configuration: %s", handler, str(getattr(config.authentication, handler)))
 
 
-def _instantiate_authentication_handlers(config:Configuration, logger:logging.Logger) -> List:
+def _instantiate_authentication_handlers(config:Configuration, logger:logging.Logger) -> List[BaseAuthHandler]:
     """ Instantiate authentication handlers """
     handler_mapping = {
         "arvados": ArvadosAuthHandler,
