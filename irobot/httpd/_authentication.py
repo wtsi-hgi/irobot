@@ -26,6 +26,9 @@ from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
 
 
+_HTTPAuthenticationFailure = error_factory(401, "Could not authenticate credentials")
+
+
 def authentication_middleware(auth_handlers:List[BaseAuthHandler]) -> Callable[[web.Application, HandlerT], Awaitable[HandlerT]]:
     """
     Create the middleware factory that handles authentication with the
@@ -51,6 +54,30 @@ def authentication_middleware(auth_handlers:List[BaseAuthHandler]) -> Callable[[
             @param   request  HTTP request
             @return  HTTP response
             """
+            try:
+                auth_header = request.headers["Authorization"]
+            except KeyError:
+                # Fail on missing Authorization header
+                raise _HTTPAuthenticationFailure
+
+            user = None
+            for auth_handler in auth_handlers:
+                # TODO The authentication handler should probably also
+                # be asynchronous. This is planned with the deprecation
+                # of the requests library (all our authentication
+                # handlers are currently HTTP-based)
+                user = auth_handler.authenticate(auth_header)
+                if user:
+                    # Short-circuit if authentication succeeded
+                    break
+
+            if not user:
+                # Fail on inability to authenticate
+                raise _HTTPAuthenticationFailure
+
+            # Success: Thread the authenticated user into the request
+            request["auth_user"] = user
+            return await handler(request)
 
         return _middleware
 

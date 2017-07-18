@@ -22,9 +22,11 @@ import logging
 from threading import Lock, Thread
 from typing import Optional
 
-import aiohttp
+from aiohttp import web
 
+from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
+from irobot.httpd._authentication import authentication_middleware
 from irobot.logging import LogWriter
 
 
@@ -32,13 +34,14 @@ class APIServer(LogWriter):
     """ HTTP API server interface """
     _loop:asyncio.AbstractEventLoop
 
-    def __init__(self, httpd_config:HTTPdConfig, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, httpd_config:HTTPdConfig, auth_handlers:List[BaseAuthHandler], logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor: Start the event loop in a separate thread, which
         listens for and serves API requests
 
-        @param   httpd_config  HTTPd configuration (HTTPdConfig)
-        @param   logger        Logger
+        @param   httpd_config   HTTPd configuration (HTTPdConfig)
+        @param   auth_handlers  Authentication handlers (list of BaseAuthHandler)
+        @param   logger         Logger
         @param   TODO...
         """
         super().__init__(logger=logger)
@@ -53,7 +56,8 @@ class APIServer(LogWriter):
 
         with self._loop_lock:
             # TODO Start the listener on the event loop once it's ready
-            pass
+            middleware = [authentication_middleware(auth_handlers)]
+            # etc., etc....
 
         # We don't need the loop lock any more
         del self._loop_lock

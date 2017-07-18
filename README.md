@@ -36,7 +36,7 @@ managing a connection pool to iRODS.
   - [x] HTTP Basic
   - [x] Arvados
 - [ ] HTTP interface
-  - [ ] Authentication middleware
+  - [x] Authentication middleware
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
     - [ ] `POST`
@@ -51,7 +51,7 @@ managing a connection pool to iRODS.
   - [x] Kerberos support
   - [ ] iRobot
 - [ ] Testing
-  - [x] Unit testing
+  - [ ] Unit testing
   - [ ] Integration testing
   - [ ] User acceptance testing
 - [x] Documentation
