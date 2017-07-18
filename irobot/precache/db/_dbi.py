@@ -19,8 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
 from inspect import Parameter, signature
-from typing import (Any, ClassVar, Dict, Iterator, List, Optional,
-                    Sequence, Tuple, Type, Union)
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Type, Union
 
 import apsw
 
@@ -172,7 +171,7 @@ class Connection(apsw.Connection):
         """
         return Cursor(super().cursor())
 
-    def register_aggregate_function(self, name:str, udf:ClassVar[AggregateUDF]) -> None:
+    def register_aggregate_function(self, name:str, udf:Type[AggregateUDF]) -> None:
         """
         Register an aggregation function using an AggregateUDF
         implementation
