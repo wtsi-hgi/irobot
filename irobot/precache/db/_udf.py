@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import math
 from abc import ABCMeta, abstractmethod
-from typing import Callable, ClassVar, Optional
+from typing import Callable, Optional, Type
 from numbers import Number
 
 from irobot.precache.db._types import SQLite
@@ -36,7 +36,7 @@ class AggregateUDF(metaclass=ABCMeta):
         """ Finalise function """
 
 
-def aggregate_udf_factory_factory(udf:ClassVar[AggregateUDF]) -> Callable:
+def aggregate_udf_factory_factory(udf:Type[AggregateUDF]) -> Callable:
     """
     Create the aggregate UDF factory for APSW using an AggregateUDF
     implementation

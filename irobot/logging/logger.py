@@ -21,7 +21,7 @@ import atexit
 import logging
 import sys
 import time
-from typing import Callable, ClassVar, Optional
+from typing import Callable, Optional, Type
 
 from irobot.config.log import LoggingConfig
 
@@ -53,7 +53,7 @@ def _exception_handler(logger:logging.Logger) -> Callable:
     Create an exception handler that logs uncaught exceptions (except
     keyboard interrupts) before terminating
     """
-    def _log_uncaught_exception(exc_class:ClassVar[Exception], exc_obj:Exception, traceback) -> None:
+    def _log_uncaught_exception(exc_class:Type[Exception], exc_obj:Exception, traceback) -> None:
         if issubclass(exc_class, KeyboardInterrupt):
             sys.__excepthook__(exc_class, exc_obj, traceback)
 

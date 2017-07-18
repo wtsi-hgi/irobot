@@ -129,7 +129,7 @@ class Precache(LogWriter):
             atexit.register(self._gc_timer.cancel)
 
     def __del__(self) -> None:
-        """ Cancel any running timers on python GC """
+        """ Cancel any running timers on Python GC """
         if self.temporal_gc and self._gc_timer.is_alive():
             self._gc_timer.cancel()
 

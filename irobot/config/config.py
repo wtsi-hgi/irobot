@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ConfigParser, ParsingError
-from typing import ClassVar, Dict, Tuple
+from typing import Dict, Tuple, Type
 
 import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
@@ -141,7 +141,7 @@ class Configuration(object):
             if isinstance(getattr(self, config), BaseConfig)
         }
 
-    def _build_config(self, constructor:ClassVar[BaseConfig], section:str, *options) -> BaseConfig:
+    def _build_config(self, constructor:Type[BaseConfig], section:str, *options) -> BaseConfig:
         """
         Build configuration
 

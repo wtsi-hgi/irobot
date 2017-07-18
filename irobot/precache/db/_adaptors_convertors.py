@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import datetime as stdlib_datetime
 import enum as stdlib_enum
-from typing import Any, Callable, ClassVar
+from typing import Any, Callable, Type
 
 
 class Adaptor(object):
@@ -78,7 +78,7 @@ class Convertor(object):
         return stdlib_datetime.timedelta(seconds=float(d))
 
     @staticmethod
-    def enum_factory(enum_type:ClassVar[stdlib_enum.Enum], cast_fn:Callable[[bytes], Any] = int) -> Callable[[bytes], "enum_type"]:
+    def enum_factory(enum_type:Type[stdlib_enum.Enum], cast_fn:Callable[[bytes], Any] = int) -> Callable[[bytes], "enum_type"]:
         """
         Enum convertor factory
 
