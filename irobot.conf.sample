@@ -58,7 +58,7 @@ listen = 5000
 # until their content is available (not recommended), or to a specific
 # number of milliseconds (with an optional "ms" suffix) or seconds (with
 # a mandatory "s" suffix).
-timeout = 500
+timeout = 5s
 
 # Available authentication handlers, set to a comma-separated list of at
 # least one of "basic" and "arvados". Note that the corresponding
