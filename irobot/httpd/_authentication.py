@@ -17,8 +17,6 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Awaitable, Callable, List
-
 from aiohttp import web
 
 from irobot.authentication import BaseAuthHandler
@@ -29,56 +27,48 @@ from irobot.httpd._error import error_factory
 _HTTPAuthenticationFailure = error_factory(401, "Could not authenticate credentials")
 
 
-def authentication_middleware(auth_handlers:List[BaseAuthHandler]) -> Callable[[web.Application, HandlerT], Awaitable[HandlerT]]:
+async def authentication_middleware(app:web.Application, handler:HandlerT) -> HandlerT:
     """
-    Create the middleware factory that handles authentication with the
-    given authentication handlers
+    Authentication middleware factory
 
-    @param   auth_handlers  List of authentication handlers
-    @return  Authentication middleware factory
+    @param   app      Application
+    @param   handler  Route handler
+    @return  Authentication middleware handler
     """
 
-    async def _factory(app:web.Application, handler:HandlerT) -> HandlerT:
+    # Get authentication handlers
+    auth_handlers = app.get("irobot_auth_handlers", [])
+
+    async def _middleware(request:web.Request) -> web.Response:
         """
-        Authentication middleware factory
+        Authentication middleware
 
-        @param   app      Application
-        @param   handler  Route handler
-        @return  Authentication middleware handler
+        @param   request  HTTP request
+        @return  HTTP response
         """
+        try:
+            auth_header = request.headers["Authorization"]
+        except KeyError:
+            # Fail on missing Authorization header
+            raise _HTTPAuthenticationFailure
 
-        async def _middleware(request:web.Request) -> web.Response:
-            """
-            Authentication middleware
+        user = None
+        for auth_handler in auth_handlers:
+            # TODO The authentication handler should probably also
+            # be asynchronous. This is planned with the deprecation
+            # of the requests library (all our authentication
+            # handlers are currently HTTP-based)
+            user = auth_handler.authenticate(auth_header)
+            if user:
+                # Short-circuit if authentication succeeded
+                break
 
-            @param   request  HTTP request
-            @return  HTTP response
-            """
-            try:
-                auth_header = request.headers["Authorization"]
-            except KeyError:
-                # Fail on missing Authorization header
-                raise _HTTPAuthenticationFailure
+        if not user:
+            # Fail on inability to authenticate
+            raise _HTTPAuthenticationFailure
 
-            user = None
-            for auth_handler in auth_handlers:
-                # TODO The authentication handler should probably also
-                # be asynchronous. This is planned with the deprecation
-                # of the requests library (all our authentication
-                # handlers are currently HTTP-based)
-                user = auth_handler.authenticate(auth_header)
-                if user:
-                    # Short-circuit if authentication succeeded
-                    break
+        # Success: Thread the authenticated user into the request
+        request["auth_user"] = user
+        return await handler(request)
 
-            if not user:
-                # Fail on inability to authenticate
-                raise _HTTPAuthenticationFailure
-
-            # Success: Thread the authenticated user into the request
-            request["auth_user"] = user
-            return await handler(request)
-
-        return _middleware
-
-    return _factory
+    return _middleware

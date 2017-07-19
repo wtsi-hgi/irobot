@@ -58,9 +58,13 @@ class APIServer(LogWriter):
         with self._loop_lock:
             # Set up the web application and start listening on the
             # event loop once everything's ready
-            middleware = [timeout_middleware, authentication_middleware(auth_handlers)]
+            middleware = [timeout_middleware, authentication_middleware]
             app = web.Application(logger=logger, middlewares=middleware)
+
+            # Thread through application variables
             app["timeout"] = httpd_config.timeout
+            app["irobot_auth_handlers"] = auth_handlers
+
             # TODO etc., etc....
             web.run_app(app, host=httpd_config.bind_address,
                              port=httpd_config.listen,
