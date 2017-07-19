@@ -187,12 +187,14 @@ configuration can be found in `irobot.conf.sample`.
   (with an optional `ms` suffix) or seconds (with a mandatory `s`
   suffix), greater than zero.
 
-  Note that every request that triggers data fetching from iRODS will
-  almost certainly exceed the timeout (unless the data is very small or
-  the timeout very large). As such, this will necessarily introduce
-  artificial latency to this type of request. To minimise this effect,
-  the timeout ought to be set low, but not so low that any operational
-  overhead doesn't have time to complete.
+  Note that any request that triggers data fetching from iRODS will
+  respond, in that first instance, with a `202 Accepted` and never,
+  regardless of the timeout setting, wait for the data to be fetched and
+  then respond with it under `200 OK`. That is to say, the timeout
+  setting is used to cancel unusually long-running operations, so not to
+  tie up the API server, and should be set relatively high to indicate
+  back to any client that there's something wrong with the iRODS
+  gateway.
 
 * **`authentication`** The available authentication handlers, which is a
   comma-separated list of at least one of `basic` and `arvados`, in any
@@ -264,6 +266,18 @@ message records.
 
 ## API
 
+### Gateway Timeout
+
+iRobot essentially acts as an iRODS gateway through this HTTP API. If
+any operation takes an overly long time to complete (per the respective
+configuration), then a `504 Gateway Timeout` response will be issued.
+(This *may* not be due to iRODS, but that will be the most likely
+culprit.) If this happens regularly, it may be indicative of a
+configuration or networking problem between iRobot and iRODS.
+
+(Note that any client would also, presumably, hang up on an overly
+long-running connection.)
+
 ### Authentication
 
 All HTTP requests must include the `Authorization` header with a value
@@ -318,6 +332,7 @@ Found` response will be returned.
  401    | Authentication failure
  403    | Access denied to iRobot iRODS user
  404    | No such data object on iRODS
+ 405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
  406    | Unsupported requested media type
  416    | Invalid range request
  504    | Response timeout
@@ -388,8 +403,8 @@ be returned with a `206 Partial Content` response under the
 `multipart/byteranges` media type, where byte ranges in the response
 will have the media type `application/octet-stream` and include a
 `Content-MD5` if one exists. The ranges may therefore be chunked
-differently than specified, so that they align with the precache
-checksum chunk size.
+differently than requested, so that they align with the precache
+checksum chunk size, but the requested range will be fully satisfied.
 
 If the `Accept-Ranges` request header is omitted, then the entirety of
 the data will be returned as a `200 OK` response, with media type
@@ -408,7 +423,7 @@ Note that an initial range request (i.e., for data that has yet to be
 precached) will still fetch the entirety of the data into the precache;
 there is no short-cutting.
 
-##### Precache Exhaustion
+##### Precache Saturation
 
 If the constraints of the precache are impossible to satisfy (e.g.,
 trying to fetch a data object that's bigger than the precache), then a
@@ -424,7 +439,7 @@ comprising of an ISO8601 UTC timestamp and an indication of confidence
     2017-09-25T12:34:56Z+00:00 +/- 123
 
 If an estimate cannot be calculated, then the content body will be
-empty.
+empty (i.e., content length of 0 bytes).
 
 #### `POST`
 
@@ -437,6 +452,8 @@ checksums; thus warranting its title of "precache"!
  401    | Authentication failure
  403    | Access denied to iRobot iRODS user
  404    | No such data object on iRODS
+ 405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
+ 504    | Response timeout
  507    | Precache full
 
 Note that if the data object's state is already in the precache, this
@@ -456,6 +473,8 @@ precache is designed to manage itself automatically.
  401    | Authentication failure
  409    | Inflight data object could not be deleted from the precache
  404    | No such data object in precache
+ 405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
+ 504    | Response timeout
 
 A data object can only be deleted from the precache if it is currently
 not inflight. That is, it is not being fetched from iRODS or being
@@ -473,7 +492,9 @@ requests can be made to these endpoints, which can return the following:
 :------:|:--------------------------------------------------------------
  200    | Return the administrative data
  401    | Authentication failure
+ 405    | Method not allowed (only `GET`, `HEAD` and `OPTIONS` are supported)
  406    | Unsupported requested media type
+ 504    | Response timeout
 
 Administrative endpoints will only ever return `application/json`. If
 the `Accept` request header diverges from this, a `406 Not Acceptable`
