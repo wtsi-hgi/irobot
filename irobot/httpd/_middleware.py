@@ -17,19 +17,59 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import asyncio
+
+import async_timeout
 from aiohttp import web
 
-from irobot.authentication import BaseAuthHandler
 from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
 
 
+_HTTPResponseTimeout = error_factory(504, "Response timed out")
 _HTTPAuthenticationFailure = error_factory(401, "Could not authenticate credentials")
 
 
-async def authentication_middleware(app:web.Application, handler:HandlerT) -> HandlerT:
+async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
+    """
+    Timeout middleware factory
+
+    @note    The response timeout value is threaded through the
+             application under the "irobot_timeout" key
+
+    @param   app      Application
+    @param   handler  Route handler
+    @return  Timeout middleware handler
+    """
+
+    # Get response timeout, in seconds (None for unlimited)
+    response_timeout = app.get("irobot_timeout", None)
+    if response_timeout:
+        response_timeout /= 1000
+
+    async def _middleware(request:web.Request) -> web.Response:
+        """
+        Timeout middleware
+
+        @param   request  HTTP request
+        @return  HTTP response
+        """
+        try:
+            with async_timeout.timeout(response_timeout, loop=app.loop):
+                return await handler(request)
+
+        except asyncio.TimeoutError:
+            raise _HTTPResponseTimeout
+
+    return _middleware
+
+
+async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
     """
     Authentication middleware factory
+
+    @note    The authentication handlers are threaded through the
+             application under the "irobot_auth_handlers" key
 
     @param   app      Application
     @param   handler  Route handler
