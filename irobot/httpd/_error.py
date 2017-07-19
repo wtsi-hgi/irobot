@@ -33,9 +33,11 @@ _status_map:Dict[int, _ErrorT] = {
     401: ("Unauthorized",          web.HTTPUnauthorized),
     403: ("Forbidden",             web.HTTPForbidden),
     404: ("Not Found",             web.HTTPNotFound),
+    405: ("Method Not Allowed",    web.HTTPMethodNotAllowed),
     406: ("Not Acceptable",        web.HTTPNotAcceptable),
     409: ("Conflict",              web.HTTPConflict),
     416: ("Range Not Satisfiable", web.HTTPRequestRangeNotSatisfiable),
+    504: ("Gateway Timeout",       web.HTTPGatewayTimeout),
     507: ("Insufficient Storage",  web.HTTPInsufficientStorage)
 }
 

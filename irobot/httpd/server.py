@@ -27,6 +27,7 @@ from aiohttp import web
 from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
 from irobot.httpd._authentication import authentication_middleware
+from irobot.httpd._timeout import timeout_middleware
 from irobot.logging import LogWriter
 
 
@@ -57,13 +58,13 @@ class APIServer(LogWriter):
         with self._loop_lock:
             # Set up the web application and start listening on the
             # event loop once everything's ready
-            middleware = [authentication_middleware(auth_handlers)]
+            middleware = [timeout_middleware, authentication_middleware(auth_handlers)]
             app = web.Application(logger=logger, middlewares=middleware)
             app["timeout"] = httpd_config.timeout
             # TODO etc., etc....
             web.run_app(app, host=httpd_config.bind_address,
                              port=httpd_config.listen,
-                             print=lambda *_a, **_kw: None,  # i.e. noop
+                             print=lambda *_: None,  # i.e. noop
                              loop=self._loop)
 
         # We don't need the loop lock any more

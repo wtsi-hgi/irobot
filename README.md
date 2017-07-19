@@ -36,7 +36,7 @@ managing a connection pool to iRODS.
   - [x] HTTP Basic
   - [x] Arvados
 - [ ] HTTP interface
-  - [ ] Response timeout middleware
+  - [x] Response timeout middleware
   - [x] Authentication middleware
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
