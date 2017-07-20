@@ -11,6 +11,7 @@ script:
 - nose2 -F -C --coverage-report=term-missing -v
 after_script:
 - find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq
+- irobot/test/todos.awk irobot/precache.precache.py
 after_success:
 - codecov
 notifications:
