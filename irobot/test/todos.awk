@@ -1,4 +1,4 @@
-#!/usr/bin/env awk -f
+#!/usr/bin/env gawk -f
 
 # TODO and FIXME reporter for Python source files
 # -----------------------------------------------
