@@ -2,11 +2,15 @@ language: python
 python:
 - 3.6
 before_install:
+- apt-get -qq update
+- apt-get install -y gawk
 - pip install codecov nose2 nose2-cov
 install:
 - pip install -r requirements.txt
 script:
 - nose2 -F -C --coverage-report=term-missing -v
+after_script:
+- find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/test/todos.awk
 after_success:
 - codecov
 notifications:
