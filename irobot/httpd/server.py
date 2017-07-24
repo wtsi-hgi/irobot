@@ -28,21 +28,22 @@ import irobot.httpd._middleware as middleware
 from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
 from irobot.logging import LogWriter
+from irobot.precache import Precache
 
 
 class APIServer(LogWriter):
     """ HTTP API server interface """
     _loop:asyncio.AbstractEventLoop
 
-    def __init__(self, httpd_config:HTTPdConfig, auth_handlers:List[BaseAuthHandler], logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[BaseAuthHandler], logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor: Start the event loop in a separate thread, which
         listens for and serves API requests
 
         @param   httpd_config   HTTPd configuration (HTTPdConfig)
+        @param   precache       Precache interface (Precache)
         @param   auth_handlers  Authentication handlers (list of BaseAuthHandler)
         @param   logger         Logger
-        @param   TODO...
         """
         super().__init__(logger=logger)
         self.log(logging.DEBUG, "Starting API server")
@@ -63,9 +64,14 @@ class APIServer(LogWriter):
 
             # Thread through application variables
             app["irobot_timeout"] = httpd_config.timeout
+            app["irobot_precache"] = precache
             app["irobot_auth_handlers"] = auth_handlers
 
-            # TODO etc., etc....
+            # TODO Looking at the aiohttp code, it looks like run_app
+            # starts the event loop itself, so this code ultimately
+            # needs to be moved into the _init_loop function that's
+            # execute in its own thread (otherwise we're either going to
+            # have contention on the loop or block; neither is good!)
             web.run_app(app, host=httpd_config.bind_address,
                              port=httpd_config.listen,
                              print=lambda *_: None,  # i.e. noop
