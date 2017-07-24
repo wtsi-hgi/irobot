@@ -25,7 +25,7 @@ from typing import List, Optional
 from aiohttp import web
 
 import irobot.httpd._middleware as middleware
-import irobot.httpd._admin as admin
+import irobot.httpd.handlers as handlers
 from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
 from irobot.logging import LogWriter
@@ -69,9 +69,9 @@ class APIServer(LogWriter):
             app["irobot_auth_handlers"] = auth_handlers
 
             # Routing
-            app.router.add_route("*", "/_status", admin.status)
-            app.router.add_route("*", "/_config", admin.config) # NOTE Is this necessary?
-            app.router.add_route("*", "/_precache", admin.precache)
+            app.router.add_route("*", "/_status", handlers.status)
+            app.router.add_route("*", "/_config", handlers.config) # NOTE Is this necessary?
+            app.router.add_route("*", "/_precache", handlers.precache)
             # TODO Data object handler
 
             # TODO Looking at the aiohttp code, it looks like run_app
