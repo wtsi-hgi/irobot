@@ -20,11 +20,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import asyncio
 import logging
 from threading import Lock, Thread
-from typing import Optional
+from typing import List, Optional
 
 from aiohttp import web
 
 import irobot.httpd._middleware as middleware
+import irobot.httpd._admin as admin
 from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
 from irobot.logging import LogWriter
@@ -67,11 +68,17 @@ class APIServer(LogWriter):
             app["irobot_precache"] = precache
             app["irobot_auth_handlers"] = auth_handlers
 
+            # Routing
+            app.router.add_route("*", "/_status", admin.status)
+            app.router.add_route("*", "/_config", admin.config) # NOTE Is this necessary?
+            app.router.add_route("*", "/_precache", admin.precache)
+            # TODO Data object handler
+
             # TODO Looking at the aiohttp code, it looks like run_app
             # starts the event loop itself, so this code ultimately
             # needs to be moved into the _init_loop function that's
-            # execute in its own thread (otherwise we're either going to
-            # have contention on the loop or block; neither is good!)
+            # executed in its own thread (otherwise we're either going
+            # to have contention on the loop or block; neither is good!)
             web.run_app(app, host=httpd_config.bind_address,
                              port=httpd_config.listen,
                              print=lambda *_: None,  # i.e. noop
