@@ -17,39 +17,14 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from functools import wraps
-
 from aiohttp.web import Request, Response
 
-from irobot.httpd._allow import allow_request
-from irobot.httpd._common import HandlerT
-from irobot.httpd._error import error_factory
+import irobot.httpd.handlers._decorators as request
 
 
-def _check_admin_request(handler:HandlerT) -> HandlerT:
-    """
-    Decorator that checks admin requests are appropriate
-
-    @param   handler  Handler function to decorate
-    @return  Decorated handler
-    """
-    @wraps(handler)
-    async def _decorated(request:Request) -> Response:
-        """
-        Check Accept header is OK
-
-        @param   request  HTTP request (Request)
-        @return  HTTP response (Response)
-        """
-        # TODO
-        return await handler(request)
-
-    return _decorated
-
-
-@allow_request("GET", "HEAD")
-@_check_admin_request
-async def status(request:Request) -> Response:
+@request.allow("GET", "HEAD")
+@request.accept("application/json")
+async def status(req:Request) -> Response:
     """
     Status handler
 
@@ -59,9 +34,9 @@ async def status(request:Request) -> Response:
     raise NotImplementedError("OMG!!")
 
 
-@allow_request("GET", "HEAD")
-@_check_admin_request
-async def config(request:Request) -> Response:
+@request.allow("GET", "HEAD")
+@request.accept("application/json")
+async def config(req:Request) -> Response:
     """
     Config status handler
 
@@ -73,9 +48,9 @@ async def config(request:Request) -> Response:
     raise NotImplementedError("OMG!!")
 
 
-@allow_request("GET", "HEAD")
-@_check_admin_request
-async def precache(request:Request) -> Response:
+@request.allow("GET", "HEAD")
+@request.accept("application/json")
+async def precache(req:Request) -> Response:
     """
     Precache status handler
 

@@ -26,14 +26,17 @@ from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
 
 
-def allow_request(*methods) -> Callable[[HandlerT], HandlerT]:
+_HandlerDecoratorT = Callable[[HandlerT], HandlerT]
+
+
+def allow(*methods) -> _HandlerDecoratorT:
     """
     Parametrisable decorator which checks the request method matches
     what's allowed (raising an error, if not) and responds appropriately
-    to an OPTIONS request.
+    to an OPTIONS request
 
     @param   methods  Allowed methods (strings)
-    @return  Decorator
+    @return  Handler decorator
     """
     # Allowed methods (obviously OPTIONS is included)
     allowed = {m.upper() for m in [*methods, "OPTIONS"]}
@@ -60,6 +63,37 @@ def allow_request(*methods) -> Callable[[HandlerT], HandlerT]:
             if request.method == "OPTIONS":
                 return Response(status=200, headers=allow_header)
 
+            return await handler(request)
+
+        return _decorated
+
+    return _decorator
+
+
+def accept(*media_types) -> _HandlerDecoratorT:
+    """
+    Parametrisable decorator which checks the requested acceptable media
+    types match what's allowed (raising an error, if not)
+
+    @param   media_types  Acceptable media types (strings)
+    @return  Handler decorator
+    """
+    def _decorator(handler:HandlerT) -> HandlerT:
+        """
+        Decorator that handles the accepted media types
+
+        @param   handler  Handler function to decorate
+        @return  Decorated handler
+        """
+        @wraps(handler)
+        async def _decorated(request:Request) -> Response:
+            """
+            Check Accept header against acceptable media types
+
+            @param   request  HTTP request (Request)
+            @return  HTTP response (Response)
+            """
+            # TODO
             return await handler(request)
 
         return _decorated
