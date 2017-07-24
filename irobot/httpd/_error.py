@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-from typing import Dict, Tuple, Type
+from typing import Dict, Optional, Tuple, Type
 
 from aiohttp import web
 
@@ -27,19 +27,6 @@ from irobot.httpd._common import ENCODING
 
 # Tuple of error reason (string) and error class
 _ErrorT = Tuple[str, Type[web.HTTPError]]
-
-# Error responses which iRobot can return
-_status_map:Dict[int, _ErrorT] = {
-    401: ("Unauthorized",          web.HTTPUnauthorized),
-    403: ("Forbidden",             web.HTTPForbidden),
-    404: ("Not Found",             web.HTTPNotFound),
-    405: ("Method Not Allowed",    web.HTTPMethodNotAllowed),
-    406: ("Not Acceptable",        web.HTTPNotAcceptable),
-    409: ("Conflict",              web.HTTPConflict),
-    416: ("Range Not Satisfiable", web.HTTPRequestRangeNotSatisfiable),
-    504: ("Gateway Timeout",       web.HTTPGatewayTimeout),
-    507: ("Insufficient Storage",  web.HTTPInsufficientStorage)
-}
 
 
 def _undefined_error_factory(status:int) -> _ErrorT:
@@ -56,12 +43,34 @@ def _undefined_error_factory(status:int) -> _ErrorT:
     return "Undefined Error", _UndefinedError
 
 
-def error_factory(status:int, description:str) -> web.HTTPError:
+# We don't use aiohttp's HTTPMethodNotAllowed because its constructor
+# has a different signature to what we expect. Instead we just create a
+# simple exception and force upstream to pass in a correct Allow header.
+# FIXME? Leaky abstraction
+_, _HTTPMethodNotAllowed = _undefined_error_factory(405)
+
+
+# Error responses which iRobot can return
+_status_map:Dict[int, _ErrorT] = {
+    401: ("Unauthorized",          web.HTTPUnauthorized),
+    403: ("Forbidden",             web.HTTPForbidden),
+    404: ("Not Found",             web.HTTPNotFound),
+    405: ("Method Not Allowed",    _HTTPMethodNotAllowed),
+    406: ("Not Acceptable",        web.HTTPNotAcceptable),
+    409: ("Conflict",              web.HTTPConflict),
+    416: ("Range Not Satisfiable", web.HTTPRequestRangeNotSatisfiable),
+    504: ("Gateway Timeout",       web.HTTPGatewayTimeout),
+    507: ("Insufficient Storage",  web.HTTPInsufficientStorage)
+}
+
+
+def error_factory(status:int, description:str, *, headers:Optional[Dict[str, str]] = None) -> web.HTTPError:
     """
     Standardised JSON error response factory
 
     @param   status       HTTP response status (int)
     @param   description  Human readable error description (string)
+    @param   headers      Additional response headers (optional; dictionary)
     @return  HTTP error response (web.HTTPError)
     """
     reason, cls = _status_map.get(status, _undefined_error_factory(status))
@@ -74,4 +83,4 @@ def error_factory(status:int, description:str) -> web.HTTPError:
         "description": description
     }).encode(ENCODING)
 
-    return cls(reason=reason, body=body, content_type=content_type)
+    return cls(reason=reason, body=body, content_type=content_type, headers=headers)
