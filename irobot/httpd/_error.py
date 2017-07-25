@@ -75,12 +75,10 @@ def error_factory(status:int, description:str, *, headers:Optional[Dict[str, str
     """
     reason, cls = _status_map.get(status, _undefined_error_factory(status))
 
-    content_type = f"application/json; charset={ENCODING}"
-
     body = json.dumps({
         "status":      status,
         "reason":      reason,
         "description": description
     }).encode(ENCODING)
 
-    return cls(reason=reason, body=body, content_type=content_type, headers=headers)
+    return cls(reason=reason, body=body, content_type="application/json", headers=headers)
