@@ -43,7 +43,7 @@ managing a connection pool to iRODS.
     - [ ] `POST`
     - [ ] `DELETE`
   - [ ] Administrative endpoints
-    - [ ] Common middleware
+    - [x] Common middleware
     - [ ] Status endpoint
     - [ ] Configuration endpoint (is this necessary?...)
     - [ ] Precache manifest endpoint
