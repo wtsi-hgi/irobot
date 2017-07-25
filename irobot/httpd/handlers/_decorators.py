@@ -24,6 +24,7 @@ from aiohttp.web import Request, Response
 
 from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
+from irobot.httpd.handlers._accept_parser import RE_MEDIA_TYPE, AcceptParser
 
 
 _HandlerDecoratorT = Callable[[HandlerT], HandlerT]
@@ -58,7 +59,7 @@ def allow(*methods) -> _HandlerDecoratorT:
             @return  HTTP response (Response)
             """
             if request.method not in allowed:
-                raise error_factory(405, f"Cannot {request.method} the resource at f{request.url}.", headers=allow_header)
+                raise error_factory(405, f"Cannot {request.method} the resource at {request.url}.", headers=allow_header)
 
             if request.method == "OPTIONS":
                 return Response(status=200, headers=allow_header)
@@ -73,11 +74,17 @@ def allow(*methods) -> _HandlerDecoratorT:
 def accept(*media_types) -> _HandlerDecoratorT:
     """
     Parametrisable decorator which checks the requested acceptable media
-    types match what's allowed (raising an error, if not)
+    types can be fulfilled (raising an error, if not)
 
-    @param   media_types  Acceptable media types (strings)
+    @param   media_types  Available media types (strings)
     @return  Handler decorator
     """
+    # Available media types
+    if not media_types or any(not RE_MEDIA_TYPE.match(m) for m in media_types):
+        raise TypeError("You must specify fully-qualified media type(s)")
+
+    available = tuple(set(media_types))
+
     def _decorator(handler:HandlerT) -> HandlerT:
         """
         Decorator that handles the accepted media types
@@ -93,7 +100,16 @@ def accept(*media_types) -> _HandlerDecoratorT:
             @param   request  HTTP request (Request)
             @return  HTTP response (Response)
             """
-            # TODO
+            # Client accepts anything if no Accept value found
+            acceptable = AcceptParser(request.headers.get("Accept", "*/*"))
+
+            if not acceptable.can_accept(*available):
+                _pretty = " or".join(", ".join(available).rsplit(",", 1))
+                raise error_factory(406, f"Can only respond with {_pretty} media types")
+
+            # Thread the parsed Accept header into the request for the
+            # handler to deal with
+            request["irobot_request_accept"] = acceptable
             return await handler(request)
 
         return _decorated
