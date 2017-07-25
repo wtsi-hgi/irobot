@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from aiohttp.web import Request, Response
 
-import irobot.httpd.handlers._decorators as request
+from irobot.httpd.handlers import _decorators as request
 
 
 @request.allow("GET", "HEAD")

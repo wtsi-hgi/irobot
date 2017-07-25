@@ -24,11 +24,10 @@ from typing import List, Optional
 
 from aiohttp import web
 
-import irobot.httpd._middleware as middleware
-import irobot.httpd.handlers as handlers
 from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
 from irobot.logging import LogWriter
+from irobot.httpd import _middleware, handlers
 from irobot.precache import Precache
 
 
@@ -60,8 +59,8 @@ class APIServer(LogWriter):
             # Set up the web application and start listening on the
             # event loop once everything's ready
             app = web.Application(logger=logger,
-                                  middlewares=[middleware.timeout,
-                                               middleware.authentication])
+                                  middlewares=[_middleware.timeout,
+                                               _middleware.authentication])
 
             # Thread through application variables
             app["irobot_timeout"] = httpd_config.timeout
