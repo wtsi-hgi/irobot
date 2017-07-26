@@ -31,6 +31,10 @@ from irobot.config._base import BaseConfig
 
 
 class _MockHTTPAuthentication(http.HTTPAuthHandler):
+    @property
+    def www_authenticate(self) -> str:
+        return "Mock"
+
     def parse_auth_header(self, auth_header:str) -> str:
         if auth_header == "fail":
             raise ValueError()
