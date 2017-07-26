@@ -39,6 +39,10 @@ class ArvadosAuthHandler(HTTPAuthHandler):
         super().__init__(config=config, logger=logger)
         self._auth_re = _ARV_AUTH_RE
 
+    @property
+    def www_authenticate(self) -> str:
+        return "Arvados"
+
     def parse_auth_header(self, auth_header:str) -> Tuple[str]:
         """
         Parse the Arvados authentication authorisation header

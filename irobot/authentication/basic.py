@@ -43,6 +43,11 @@ class HTTPBasicAuthHandler(HTTPAuthHandler):
         super().__init__(config=config, logger=logger)
         self._auth_re = _BASIC_AUTH_RE
 
+    @property
+    def www_authenticate(self) -> str:
+        # TODO Support Basic authentication params (e.g., realm, etc.)
+        return "Basic"
+
     def parse_auth_header(self, auth_header:str) -> Tuple[str, str]:
         """
         Parse the basic authentication authorisation header
