@@ -151,7 +151,7 @@ class Configuration(object):
 
         @return  Instantiated configuration (object inheriting BaseConfig)
         """
-        return constructor(**{
+        config = constructor(**{
             # Required values
             **{
                 k: self.config.get(section, k)
@@ -166,3 +166,8 @@ class Configuration(object):
                 if k.startswith("*")
             }
         })
+
+        # Inject self as parent
+        config.parent = self
+
+        return config

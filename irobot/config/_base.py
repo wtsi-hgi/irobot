@@ -18,9 +18,17 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 class BaseConfig(object):
+    @property
+    def parent(self) -> "Configuration":
+        return self._parent
+
+    @parent.setter
+    def parent(self, p:"Configuration"):
+        self._parent = p
+
     def __str__(self) -> None:
         return ", ".join([
             f"{k} = {getattr(self, k)}"
             for k in dir(self)
-            if not k.startswith("_")
+            if not k.startswith("_") and k != "parent"
         ])
