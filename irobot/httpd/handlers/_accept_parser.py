@@ -133,6 +133,8 @@ class AcceptParser(object):
         Check any of the specified media types fulfil those deemed
         acceptable by the client
 
+        TODO Should allow parametrisable media types
+
         @param   media_types  Media types to check against (strings)
         @return  Acceptability (boolean)
         """
@@ -145,7 +147,10 @@ class AcceptParser(object):
         client specifies acceptable media types will be used (i.e.,
         leftmost first)
 
-        @note    We presume that can_accept is true and already tested
+        TODO Should allow parametrisable media types
+
+        @note    We presume that can_accept is true and already tested,
+                 so this will always return a valid media type
 
         @param   media_types  Media types to check against (strings)
         @return  Most preferred media type (string)

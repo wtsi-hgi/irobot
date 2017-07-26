@@ -80,6 +80,7 @@ def accept(*media_types) -> _HandlerDecoratorT:
     @return  Handler decorator
     """
     # Available media types
+    # TODO Should allow parametrisable media types
     if not media_types or any(not RE_MEDIA_TYPE.match(m) for m in media_types):
         raise TypeError("You must specify fully-qualified media type(s)")
 
@@ -107,9 +108,10 @@ def accept(*media_types) -> _HandlerDecoratorT:
                 _pretty = " or".join(", ".join(available).rsplit(",", 1))
                 raise error_factory(406, f"Can only respond with {_pretty} media types")
 
-            # Thread the parsed Accept header into the request for the
-            # handler to deal with
-            request["irobot_request_accept"] = acceptable
+            # Thread the parsed Accept header and the preferred reponse
+            # media type into the request for the handler to deal with
+            request["irobot_accept"] = acceptable
+            request["irobot_preferred"] = acceptable.preferred(*available)
             return await handler(request)
 
         return _decorated
