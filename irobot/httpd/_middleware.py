@@ -27,7 +27,6 @@ from irobot.httpd._error import error_factory
 
 
 _HTTPResponseTimeout = error_factory(504, "Response timed out")
-_HTTPAuthenticationFailure = error_factory(401, "Could not authenticate credentials")
 
 
 async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
@@ -76,8 +75,13 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
     @return  Authentication middleware handler
     """
 
-    # Get authentication handlers
+    # Get authentication handlers and set WWW-Authenticate value
     auth_handlers = app.get("irobot_auth_handlers", [])
+    www_authenticate = ", ".join(auth_method.www_authenticate for auth_method in auth_handlers)
+
+    # Set up HTTP 401 response/exception
+    HTTPAuthenticationFailure = error_factory(401, "Could not authenticate credentials",
+                                              headers={"WWW-Authenticate": www_authenticate})
 
     async def _middleware(request:web.Request) -> web.Response:
         """
@@ -90,7 +94,7 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
             auth_header = request.headers["Authorization"]
         except KeyError:
             # Fail on missing Authorization header
-            raise _HTTPAuthenticationFailure
+            raise HTTPAuthenticationFailure
 
         user = None
         for auth_handler in auth_handlers:
@@ -105,10 +109,10 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
 
         if not user:
             # Fail on inability to authenticate
-            raise _HTTPAuthenticationFailure
+            raise HTTPAuthenticationFailure
 
         # Success: Thread the authenticated user into the request
-        request["auth_user"] = user
+        request["irobot_auth_user"] = user
         return await handler(request)
 
     return _middleware

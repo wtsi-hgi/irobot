@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -55,4 +55,13 @@ class BaseAuthHandler(metaclass=ABCMeta):
 
         @param   auth_header  Contents of the "Authorization" header (string)
         @return  Authenticated user (AuthenticatedUser); None on validation failure
+        """
+
+    @abstractproperty
+    def www_authenticate(self) -> str:
+        """
+        Return the HTTP WWW-Authenticate response header value for this
+        authentication method
+
+        @return  WWW-Authenticate value (string)
         """
