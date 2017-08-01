@@ -432,14 +432,16 @@ trying to fetch a data object that's bigger than the precache), then a
 ##### ETA Reponses
 
 An ETA response indicates when data may be available. It will have media
-type `application/vnd.irobot.eta`, which is a single line of plain text
-comprising of an ISO8601 UTC timestamp and an indication of confidence
-(in whole seconds). For example:
+type `application/vnd.irobot.eta`. This will have an empty content body
+(i.e., content length of 0 bytes) and, if it can be calculated, a
+response header `iRobot-ETA` containing an ISO8601 UTC timestamp and an
+indication of confidence (in whole seconds) of when the data will be
+available. For example:
 
-    2017-09-25T12:34:56Z+00:00 +/- 123
+    iRobot-ETA: 2017-09-25T12:34:56Z+00:00 +/- 123
 
-If an estimate cannot be calculated, then the content body will be
-empty (i.e., content length of 0 bytes).
+A client may choose to use this information to inform the rate at which
+it reissues requests.
 
 #### `POST`
 
