@@ -122,7 +122,7 @@ This is only relevant if the precache size is limited:
 
 ### Manual Invalidation
 
-A force request is effectively manual invalidation. It will delete any
+A `POST` request is effectively manual invalidation. It will delete any
 state already existing in the precache, presuming its metadata indicate
 that it's changed, regardless of any current users. It is assumed that
 manual invalidation will be an exceptional case, hence not protecting
