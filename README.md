@@ -376,25 +376,6 @@ then it would either make two requests -- first with the `If-None-Match`
 header then the second without -- or a single request without the
 `If-None-Match` header, that would need to be analysed by the client.
 
-##### Manual Cache Invalidation
-
-A data object can be forcibly refetched by sending the `Cache-Control:
-no-cache` request header. This will delete the currently stored data
-object state and refetch it from iRODS if none of the filesystem
-metadata have changed (file size, checksum and timestamps); otherwise,
-the invalidation will be cancelled.
-
-If the cache control header is used on a metadata request, then the
-metadata will be refetched from iRODS. Again, if any of the filesystem
-metadata have changed, this will also trigger an invalidation of the
-data and its refetching from iRODS.
-
-If another user is requesting data that is manually invalidated by
-someone else, their response will be interrupted and cancelled, as the
-data will be removed. Data on iRODS shouldn't change often (or at all),
-so not protecting against such an event is seen as a justifiable
-trade-off.
-
 ##### Fetching Data
 
 Fetching of the data supports range requests using the `Accept-Ranges`
