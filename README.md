@@ -521,3 +521,11 @@ of objects of the following form:
 * `path` Full path of the data object.
 
 <!-- TODO: Other precache entity properties; MD5, status, ETA, etc. -->
+
+### Error Responses
+
+All `400` and `500`-series errors (i.e., client and server errors,
+respectively) will be returned as `application/json`. The response body
+will be a JSON object with three elements: `status`, containing the HTTP
+status code; `reason`, containing the HTTP status reason; and
+`description` containing a human-readable description of the problem.
