@@ -70,7 +70,7 @@ class APIServer(LogWriter):
 
             # Routing
             app.router.add_route("*", "/_status", handlers.status)
-            app.router.add_route("*", "/_config", handlers.config) # NOTE Is this necessary?
+            app.router.add_route("*", "/_config", handlers.config)
             app.router.add_route("*", "/_precache", handlers.precache)
             # TODO Data object handler
 
