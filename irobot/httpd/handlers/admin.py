@@ -40,8 +40,6 @@ async def config(req:Request) -> Response:
     """
     Config status handler
 
-    @note    Is this necessary?...
-
     @param   request  HTTP request (Request)
     @return  HTTP response (Response)
     """
