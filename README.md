@@ -505,22 +505,22 @@ iRobot's current state:
     * `stderr` The standard error, in bytes/second, of the download
       rate.
 
-<!-- TODO: More?... -->
-
 #### `_config`
 
-iRobot's current configuration:
-
-<!-- TODO -->
+iRobot's current configuration, as a JSON object.
 
 #### `_precache`
 
-An overview of the contents of the precache. This will return an array
-of objects of the following form:
+An overview of the contents of the precache. This will return a JSON
+array of objects of the following form:
 
 * `path` Full path of the data object.
-
-<!-- TODO: Other precache entity properties; MD5, status, ETA, etc. -->
+* `availability` A JSON object where each key's value is a string of
+  `pending`, an ETA (in the same format as the ETA response), or
+  `ready` for the following keys:
+  * `data`
+  * `metadata`
+  * `checksums`
 
 ### Error Responses
 
