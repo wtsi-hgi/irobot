@@ -81,4 +81,6 @@ def error_factory(status:int, description:str, *, headers:Optional[Dict[str, str
         "description": description
     }).encode(ENCODING)
 
-    return cls(reason=reason, body=body, content_type="application/json", headers=headers)
+    return cls(reason=reason,
+               headers=headers, body=body,
+               content_type="application/json", charset=ENCODING)
