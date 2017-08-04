@@ -17,13 +17,20 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import json
+from typing import Dict, List
+
 from aiohttp.web import Request, Response
 
+from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
 
 
+_json = "application/json"
+
+
 @request.allow("GET", "HEAD")
-@request.accept("application/json")
+@request.accept(_json)
 async def status(req:Request) -> Response:
     """
     Status handler
@@ -31,11 +38,45 @@ async def status(req:Request) -> Response:
     @param   request  HTTP request (Request)
     @return  HTTP response (Response)
     """
-    raise NotImplementedError("OMG!!")
+    assert req["irobot_preferred"] == _json
+
+    resp = Response(status=200, content_type=_json, charset=ENCODING)
+
+    irobot_status:Dict = {
+        "connections": {
+            "active": 123,
+            "total":  123
+        },
+        "precache": {
+            "commitment": 123,
+            "checksum_rate": {
+                "average": 123,
+                "stderr":  123
+            }
+        },
+        "irods": {
+            "active": 123,
+            "download_rate": {
+                "average": 123,
+                "stderr": 123
+            }
+        }
+    }
+
+    body = json.dumps(irobot_status).encode(ENCODING)
+    content_length = len(body)
+
+    if req.method == "GET":
+        resp.body = body
+
+    if req.method == "HEAD":
+        resp.headers["Content-Length"] = content_length
+
+    return resp
 
 
 @request.allow("GET", "HEAD")
-@request.accept("application/json")
+@request.accept(_json)
 async def config(req:Request) -> Response:
     """
     Config status handler
@@ -43,11 +84,26 @@ async def config(req:Request) -> Response:
     @param   request  HTTP request (Request)
     @return  HTTP response (Response)
     """
-    raise NotImplementedError("OMG!!")
+    assert req["irobot_preferred"] == _json
+
+    resp = Response(status=200, content_type=_json, charset=ENCODING)
+
+    irobot_config:Dict = {}
+
+    body = json.dumps(irobot_config).encode(ENCODING)
+    content_length = len(body)
+
+    if req.method == "GET":
+        resp.body = body
+
+    if req.method == "HEAD":
+        resp.headers["Content-Length"] = content_length
+
+    return resp
 
 
 @request.allow("GET", "HEAD")
-@request.accept("application/json")
+@request.accept(_json)
 async def precache(req:Request) -> Response:
     """
     Precache status handler
@@ -55,4 +111,19 @@ async def precache(req:Request) -> Response:
     @param   request  HTTP request (Request)
     @return  HTTP response (Response)
     """
-    raise NotImplementedError("OMG!!")
+    assert req["irobot_preferred"] == _json
+
+    resp = Response(status=200, content_type=_json, charset=ENCODING)
+
+    irobot_precache:List[Dict] = []
+
+    body = json.dumps(irobot_precache).encode(ENCODING)
+    content_length = len(body)
+
+    if req.method == "GET":
+        resp.body = body
+
+    if req.method == "HEAD":
+        resp.headers["Content-Length"] = content_length
+
+    return resp
