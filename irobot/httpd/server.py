@@ -19,101 +19,66 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
-from threading import Lock, Thread
 from typing import List, Optional
 
 from aiohttp import web
 
 from irobot.authentication import BaseAuthHandler
 from irobot.config.httpd import HTTPdConfig
-from irobot.logging import LogWriter
 from irobot.httpd import _middleware, handlers
 from irobot.precache import Precache
 
 
-class APIServer(LogWriter):
-    """ HTTP API server interface """
-    _loop:asyncio.AbstractEventLoop
+_noop = lambda *_, **__: None
 
-    def __init__(self, httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[BaseAuthHandler], logger:Optional[logging.Logger] = None) -> None:
-        """
-        Constructor: Start the event loop in a separate thread, which
-        listens for and serves API requests
 
-        @param   httpd_config   HTTPd configuration (HTTPdConfig)
-        @param   precache       Precache interface (Precache)
-        @param   auth_handlers  Authentication handlers (list of BaseAuthHandler)
-        @param   logger         Logger
-        """
-        super().__init__(logger=logger)
-        self.log(logging.INFO, "Starting API server")
+async def _set_server_header(_request:web.Request, response:web.Response) -> None:
+    """ Set the Server response header """
+    response.headers["Server"] = "iRobot"
 
-        self._loop_lock = Lock()
-        self._loop_lock.acquire()
 
-        # Start the event loop thread
-        self._thread = Thread(target=self._init_loop, daemon=True)
-        self._thread.start()
+async def _shutdown_server(app:web.Application) -> None:
+    """ Gracefully shutdown the HTTPd server """
+    if app.logger:
+        app.logger.log(logging.INFO, "Shutting down API server")
 
-        with self._loop_lock:
-            # Set up the web application and start listening on the
-            # event loop once everything's ready
-            app = web.Application(logger=logger,
-                                  middlewares=[_middleware.timeout,
-                                               _middleware.authentication])
+    app.loop.call_soon_threadsafe(app.loop.stop)
 
-            # Thread through application variables
-            app["irobot_config"] = httpd_config.parent
-            app["irobot_timeout"] = httpd_config.timeout
-            app["irobot_precache"] = precache
-            app["irobot_auth_handlers"] = auth_handlers
 
-            # Routing
-            app.router.add_route("*", "/_status", handlers.status)
-            app.router.add_route("*", "/_config", handlers.config)
-            app.router.add_route("*", "/_precache", handlers.precache)
-            # TODO Data object handler
+def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[BaseAuthHandler], logger:Optional[logging.Logger] = None) -> None:
+    """
+    Start the HTTPd API server on the event loop of the current context
 
-            # TODO Looking at the aiohttp code, it looks like run_app
-            # starts the event loop itself, so this code ultimately
-            # needs to be moved into the _init_loop function that's
-            # executed in its own thread (otherwise we're either going
-            # to have contention on the loop or block; neither is good!)
-            web.run_app(app, host=httpd_config.bind_address,
-                             port=httpd_config.listen,
-                             print=lambda *_: None,  # i.e. noop
-                             loop=self._loop)
+    @param   httpd_config   HTTPd configuration (HTTPdConfig)
+    @param   precache       Precache interface (Precache)
+    @param   auth_handlers  Authentication handlers (list of BaseAuthHandler)
+    @param   logger         Logger
+    """
+    app = web.Application(logger=logger, middlewares=[_middleware.timeout,
+                                                      _middleware.authentication])
 
-        # We don't need the loop lock any more
-        del self._loop_lock
+    # Thread through application variables
+    app["irobot_config"] = httpd_config.parent
+    app["irobot_timeout"] = httpd_config.timeout
+    app["irobot_precache"] = precache
+    app["irobot_auth_handlers"] = auth_handlers
 
-    def __del__(self) -> None:
-        """ Tidy up after ourselves on Python GC """
-        self.close()
+    # Routing
+    app.router.add_route("*", "/_status", handlers.status)
+    app.router.add_route("*", "/_config", handlers.config)
+    app.router.add_route("*", "/_precache", handlers.precache)
+    # TODO Data object handler
 
-    def _init_loop(self) -> None:
-        """
-        Initialise and start the event loop within the policy context
-        (i.e., "thread", under the default policy)
+    # Signal handlers
+    app.on_response_prepare.append(_set_server_header)
+    app.on_shutdown.append(_shutdown_server)
 
-        @note    Blocking
-        """
-        self._loop = asyncio.new_event_loop()
-        self._loop_lock.release()
+    loop = asyncio.get_event_loop()
+    asyncio.set_event_loop(loop)
 
-        asyncio.set_event_loop(self._loop)
-        self._loop.run_forever()
+    if logger:
+        logger.log(logging.INFO, f"Starting API server on http://{httpd_config.bind_address}:{httpd_config.listen}")
 
-    def close(self) -> None:
-        """
-        Graceful shutdown:
-        * Close HTTPd listener
-        * Stop the event loop and block until the thread terminates
-
-        @note    Blocking
-        """
-        self.log(logging.DEBUG, "Shutting down API server")
-
-        # TODO Close HTTPd listener
-        self._loop.call_soon_threadsafe(self._loop.stop)
-        self._thread.join()
+    web.run_app(app, host=httpd_config.bind_address, port=httpd_config.listen,
+                     access_log=logger, access_log_format="%a %l %u \"%r\" %s %b",
+                     print=_noop, loop=loop)
