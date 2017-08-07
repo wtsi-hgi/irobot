@@ -75,12 +75,18 @@ def error_factory(status:int, description:str, *, headers:Optional[Dict[str, str
     """
     reason, cls = _status_map.get(status, _undefined_error_factory(status))
 
+    # HTTPException subclasses Response, but its constructor doesn't
+    # have a charset argument and setting it in the content_type
+    # argument raises an error... Sheesh
+    headers_with_content_type = {
+        "Content-Type": f"application/json; charset={ENCODING}",
+        **(headers or {})
+    }
+
     body = json.dumps({
         "status":      status,
         "reason":      reason,
         "description": description
     }).encode(ENCODING)
 
-    return cls(reason=reason,
-               headers=headers, body=body,
-               content_type="application/json", charset=ENCODING)
+    return cls(reason=reason, headers=headers_with_content_type, body=body)
