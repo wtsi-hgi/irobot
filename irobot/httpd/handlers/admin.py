@@ -70,7 +70,7 @@ async def status(req:Request) -> Response:
         resp.body = body
 
     if req.method == "HEAD":
-        resp.headers["Content-Length"] = content_length
+        resp.headers["Content-Length"] = f"{content_length}"
 
     return resp
 
@@ -97,7 +97,7 @@ async def config(req:Request) -> Response:
         resp.body = body
 
     if req.method == "HEAD":
-        resp.headers["Content-Length"] = content_length
+        resp.headers["Content-Length"] = f"{content_length}"
 
     return resp
 
@@ -124,6 +124,6 @@ async def precache(req:Request) -> Response:
         resp.body = body
 
     if req.method == "HEAD":
-        resp.headers["Content-Length"] = content_length
+        resp.headers["Content-Length"] = f"{content_length}"
 
     return resp
