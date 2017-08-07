@@ -18,12 +18,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import asyncio
+import json
 import logging
 
 import async_timeout
 from aiohttp import web
 
-from irobot.httpd._common import HandlerT
+from irobot.httpd._common import ENCODING, HandlerT
 from irobot.httpd._error import error_factory
 
 
@@ -38,6 +39,11 @@ async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
     @param   handler  Route handler
     @return  HTTP 500 response middleware handler
     """
+    def _log(message:str) -> None:
+        """ Convenience wrapper to do logging """
+        if app.logger:
+            app.logger.log(logging.ERROR, message)
+
     async def _middleware(request:web.Request) -> web.Response:
         """
         HTTP 500 response middleware
@@ -48,12 +54,14 @@ async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
         try:
             return await handler(request)
 
+        except web.HTTPError as e:
+            message = json.loads(e.body, encoding=ENCODING)["description"]
+            _log(message)
+            raise
+
         except Exception as e:
             message = str(e)
-
-            if app.logger:
-                app.logger.log(logging.ERROR, message)
-
+            _log(message)
             raise error_factory(500, message)
 
     return _middleware
