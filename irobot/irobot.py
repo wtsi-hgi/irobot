@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import atexit
 import logging
 import os
 from typing import List
@@ -66,8 +67,10 @@ if __name__ == "__main__":
     logger = create_logger(config.logging)
     _log_config(config, logger)
 
-    # Start everything up
+    # Plumb everything together and start
     irods = iRODS(config.irods, logger)
     precache = Precache(config.precache, irods, logger)
     auth_handlers = _instantiate_authentication_handlers(config, logger)
     httpd = APIServer(config.httpd, precache, auth_handlers, logger)
+
+    atexit.register(httpd.close)

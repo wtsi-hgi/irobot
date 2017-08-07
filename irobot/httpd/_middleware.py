@@ -43,8 +43,8 @@ async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
 
     # Get response timeout, in seconds (None for unlimited)
     response_timeout = app.get("irobot_timeout", None)
-    if response_timeout:
-        response_timeout /= 1000
+    if response_timeout is not None:
+        response_timeout = response_timeout.total_seconds()
 
     async def _middleware(request:web.Request) -> web.Response:
         """

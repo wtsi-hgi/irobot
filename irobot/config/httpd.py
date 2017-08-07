@@ -142,16 +142,16 @@ class HTTPdConfig(BaseConfig):
         return self._listen
 
     @property
-    def timeout(self) -> Optional[int]:
+    def timeout(self) -> Optional[timedelta]:
         """
         Get response timeout
 
-        @return  Response timout in milliseconds (int)
+        @return  Response timout (timedelta)
         """
         return self._timeout
 
     @property
-    def authentication(self) -> str:
+    def authentication(self) -> List[str]:
         """
         Get authentication methods
 
