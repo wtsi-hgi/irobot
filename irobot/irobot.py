@@ -17,7 +17,6 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import atexit
 import logging
 import os
 from typing import List
@@ -26,7 +25,7 @@ from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHa
 from .config import Configuration
 from .config.log import LoggingConfig
 from .irods import iRODS
-from .httpd import APIServer
+from .httpd import start_httpd
 from .precache import Precache
 from .logging import create_logger
 
@@ -71,6 +70,4 @@ if __name__ == "__main__":
     irods = iRODS(config.irods, logger)
     precache = Precache(config.precache, irods, logger)
     auth_handlers = _instantiate_authentication_handlers(config, logger)
-    httpd = APIServer(config.httpd, precache, auth_handlers, logger)
-
-    atexit.register(httpd.close)
+    start_httpd(config.httpd, precache, auth_handlers, logger)
