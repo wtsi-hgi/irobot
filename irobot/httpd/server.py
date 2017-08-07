@@ -46,7 +46,7 @@ class APIServer(LogWriter):
         @param   logger         Logger
         """
         super().__init__(logger=logger)
-        self.log(logging.DEBUG, "Starting API server")
+        self.log(logging.INFO, "Starting API server")
 
         self._loop_lock = Lock()
         self._loop_lock.acquire()
