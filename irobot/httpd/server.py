@@ -54,7 +54,8 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
     @param   auth_handlers  Authentication handlers (list of BaseAuthHandler)
     @param   logger         Logger
     """
-    app = web.Application(logger=logger, middlewares=[_middleware.timeout,
+    app = web.Application(logger=logger, middlewares=[_middleware.catch500,
+                                                      _middleware.timeout,
                                                       _middleware.authentication])
 
     # Thread through application variables

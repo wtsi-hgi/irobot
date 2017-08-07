@@ -59,6 +59,7 @@ _status_map:Dict[int, _ErrorT] = {
     406: ("Not Acceptable",        web.HTTPNotAcceptable),
     409: ("Conflict",              web.HTTPConflict),
     416: ("Range Not Satisfiable", web.HTTPRequestRangeNotSatisfiable),
+    500: ("Internal Server Error", web.HTTPInternalServerError),
     504: ("Gateway Timeout",       web.HTTPGatewayTimeout),
     507: ("Insufficient Storage",  web.HTTPInsufficientStorage)
 }

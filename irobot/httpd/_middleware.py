@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import asyncio
+import logging
 
 import async_timeout
 from aiohttp import web
@@ -27,6 +28,35 @@ from irobot.httpd._error import error_factory
 
 
 _HTTPResponseTimeout = error_factory(504, "Response timed out")
+
+
+async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
+    """
+    Internal server error catch-all factory
+
+    @param   app      Application
+    @param   handler  Route handler
+    @return  HTTP 500 response middleware handler
+    """
+    async def _middleware(request:web.Request) -> web.Response:
+        """
+        HTTP 500 response middleware
+
+        @param   request  HTTP request
+        @return  HTTP response
+        """
+        try:
+            return await handler(request)
+
+        except Exception as e:
+            message = str(e)
+
+            if app.logger:
+                app.logger.log(logging.ERROR, message)
+
+            raise error_factory(500, message)
+
+    return _middleware
 
 
 async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
