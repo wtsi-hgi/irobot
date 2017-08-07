@@ -68,7 +68,7 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
     app.router.add_route("*", "/_status", handlers.status)
     app.router.add_route("*", "/_config", handlers.config)
     app.router.add_route("*", "/_precache", handlers.precache)
-    # TODO Data object handler
+    app.router.add_route("*", "/{irods_path:.*}", handlers.data_object)
 
     # Signal handlers
     app.on_response_prepare.append(_set_server_header)
