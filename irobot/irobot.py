@@ -62,6 +62,7 @@ if __name__ == "__main__":
     config = Configuration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
 
     # Upgrade to configured logging
+    _bootstrap_logger.handlers = []
     logger = create_logger(config.logging)
     _log_config(config, logger)
 
