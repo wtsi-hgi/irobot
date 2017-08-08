@@ -104,9 +104,9 @@ async def config(req:Request) -> Response:
 
 @request.allow("GET", "HEAD")
 @request.accept(_json)
-async def precache(req:Request) -> Response:
+async def manifest(req:Request) -> Response:
     """
-    Precache status handler
+    Precache manifest handler
 
     @param   request  HTTP request (Request)
     @return  HTTP response (Response)
