@@ -65,7 +65,7 @@ class TrackingDB(LogWriter):
         """
         super().__init__(logger=logger)
 
-        self.log(logging.INFO, f"Initialising precache tracking database in {path}")
+        self.log(logging.DEBUG, f"Initialising precache tracking database in {path}")
         self.conn = Connection(path)
 
         self.path = path

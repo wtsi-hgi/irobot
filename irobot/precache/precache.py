@@ -87,7 +87,7 @@ class Precache(LogWriter):
         @param   logger           Logger
         """
         super().__init__(logger=logger)
-        self.log(logging.DEBUG, "Starting precache")
+        self.log(logging.INFO, "Starting precache")
 
         self.config = precache_config
 

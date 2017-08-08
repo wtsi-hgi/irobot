@@ -67,7 +67,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         super().__init__(logger=logger)
         self.add_listener(self._broadcast_iget_to_log)
 
-        self.log(logging.DEBUG, "Starting iget pool")
+        self.log(logging.INFO, "Starting iget pool")
         self._iget_pool = ThreadPoolExecutor(max_workers=self._config.max_connections)
         atexit.register(self._iget_pool.shutdown)
 

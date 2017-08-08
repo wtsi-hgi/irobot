@@ -77,7 +77,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
 
         # Initialise the cache, if required
         if self._config.cache:
-            self.log(logging.DEBUG, f"Creating {self.__class__.__name__} cache")
+            self.log(logging.DEBUG, f"Creating {self.www_authenticate} authentication cache")
             self._cache:Dict[str, AuthenticatedUser] = {}
             self._cache_lock = Lock()
             self._schedule_cleanup()
@@ -97,7 +97,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
     def _cleanup(self) -> None:
         """ Clean up expired entries from the cache """
         with self._cache_lock:
-            self.log(logging.DEBUG, f"Cleaning {self.__class__.__name__} cache")
+            self.log(logging.DEBUG, f"Cleaning {self.www_authenticate} authentication cache")
             for key, user in list(self._cache.items()):
                 if not user.valid(self._config.cache):
                     del self._cache[key]
@@ -115,11 +115,11 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         res = session.send(req.prepare())
 
         if 200 <= res.status_code < 300:
-            self.log(logging.DEBUG, f"{self.__class__.__name__} authenticated")
+            self.log(logging.DEBUG, f"{self.www_authenticate} authenticated")
             return res
 
         if res.status_code in [401, 403]:
-            self.log(logging.WARNING, f"{self.__class__.__name__} couldn't authenticate")
+            self.log(logging.WARNING, f"{self.www_authenticate} couldn't authenticate")
         else:
             res.raise_for_status()
 
@@ -136,7 +136,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
             parsed = self.parse_auth_header(auth_header)
 
         except ValueError:
-            self.log(logging.WARNING, f"{self.__class__.__name__} couldn't parse authentication header")
+            self.log(logging.WARNING, f"{self.www_authenticate} authentication handler couldn't parse authentication header")
             return None
 
         # Check the cache
