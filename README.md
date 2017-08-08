@@ -467,11 +467,11 @@ pushed by iRobot to a connected client.
 
 ### Administrative Endpoints
 
-Administrative endpoints are exposed at the root and prefixed with an
-underscore. They have a higher priority in the routing tree than the
-data object endpoints, but should never mask data objects as they cannot
-be contained within the iRODS "root collection". Only `GET` and `HEAD`
-requests can be made to these endpoints, which can return the following:
+Administrative endpoints are exposed at the root; they have a higher
+priority in the routing tree than the data object endpoints, but should
+never mask data objects as they cannot be contained within the iRODS
+"root collection". Only `GET` and `HEAD` requests can be made to these
+endpoints, which can return the following:
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
@@ -485,7 +485,7 @@ Administrative endpoints will only ever return `application/json`. If
 the `Accept` request header diverges from this, a `406 Not Acceptable`
 response will be returned.
 
-#### `_status`
+#### `/status`
 
 iRobot's current state:
 
@@ -508,11 +508,11 @@ iRobot's current state:
     * `stderr` The standard error, in bytes/second, of the download
       rate.
 
-#### `_config`
+#### `/config`
 
 iRobot's current configuration, as a JSON object.
 
-#### `_precache`
+#### `/precache`
 
 An overview of the contents of the precache. This will return a JSON
 array of objects of the following form:
