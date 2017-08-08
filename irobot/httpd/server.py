@@ -88,5 +88,5 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
         logger.log(logging.INFO, f"Starting API server on http://{httpd_config.bind_address}:{httpd_config.listen}")
 
     web.run_app(app, host=httpd_config.bind_address, port=httpd_config.listen,
-                     access_log=logger, access_log_format="%a %l %u \"%r\" %s %b",
+                     access_log=logger, access_log_format="%a \"%r\" %s %b",
                      print=_noop, loop=loop)

@@ -17,10 +17,31 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+import re
+import os
+
 from aiohttp.web import Request, Response
 
 from irobot.httpd._error import error_factory
+from irobot.httpd.handlers import _decorators as request
 
 
+@request.allow("GET", "HEAD", "POST", "DELETE")
 async def data_object(req:Request) -> Response:
-    raise NotImplementedError("Watch this space...")
+    """
+    Data object handling delegation
+
+    @param   req  Request
+    @return  Response
+    """
+    # Extract path from URL and normalise
+    irods_path = os.path.normpath("/" + req.match_info["irods_path"])
+    irods_path = re.sub(r"^/+", "/", irods_path)
+
+    # Initial sanity check on iRODS path: We cannot have data objects in
+    # the root collection, so we must be at least one level deep
+    if not re.match(r".+/.+", irods_path):
+        raise error_factory(404, f"No such data object {irods_path}; "
+                                  "must be at least one collection deep.")
+
+    raise NotImplementedError(f"Watch this space... {irods_path}")
