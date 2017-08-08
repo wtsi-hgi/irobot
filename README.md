@@ -490,6 +490,7 @@ iRobot's current state:
 * `connections`
   * `active` The current number of active connections.
   * `total` The total number of requests made to iRobot.
+  * `since` The Unix time when iRobot was started.
 * `precache`
   * `commitment` The size, in bytes, committed to the precache.
   * `checksum_rate`
