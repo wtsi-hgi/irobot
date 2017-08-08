@@ -49,10 +49,11 @@ async def log_connections(app:web.Application, handler:HandlerT) -> HandlerT:
         """
         app["irobot_connections_total"] += 1
         app["irobot_connections_active"] += 1
-        response = await handler(request)
-        app["irobot_connections_active"] -= 1
 
-        return response
+        try:
+            return await handler(request)
+        finally:
+            app["irobot_connections_active"] -= 1
 
     return _middleware
 
