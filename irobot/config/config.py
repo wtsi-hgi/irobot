@@ -141,6 +141,29 @@ class Configuration(object):
             if isinstance(getattr(self, config), BaseConfig)
         }
 
+    @property
+    def raw(self) -> Dict:
+        """
+        Return a dictionary of the complete configuration, that can be
+        used in, e.g., a JSON encoder
+
+        TODO This is hardcoded for the time being, because there's no
+        point wasting time on generalising it. This module needs to be
+        cleaned up a bit to allow better generalisation...
+
+        @return  Dictionary of configuration
+        """
+        return {
+            "precache": self.precache.raw,
+            "irods": self.irods.raw,
+            "httpd": self.httpd.raw,
+            "authentication": {
+                handler: getattr(self.authentication, handler).raw
+                for handler in self.httpd.authentication
+            },
+            "logging": self.logging.raw
+        }
+
     def _build_config(self, constructor:Type[BaseConfig], section:str, *options) -> BaseConfig:
         """
         Build configuration

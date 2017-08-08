@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from typing import Dict
+
+
 class BaseConfig(object):
     @property
     def parent(self) -> "Configuration":
@@ -26,9 +29,17 @@ class BaseConfig(object):
     def parent(self, p:"Configuration"):
         self._parent = p
 
+    @property
+    def raw(self) -> Dict:
+        return {
+            k: str(getattr(self,k))
+            for k in dir(self)
+            if not k.startswith("_") and k not in ["raw", "parent"]
+        }
+
     def __str__(self) -> None:
         return ", ".join([
             f"{k} = {getattr(self, k)}"
             for k in dir(self)
-            if not k.startswith("_") and k != "parent"
+            if not k.startswith("_") and k not in ["raw", "parent"]
         ])

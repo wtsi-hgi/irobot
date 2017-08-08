@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import re
 from configparser import ParsingError
 from datetime import timedelta
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import irobot.common.canon as canon
 from irobot.config._base import BaseConfig
@@ -122,6 +122,13 @@ class HTTPdConfig(BaseConfig):
         self._listen = _canon_listening_port(listen)
         self._timeout = _canon_timeout(timeout)
         self._authentication = _canon_authentication(authentication)
+
+    @property
+    def raw(self) -> Dict:
+        return {
+            **super().raw,
+            "authentication": self.authentication
+        }
 
     @property
     def bind_address(self) -> str:
