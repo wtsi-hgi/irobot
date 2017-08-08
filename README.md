@@ -36,6 +36,8 @@ managing a connection pool to iRODS.
   - [x] HTTP Basic
   - [x] Arvados
 - [ ] HTTP interface
+  - [x] Request logging middleware
+  - [x] Error catching middleware
   - [x] Response timeout middleware
   - [x] Authentication middleware
   - [ ] Data object endpoint
@@ -45,7 +47,7 @@ managing a connection pool to iRODS.
   - [ ] Administrative endpoints
     - [x] Common middleware
     - [ ] Status endpoint
-    - [ ] Configuration endpoint (is this necessary?...)
+    - [x] Configuration endpoint
     - [ ] Precache manifest endpoint
 - [ ] Installation/containerisation
   - [x] Base system

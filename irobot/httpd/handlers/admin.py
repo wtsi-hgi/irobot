@@ -22,6 +22,7 @@ from typing import Dict, List
 
 from aiohttp.web import Request, Response
 
+from irobot.config._base import BaseConfig
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
 
@@ -89,9 +90,7 @@ async def config(req:Request) -> Response:
 
     resp = Response(status=200, content_type=_json, charset=ENCODING)
 
-    irobot_config:Dict = {}
-
-    body = json.dumps(irobot_config).encode(ENCODING)
+    body = json.dumps(req.app["irobot_config"].raw).encode(ENCODING)
     content_length = len(body)
 
     if req.method == "GET":

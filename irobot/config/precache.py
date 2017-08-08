@@ -22,7 +22,7 @@ import re
 from configparser import ParsingError
 from datetime import datetime, timedelta
 from numbers import Number
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import irobot.common.canon as canon
 from irobot.common import add_years
@@ -174,6 +174,22 @@ class PrecacheConfig(BaseConfig):
         self._chunk_size = _canon_limited_size(chunk_size)
 
         self._age_threshold = _canon_age_threshold(age_threshold) if self._size else None
+
+    @property
+    def raw(self) -> Dict:
+        if self._expiry is None:
+            expiry = "unlimited"
+
+        elif isinstance(self._expiry, timedelta):
+            expiry = str(self._expiry)
+
+        else:
+            expiry = f"{self._expiry} years"
+
+        return {
+            **super().raw,
+            "expiry": expiry
+        }
 
     def __str__(self) -> None:
         if self._expiry is None:
