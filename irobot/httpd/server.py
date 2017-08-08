@@ -54,7 +54,8 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
     @param   auth_handlers  Authentication handlers (list of BaseAuthHandler)
     @param   logger         Logger
     """
-    app = web.Application(logger=logger, middlewares=[_middleware.catch500,
+    app = web.Application(logger=logger, middlewares=[_middleware.log_connections,
+                                                      _middleware.catch500,
                                                       _middleware.timeout,
                                                       _middleware.authentication])
 
@@ -63,6 +64,10 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
     app["irobot_timeout"] = httpd_config.timeout
     app["irobot_precache"] = precache
     app["irobot_auth_handlers"] = auth_handlers
+
+    # This doesn't seem like a very satisfactory solution :P
+    app["irobot_connections_active"] = 0
+    app["irobot_connections_total"] = 0
 
     # Routing
     app.router.add_route("*", "/_status", handlers.status)

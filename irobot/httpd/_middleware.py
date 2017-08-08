@@ -31,6 +31,32 @@ from irobot.httpd._error import error_factory
 _HTTPResponseTimeout = error_factory(504, "Response timed out")
 
 
+async def log_connections(app:web.Application, handler:HandlerT) -> HandlerT:
+    """
+    Keep a log of all active and current connections, seeing as we don't
+    appear to be able to access this information from elsewhere
+
+    @param   app      Application
+    @param   handler  Route handler
+    @return  Connection counting middleware handler
+    """
+    async def _middleware(request:web.Request) -> web.Response:
+        """
+        Connection counting middleware
+
+        @param   request  HTTP request
+        @return  HTTP response
+        """
+        app["irobot_connections_total"] += 1
+        app["irobot_connections_active"] += 1
+        response = await handler(request)
+        app["irobot_connections_active"] -= 1
+
+        return response
+
+    return _middleware
+
+
 async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
     """
     Internal server error catch-all factory
