@@ -72,9 +72,9 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
     app["irobot_start_time"] = int(datetime.utcnow().timestamp())
 
     # Routing
-    app.router.add_route("*", "/_status", handlers.status)
-    app.router.add_route("*", "/_config", handlers.config)
-    app.router.add_route("*", "/_manifest", handlers.manifest)
+    app.router.add_route("*", "/status", handlers.status)
+    app.router.add_route("*", "/config", handlers.config)
+    app.router.add_route("*", "/manifest", handlers.manifest)
     app.router.add_route("*", "/{irods_path:.*}", handlers.data_object)
 
     # Signal handlers
