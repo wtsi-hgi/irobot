@@ -45,7 +45,8 @@ async def status(req:Request) -> Response:
     irobot_status:Dict = {
         "connections": {
             "active": req.app["irobot_connections_active"],
-            "total":  req.app["irobot_connections_total"]
+            "total":  req.app["irobot_connections_total"],
+            "since":  req.app["irobot_start_time"]
         },
         "precache": {
             "commitment": 123,
