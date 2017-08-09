@@ -19,39 +19,17 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import ParsingError
 
-from irobot.config._base import BaseConfig
 
-
-def _canon_max_connections(max_connections:str) -> int:
+def max_connections(max_conn:str) -> int:
     """
     Canonicalise maximum connections
 
-    @param   max_connections  Maximum concurrent connections (string)
+    @param   max_conn  Maximum concurrent connections (string)
     @return  Maximum concurrent connections (int)
     """
-    value = int(max_connections)
+    value = int(max_conn)
 
     if value <= 0:
         raise ParsingError("Maximum number of connections must be greater than zero")
 
     return value
-
-
-class iRODSConfig(BaseConfig):
-    """ iRODS configuration """
-    def __init__(self, max_connections:str) -> None:
-        """
-        Parse iRODS configuration
-
-        @param   max_connections  Maximum concurrent connections (string)
-        """
-        self._max_connections = _canon_max_connections(max_connections)
-
-    @property
-    def max_connections(self) -> int:
-        """
-        Get maximum concurrent connections
-
-        @return  Maximum concurrent connections (int)
-        """
-        return self._max_connections
