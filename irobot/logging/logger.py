@@ -23,7 +23,7 @@ import sys
 import time
 from typing import Callable, Optional, Type
 
-from irobot.config.log import LoggingConfig
+from irobot.config import LoggingConfig
 
 
 class LogWriter(object):

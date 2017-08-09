@@ -22,8 +22,7 @@ import os
 from typing import List
 
 from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
-from .config import Configuration
-from .config.log import LoggingConfig
+from .config import iRobotConfiguration, LoggingConfig
 from .irods import iRODS
 from .httpd import start_httpd
 from .precache import Precache
