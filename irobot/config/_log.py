@@ -22,6 +22,7 @@ from configparser import ParsingError
 from typing import Optional
 
 import irobot.common.canon as canon
+from irobot.config._tree_builder import Configuration
 
 
 def output(value:str) -> Optional[str]:
@@ -54,3 +55,7 @@ def level(value:str) -> int:
 
     except KeyError:
         raise ParsingError("Invalid logging level")
+
+
+class LoggingConfig(Configuration):
+    pass

@@ -19,6 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import ParsingError
 
+from irobot.config._tree_builder import Configuration
+
 
 def max_connections(value:str) -> int:
     """
@@ -33,3 +35,7 @@ def max_connections(value:str) -> int:
         raise ParsingError("Maximum number of connections must be greater than zero")
 
     return value
+
+
+class iRODSConfig(Configuration):
+    pass

@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import ConfigParser, ParsingError
 from functools import partial
-from typing import Dict, Tuple, Union
+from typing import Dict, Tuple, Type, Union
 
 from irobot.config._tree_builder import ConfigValue, Configuration, OptionalKey, RequiredKey, config_factory
 
@@ -73,6 +73,16 @@ _conf_keys:Dict[str, Tuple[_KeyT, ...]] = {
     )
 }
 
+# Configuration constructors
+_conf_cls:Dict[str, Type[Configuration]] = {
+    "precache":     precache.PrecacheConfig,
+    "irods":        irods.iRODSConfig,
+    "httpd":        httpd.HTTPdConfig,
+    "basic_auth":   auth.BasicAuthConfig,
+    "arvados_auth": auth.ArvadosAuthConfig,
+    "logging":      log.LoggingConfig
+}
+
 
 class iRobotConfiguration(Configuration):
     """ Top-level iRobot configuration """
@@ -91,7 +101,10 @@ class iRobotConfiguration(Configuration):
 
         # Set main configurations
         for section in "precache", "irods", "httpd", "logging":
-            self.add_config(section, config_factory(config, section, *_conf_keys[section]))
+            self.add_config(section, config_factory(_conf_cls[section],
+                                                    config,
+                                                    section,
+                                                    *_conf_keys[section]))
 
         # precache.index configuration depends upon precache.location
         precache_index = config.get("precache", "index")
@@ -104,7 +117,10 @@ class iRobotConfiguration(Configuration):
             section = f"{handler}_auth"
 
             try:
-                auth_config.add_config(handler, config_factory(config, section, *_conf_keys[section]))
+                auth_config.add_config(handler, config_factory(_conf_cls[section],
+                                                               config,
+                                                               section,
+                                                               *_conf_keys[section]))
 
             except KeyError:
                 raise ParsingError(f"No configuration found for {handler} authentication")

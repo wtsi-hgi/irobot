@@ -22,6 +22,8 @@ from configparser import ParsingError
 from datetime import timedelta
 from typing import List, Optional
 
+from irobot.config._tree_builder import Configuration
+
 
 def listening_port(value:str) -> int:
     """
@@ -98,3 +100,7 @@ def authentication(value:str) -> List[str]:
         raise ParsingError("Must provide at least one authentication method")
 
     return methods
+
+
+class HTTPdConfig(Configuration):
+    pass

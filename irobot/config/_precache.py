@@ -27,6 +27,7 @@ from typing import Callable, Optional, Tuple
 
 import irobot.common.canon as canon
 from irobot.common import add_years
+from irobot.config._tree_builder import Configuration
 
 
 def index(location:str, value:str) -> str:
@@ -166,3 +167,7 @@ def age_threshold(value:Optional[str]) -> Optional[timedelta]:
         "w": timedelta(weeks = 1),
         "y": timedelta(days  = 365)
     }[unit]
+
+
+class PrecacheConfig(Configuration):
+    pass
