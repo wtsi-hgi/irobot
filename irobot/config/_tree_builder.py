@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from configparser import ConfigParser
-from typing import Any, Callable, Dict, Iterable, NamedTuple, Optional
+from typing import Any, Callable, Dict, Iterable, NamedTuple, Optional, Type
 
 
 class _TreeNode(object):
@@ -40,9 +40,8 @@ class _TreeNode(object):
         if name in self._leaves:
             return self._leaves[name]
 
-        if not hasattr(self, name):
-            raise AttributeError(f"{self.__class__.__name__} has no {name} attribute")
-
+        # FIXME This creates an infinite recursion if you try to access
+        # an attribute that doesn't exist
         return getattr(self, name)
 
     @property
@@ -124,19 +123,20 @@ class OptionalKey(_ConfigKey):
     pass
 
 
-def config_factory(config:ConfigParser, section:str, *mappings) -> Configuration:
+def config_factory(constructor:Type[Configuration], config:ConfigParser, section:str, *mappings) -> Configuration:
     """
     Build a configuration object from a section of a parsed file
 
-    @param   config    Parsed configuration file (ConfigParser)
-    @param   section   Section name (string)
-    @param   mappings  Tuple of mappings (RequiredKey or OptionalKey)
+    @param   constructor  The configuration class to build
+    @param   config       Parsed configuration file (ConfigParser)
+    @param   section      Section name (string)
+    @param   mappings     Tuple of mappings (RequiredKey or OptionalKey)
     @return  Built configuration
     """
     if not mappings:
         raise TypeError("You must supply at least one mapping")
 
-    built_config = Configuration()
+    built_config = constructor()
 
     for mapping in mappings:
         key = mapping.key

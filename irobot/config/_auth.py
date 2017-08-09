@@ -22,6 +22,7 @@ from configparser import ParsingError
 from urllib.parse import urlparse
 
 import irobot.common.canon as canon
+from irobot.config._tree_builder import Configuration
 
 
 def url(value:str) -> str:
@@ -81,3 +82,10 @@ def arvados_version(value:str) -> str:
         return value
 
     raise ParsingError("Unknown Arvados API version")
+
+
+class BasicAuthConfig(Configuration):
+    pass
+
+class ArvadosAuthConfig(Configuration):
+    pass
