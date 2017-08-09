@@ -23,14 +23,14 @@ from datetime import timedelta
 from typing import List, Optional
 
 
-def listening_port(listen:str) -> int:
+def listening_port(value:str) -> int:
     """
     Canonicalise listening port
 
-    @param   listen  Listening port (string)
+    @param   value  Listening port (string)
     @return  Listening port (int)
     """
-    port = int(listen)
+    port = int(value)
 
     if not 0 <= port < 2**16:
         raise ParsingError("Listening port number out of range")
@@ -38,7 +38,7 @@ def listening_port(listen:str) -> int:
     return port
 
 
-def timeout(t:str) -> Optional[timedelta]:
+def timeout(value:str) -> Optional[timedelta]:
     """
     Canonicalise response timeout string into timedelta
 
@@ -46,10 +46,10 @@ def timeout(t:str) -> Optional[timedelta]:
             | INTEGER ["ms"]
             | NUMBER "s"
 
-    @param   t  Response timeout (string)
+    @param   value  Response timeout (string)
     @return  Response timeout (timedelta); or None (for unlimited)
     """
-    if t.lower() == "unlimited":
+    if value.lower() == "unlimited":
         return None
 
     match = re.match(r"""
@@ -67,7 +67,7 @@ def timeout(t:str) -> Optional[timedelta]:
                 \s* s
             )
         )$
-    """, t, re.VERBOSE)
+    """, value, re.VERBOSE)
 
     if not match:
         raise ParsingError("Invalid timeout")
@@ -85,14 +85,14 @@ def timeout(t:str) -> Optional[timedelta]:
     return output
 
 
-def authentication(auth:str) -> List[str]:
+def authentication(value:str) -> List[str]:
     """
     Canonicalise comma-delimited authentication methods into list
 
-    @param   auth  Authentication methods (string)
+    @param   value  Authentication methods (string)
     @return  Authentication methods (list of string)
     """
-    methods = re.split(r"\s*,\s*", auth.lower())
+    methods = re.split(r"\s*,\s*", value.lower())
 
     if len(methods) == 1 and methods[0] == "":
         raise ParsingError("Must provide at least one authentication method")
