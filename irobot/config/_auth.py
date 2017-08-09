@@ -19,26 +19,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from configparser import ParsingError
-from datetime import timedelta
-from typing import Optional
 from urllib.parse import urlparse
 
 import irobot.common.canon as canon
-from irobot.config._base import BaseConfig
 
 
-def _canon_url(url:str) -> str:
+def url(value:str) -> str:
     """
     Canonicalise URL
 
-    @param   url  Validation URL (string)
+    @param   value  Validation URL (string)
     @return  Validation URL (string)
     """
     # Prepend http:// if no scheme is specified
-    if not re.match(r"^https?://", url):
-        url = f"http://{url}"
+    if not re.match(r"^https?://", value):
+        value = f"http://{value}"
 
-    components = urlparse(url)
+    components = urlparse(value)
 
     try:
         _ = canon.ipv4(components.hostname)
@@ -50,39 +47,37 @@ def _canon_url(url:str) -> str:
         except ValueError:
             raise ParsingError("Couldn't parse validation URL")
 
-    return url
+    return value
 
 
-class BasicAuthConfig(BaseConfig):
-    """ HTTP basic authentication configuration """
-    def __init__(self, url:str, cache:str) -> None:
-        """
-        Parse HTTP basic authentication configuration
+def arvados_hostname(value:str) -> str:
+    """
+    Canonicalise API hostname
 
-        @param   url    Validation URL (string)
-        @param   cache  Cache invalidation time (string)
-        """
-        self._url = _canon_url(url)
+    @param   value  Arvados API host
+    @return  Canonicalised hostname
+    """
+    try:
+        return canon.ipv4(value)
 
+    except ValueError:
         try:
-            self._cache = canon.duration(cache)
+            return canon.domain_name(value)
+
         except ValueError:
-            raise ParsingError("Couldn't parse cache invalidation time")
+            raise ParsingError("Couldn't parse API host")
 
-    @property
-    def url(self) -> str:
-        """
-        Get validation URL
 
-        @return  Validation URL (string)
-        """
-        return self._url
+def arvados_version(value:str) -> str:
+    """
+    Canonicalise API version
 
-    @property
-    def cache(self) -> Optional[timedelta]:
-        """
-        Get invalidation time
+    @param   value  Arvados API version
+    @return  Canonicalised version
+    """
+    allowed = ["v1"]
 
-        @return  Cache timeout (timedelta); None for no caching
-        """
-        return self._cache
+    if value in allowed:
+        return value
+
+    raise ParsingError("Unknown Arvados API version")

@@ -40,6 +40,9 @@ class _TreeNode(object):
         if name in self._leaves:
             return self._leaves[name]
 
+        if not hasattr(self, name):
+            raise AttributeError(f"{self.__class__.__name__} has no {name} attribute")
+
         return getattr(self, name)
 
     @property
@@ -75,7 +78,7 @@ class _TreeNode(object):
         self._leaves[name] = leaf
 
 
-class _ConfigValue(_TreeNode):
+class ConfigValue(_TreeNode):
     """ Configuration values; i.e., genuine leaf nodes """
     _raw_value:str
     _transformer:Callable[[str], Any]
@@ -92,8 +95,8 @@ class _ConfigValue(_TreeNode):
 class Configuration(_TreeNode):
     """ Configuration container """
     def __getattr__(self, name:str) -> Any:
-        """ Return the transformed value, for any _ConfigValue leaf """
-        if name in self._leaves and isinstance(self._leaves[name], _ConfigValue):
+        """ Return the transformed value, for any ConfigValue leaf """
+        if name in self._leaves and isinstance(self._leaves[name], ConfigValue):
             return self._leaves[name]()
 
         return super().__getattr__(name)
@@ -102,7 +105,7 @@ class Configuration(_TreeNode):
         """ Add subconfiguration """
         self._add_leaf(name, config)
 
-    def add_value(self, name:str, value:_ConfigValue) -> None:
+    def add_value(self, name:str, value:ConfigValue) -> None:
         """ Add configuration value """
         self._add_leaf(name, value)
 
@@ -127,7 +130,7 @@ def config_factory(config:ConfigParser, section:str, *mappings) -> Configuration
 
     @param   config    Parsed configuration file (ConfigParser)
     @param   section   Section name (string)
-    @param   mappings  List of mappings (RequiredKey or OptionalKey)
+    @param   mappings  Tuple of mappings (RequiredKey or OptionalKey)
     @return  Built configuration
     """
     if not mappings:
@@ -144,7 +147,7 @@ def config_factory(config:ConfigParser, section:str, *mappings) -> Configuration
         if isinstance(mapping, OptionalKey):
             value = config.get(section, key, fallback=mapping.default)
 
-        conf_value = _ConfigValue(value, mapping.transformer)
+        conf_value = ConfigValue(value, mapping.transformer)
         built_config.add_value(key, conf_value)
 
     return built_config

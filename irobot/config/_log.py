@@ -22,26 +22,25 @@ from configparser import ParsingError
 from typing import Optional
 
 import irobot.common.canon as canon
-from irobot.config._base import BaseConfig
 
 
-def _canon_output(output:str) -> Optional[str]:
+def output(value:str) -> Optional[str]:
     """
     Canonicalise logging output destination
 
-    @param   output  Logging destination
+    @param   value  Logging destination
     """
-    if output == "STDERR":
+    if value == "STDERR":
         return None
 
-    return canon.path(output)
+    return canon.path(value)
 
 
-def _canon_level(level:str) -> int:
+def level(value:str) -> int:
     """
     Canonicalise logging level
 
-    @param   log_level  Logging level (string)
+    @param   value  Logging level (string)
     @return  Logging level (int)
     """
     try:
@@ -51,44 +50,7 @@ def _canon_level(level:str) -> int:
             "warning":  logging.WARNING,
             "error":    logging.ERROR,
             "critical": logging.CRITICAL
-        }[level.lower()]
+        }[value.lower()]
 
     except KeyError:
         raise ParsingError("Invalid logging level")
-
-
-class LoggingConfig(BaseConfig):
-    """ Logging configuration """
-    def __init__(self, output:str, level:str) -> None:
-        """
-        Parse logging configuration
-
-        @param   output  Logging destination
-        @param   level   Logging level
-        """
-        self._output = _canon_output(output)
-        self._level = _canon_level(level)
-
-    def __str__(self) -> None:
-        return ", ".join([
-            "output = {}".format(self.output or "stderr"),
-            "level = {}".format(["debug", "info", "warning", "error", "critical"][(self.level // 10) - 1])
-        ])
-
-    @property
-    def output(self) -> Optional[str]:
-        """
-        Get logging output destination
-
-        @return  Logging destination (string or None for stderr)
-        """
-        return self._output
-
-    @property
-    def level(self) -> int:
-        """
-        Get logging level
-
-        @return  Logging level (int)
-        """
-        return self._level

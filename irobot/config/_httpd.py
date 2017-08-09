@@ -20,13 +20,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import re
 from configparser import ParsingError
 from datetime import timedelta
-from typing import Dict, List, Optional
-
-import irobot.common.canon as canon
-from irobot.config._base import BaseConfig
+from typing import List, Optional
 
 
-def _canon_listening_port(listen:str) -> int:
+def listening_port(listen:str) -> int:
     """
     Canonicalise listening port
 
@@ -41,7 +38,7 @@ def _canon_listening_port(listen:str) -> int:
     return port
 
 
-def _canon_timeout(timeout:str) -> Optional[timedelta]:
+def timeout(t:str) -> Optional[timedelta]:
     """
     Canonicalise response timeout string into timedelta
 
@@ -49,10 +46,10 @@ def _canon_timeout(timeout:str) -> Optional[timedelta]:
             | INTEGER ["ms"]
             | NUMBER "s"
 
-    @param   timeout  Response timeout (string)
+    @param   t  Response timeout (string)
     @return  Response timeout (timedelta); or None (for unlimited)
     """
-    if timeout.lower() == "unlimited":
+    if t.lower() == "unlimited":
         return None
 
     match = re.match(r"""
@@ -70,7 +67,7 @@ def _canon_timeout(timeout:str) -> Optional[timedelta]:
                 \s* s
             )
         )$
-    """, timeout, re.VERBOSE)
+    """, t, re.VERBOSE)
 
     if not match:
         raise ParsingError("Invalid timeout")
@@ -88,80 +85,16 @@ def _canon_timeout(timeout:str) -> Optional[timedelta]:
     return output
 
 
-def _canon_authentication(authentication:str) -> List[str]:
+def authentication(auth:str) -> List[str]:
     """
     Canonicalise comma-delimited authentication methods into list
 
-    @param   authentication  Authentication methods (string)
+    @param   auth  Authentication methods (string)
     @return  Authentication methods (list of string)
     """
-    methods = re.split(r"\s*,\s*", authentication.lower())
+    methods = re.split(r"\s*,\s*", auth.lower())
 
     if len(methods) == 1 and methods[0] == "":
         raise ParsingError("Must provide at least one authentication method")
 
     return methods
-
-
-class HTTPdConfig(BaseConfig):
-    """ HTTPd configuration """
-    def __init__(self, bind_address:str, listen:str, timeout:str, authentication:str) -> None:
-        """
-        Parse HTTPd configuration
-
-        @param   bind_address    IPv4 bind address (string)
-        @param   listen          Listening port (string)
-        @param   timeout         Response timeout (string)
-        @param   authentication  Authentication methods (string)
-        """
-        try:
-            self._bind_address = canon.ipv4(bind_address)
-        except ValueError:
-            raise ParsingError("Couldn't parse bind address")
-
-        self._listen = _canon_listening_port(listen)
-        self._timeout = _canon_timeout(timeout)
-        self._authentication = _canon_authentication(authentication)
-
-    @property
-    def raw(self) -> Dict:
-        return {
-            **super().raw,
-            "authentication": self.authentication
-        }
-
-    @property
-    def bind_address(self) -> str:
-        """
-        Get bind address
-
-        @return  IPv4 bind address (string)
-        """
-        return self._bind_address
-
-    @property
-    def listen(self) -> int:
-        """
-        Get listening port
-
-        @return  Listening port (int)
-        """
-        return self._listen
-
-    @property
-    def timeout(self) -> Optional[timedelta]:
-        """
-        Get response timeout
-
-        @return  Response timout (timedelta)
-        """
-        return self._timeout
-
-    @property
-    def authentication(self) -> List[str]:
-        """
-        Get authentication methods
-
-        @return  Authentication methods (list of strings)
-        """
-        return self._authentication
