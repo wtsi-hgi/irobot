@@ -26,7 +26,7 @@ from typing import Any, Dict, Optional, Tuple
 from requests import Response, Request, Session
 
 from irobot.authentication._base import AuthenticatedUser, BaseAuthHandler
-from irobot.config._base import BaseConfig
+from irobot.config import Configuration
 from irobot.logging import LogWriter
 
 
@@ -65,7 +65,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
 
     ####################################################################
 
-    def __init__(self, config:BaseConfig, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, config:Configuration, logger:Optional[logging.Logger] = None) -> None:
         """
         Constructor
 

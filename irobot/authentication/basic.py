@@ -25,7 +25,7 @@ from typing import Optional, Tuple
 from requests import Response, Request
 
 from irobot.authentication._http import HTTPAuthHandler
-from irobot.config.authentication import BasicAuthConfig
+from irobot.config import BasicAuthConfig
 
 
 _BASIC_AUTH_RE = re.compile(r"""

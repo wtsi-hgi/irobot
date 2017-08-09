@@ -29,7 +29,7 @@ from hashlib import md5
 from typing import List, Optional, Tuple
 
 from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
-from irobot.config.precache import PrecacheConfig
+from irobot.config import PrecacheConfig
 from irobot.logging import LogWriter
 from irobot.precache._types import ByteRange, ByteRangeChecksum
 

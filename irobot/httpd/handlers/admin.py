@@ -22,7 +22,7 @@ from typing import Dict, List
 
 from aiohttp.web import Request, Response
 
-from irobot.config._base import BaseConfig
+from irobot.config import iRobotConfiguration
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
 

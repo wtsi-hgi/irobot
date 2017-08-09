@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Tuple
 
 # A *lot* of moving parts come together here...
 from irobot.common import AsyncTaskStatus, WorkerPool
-from irobot.config.precache import PrecacheConfig
+from irobot.config import PrecacheConfig
 from irobot.irods import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder, iRODS
 from irobot.logging import LogWriter
 from irobot.precache._checksummer import Checksummer

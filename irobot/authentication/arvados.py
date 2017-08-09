@@ -24,7 +24,7 @@ from typing import Optional, Tuple
 from requests import Response, Request
 
 from irobot.authentication._http import HTTPAuthHandler
-from irobot.config.authentication import ArvadosAuthConfig
+from irobot.config import ArvadosAuthConfig
 
 
 _ARV_AUTH_RE =  re.compile(r"""

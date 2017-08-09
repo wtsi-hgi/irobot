@@ -26,7 +26,7 @@ from subprocess import CalledProcessError
 from typing import Optional
 
 from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
-from irobot.config.irods import iRODSConfig
+from irobot.config import iRODSConfig
 from irobot.irods._api import iRODSError, baton, iget, ils
 from irobot.irods._types import Metadata
 from irobot.logging import LogWriter

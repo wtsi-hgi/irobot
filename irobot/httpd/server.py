@@ -25,7 +25,7 @@ from typing import List, Optional
 from aiohttp import web
 
 from irobot.authentication import BaseAuthHandler
-from irobot.config.httpd import HTTPdConfig
+from irobot.config import HTTPdConfig
 from irobot.httpd import _middleware, handlers
 from irobot.precache import Precache
 
