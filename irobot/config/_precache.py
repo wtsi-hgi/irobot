@@ -23,61 +23,61 @@ from configparser import ParsingError
 from datetime import datetime, timedelta
 from functools import partial
 from numbers import Number
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 import irobot.common.canon as canon
 from irobot.common import add_years
 
 
-def index(location:str, idx:str) -> str:
+def index(location:str, value:str) -> str:
     """
     Canonicalise precache tracking database name
 
     @param   location  Precache directory (string)
-    @param   idx       Tracking database filename (string)
+    @param   value     Tracking database filename (string)
     @return  Absolute tracking database path (string)
     """
-    dirname, basename = os.path.split(idx)
+    dirname, basename = os.path.split(value)
 
     if basename == "":
         raise ParsingError("Precache index must be a filename")
 
-    if dirname == "" and basename == idx:
-        return os.path.join(location, idx)
+    if dirname == "" and basename == value:
+        return os.path.join(location, value)
 
     return os.path.join(canon.path(dirname), basename)
 
 
-def limited_size(size:str) -> int:
+def limited_size(value:str) -> int:
     """
     Canonicalise human size string to bytes
 
-    @param   size  File size, optionally suffixed (string)
+    @param   value  File size, optionally suffixed (string)
     @return  Size in bytes (int)
     """
     try:
-        return canon.human_size(size)
+        return canon.human_size(value)
 
     except ValueError:
         raise ParsingError("Could not parse file size configuration")
 
 
-def unlimited_size(size:str) -> Optional[int]:
+def unlimited_size(value:str) -> Optional[int]:
     """
     Canonicalise optionally unlimited human size string to bytes
 
-    @param   size  File size, optionally suffixed (string)
+    @param   value  File size, optionally suffixed (string)
     @return  Size in bytes (int); or None for unlimited
     """
-    if size.lower() == "unlimited":
+    if value.lower() == "unlimited":
         return None
 
-    return limited_size(size)
+    return limited_size(value)
 
 
-def expiry(expiry:str) -> Callable[[datetime], Optional[datetime]]:
+def _parse_expiry(value:str) -> Optional[Tuple[Number, str]]:
     """
-    Canonicalise cache invalidation expiry string
+    Canonicalise expiry time limit string
 
     EXPIRY := "unlimited"
             | NUMBER ( "h" | "hour" ["s"]
@@ -85,12 +85,11 @@ def expiry(expiry:str) -> Callable[[datetime], Optional[datetime]]:
                      | "w" | "week" ["s"]
                      | "y" | "year" ["s"] )
 
-    @param   expiry  Maximum file age (string)
-    @return  A function that calculates the expiry time from a given
-             point (or None, for no expiry)
+    @param   value  Expiry time limit (string)
+    @return  None, for unlimited, or a tuple of value (float) and unit (string)
     """
-    if expiry.lower() == "unlimited":
-        return lambda _: None
+    if value.lower() == "unlimited":
+        return None
 
     match = re.match(r"""
         ^                     # Anchor to start of string
@@ -106,13 +105,31 @@ def expiry(expiry:str) -> Callable[[datetime], Optional[datetime]]:
             y (?: ear s?)?    # * Years
         )
         $
-    """, expiry, re.VERBOSE | re.IGNORECASE)
+    """, value, re.VERBOSE | re.IGNORECASE)
 
     if not match:
-        raise ParsingError("Could not parse precache expiry configuration")
+        raise ParsingError("Could not parse expiry time limit configuration")
 
     val = float(match.group('quantity'))
     unit = match.group('unit')[0].lower()  # First character (lowercase)
+
+    return val, unit
+
+
+def expiry(value:str) -> Callable[[datetime], Optional[datetime]]:
+    """
+    Canonicalise cache invalidation expiry string
+
+    @param   value  Maximum file age (string)
+    @return  A function that calculates the expiry time from a given
+             point (or None, for no expiry)
+    """
+    value = _parse_expiry(value)
+
+    if value is None:
+        return lambda _: None
+
+    val, unit = value
 
     # Years
     if unit == "y":
@@ -128,19 +145,24 @@ def expiry(expiry:str) -> Callable[[datetime], Optional[datetime]]:
     return lambda t: t + dt
 
 
-def age_threshold(age_threshold:Optional[str]) -> Optional[timedelta]:
+def age_threshold(value:Optional[str]) -> Optional[timedelta]:
     """
     Canonicalise age threshold for cache invalidation based on the logic
     for temporal invalidation, converting "year" values into a timedelta
     based on a nominal year of 365 days
 
-    @param   age_threshold  Age threshold (sting)
+    @param   value  Age threshold (sting)
     @return  None for unlimited; duration, otherwise (timedelta)
     """
-    threshold = expiry(age_threshold or "unlimited")
+    threshold = _parse_expiry(value or "unlimited")
 
-    if isinstance(threshold, Number):
-        # Convert numeric expiry into years (based on 365 days/year)
-        threshold = threshold * timedelta(days=365)
+    if threshold is None:
+        return None
 
-    return threshold
+    val, unit = threshold
+    return val * {
+        "h": timedelta(hours = 1),
+        "d": timedelta(days  = 1),
+        "w": timedelta(weeks = 1),
+        "y": timedelta(days  = 365)
+    }[unit]

@@ -20,14 +20,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from configparser import ParsingError
 
 
-def max_connections(max_conn:str) -> int:
+def max_connections(value:str) -> int:
     """
     Canonicalise maximum connections
 
-    @param   max_conn  Maximum concurrent connections (string)
+    @param   value  Maximum concurrent connections (string)
     @return  Maximum concurrent connections (int)
     """
-    value = int(max_conn)
+    value = int(value)
 
     if value <= 0:
         raise ParsingError("Maximum number of connections must be greater than zero")
