@@ -22,7 +22,7 @@ from typing import Dict, List
 
 from aiohttp.web import Request, Response
 
-from irobot.config import iRobotConfiguration
+from irobot.config import ConfigJSONEncoder
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
 
@@ -90,7 +90,7 @@ async def config(req:Request) -> Response:
 
     resp = Response(status=200, content_type=_json, charset=ENCODING)
 
-    body = json.dumps(req.app["irobot_config"].raw).encode(ENCODING)
+    body = json.dumps(req.app["irobot_config"], cls=ConfigJSONEncoder).encode(ENCODING)
     content_length = len(body)
 
     if req.method == "GET":
