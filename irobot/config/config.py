@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import ConfigParser, ParsingError
 from functools import partial
-from typing import Dict, Tuple, Type, Union
+from typing import Callable, Dict, Type, Union
 
 from irobot.config._tree_builder import ConfigValue, Configuration, OptionalKey, RequiredKey, config_factory
 
@@ -31,57 +31,54 @@ from irobot.config import _log as log
 from irobot.config import _precache as precache
 
 
-_KeyT = Union[RequiredKey, OptionalKey]
+class _ConfigFactories(object):
+    def __init__(self) -> None:
+        self._factories:Dict[str, Callable[[ConfigParser], Configuration]] = {}
 
-# Configuration section key mappings
-_conf_keys:Dict[str, Tuple[_KeyT, ...]] = {
-    "precache": (
-        RequiredKey("location",        canon.path),
-        # "index" is dependent upon "location", so we add it later...
-        RequiredKey("size",            precache.unlimited_size),
-        OptionalKey("age_threshold",   precache.age_threshold),
-        RequiredKey("expiry",          precache.expiry),
-        RequiredKey("chunk_size",      precache.limited_size)
-    ),
+    def add(self, section:str, constructor:Type[Configuration], *mappings):
+        self._factories[section] = lambda config: config_factory(constructor, config, section, *mappings)
 
-    "irods": (
-        RequiredKey("max_connections", irods.max_connections),
-    ),
+    def __call__(self, section:str, config:ConfigParser) -> Configuration:
+        return self._factories[section](config)
 
-    "httpd": (
-        RequiredKey("bind_address",    canon.ipv4),
-        RequiredKey("listen",          httpd.listening_port),
-        RequiredKey("timeout",         httpd.timeout),
-        RequiredKey("authentication",  httpd.authentication)
-    ),
+_factories = _ConfigFactories()
 
-    "basic_auth": (
-        RequiredKey("url",             auth.url),
-        RequiredKey("cache",           canon.duration)
-    ),
+_factories.add("precache", precache.PrecacheConfig,
+    RequiredKey("location",        canon.path),
+    # "index" is dependent upon "location", so we add it later...
+    RequiredKey("size",            precache.unlimited_size),
+    OptionalKey("age_threshold",   precache.age_threshold),
+    RequiredKey("expiry",          precache.expiry),
+    RequiredKey("chunk_size",      precache.limited_size)
+)
 
-    "arvados_auth": (
-        RequiredKey("api_host",        auth.arvados_hostname),
-        RequiredKey("api_version",     auth.arvados_version),
-        # "api_base_url" is dependent upon "api_host" and "api_version", so we add it later...
-        RequiredKey("cache",           canon.duration)
-    ),
+_factories.add("irods", irods.iRODSConfig,
+    RequiredKey("max_connections", irods.max_connections)
+)
 
-    "logging": (
-        RequiredKey("output",          log.output),
-        RequiredKey("level",           log.level)
-    )
-}
+_factories.add("httpd", httpd.HTTPdConfig,
+    RequiredKey("bind_address",    canon.ipv4),
+    RequiredKey("listen",          httpd.listening_port),
+    RequiredKey("timeout",         httpd.timeout),
+    RequiredKey("authentication",  httpd.authentication)
+)
 
-# Configuration constructors
-_conf_cls:Dict[str, Type[Configuration]] = {
-    "precache":     precache.PrecacheConfig,
-    "irods":        irods.iRODSConfig,
-    "httpd":        httpd.HTTPdConfig,
-    "basic_auth":   auth.BasicAuthConfig,
-    "arvados_auth": auth.ArvadosAuthConfig,
-    "logging":      log.LoggingConfig
-}
+_factories.add("basic_auth", auth.BasicAuthConfig,
+    RequiredKey("url",             auth.url),
+    RequiredKey("cache",           canon.duration)
+)
+
+_factories.add("arvados_auth", auth.ArvadosAuthConfig,
+    RequiredKey("api_host",        auth.arvados_hostname),
+    RequiredKey("api_version",     auth.arvados_version),
+    # "api_base_url" is dependent upon "api_host" and "api_version", so we add it later...
+    RequiredKey("cache",           canon.duration)
+)
+
+_factories.add("logging", log.LoggingConfig,
+    RequiredKey("output",          log.output),
+    RequiredKey("level",           log.level)
+)
 
 
 class iRobotConfiguration(Configuration):
@@ -101,10 +98,7 @@ class iRobotConfiguration(Configuration):
 
         # Set main configurations
         for section in "precache", "irods", "httpd", "logging":
-            self.add_config(section, config_factory(_conf_cls[section],
-                                                    config,
-                                                    section,
-                                                    *_conf_keys[section]))
+            self.add_config(section, _factories(section, config))
 
         # precache.index configuration depends upon precache.location
         precache_index = config.get("precache", "index")
@@ -117,10 +111,7 @@ class iRobotConfiguration(Configuration):
             section = f"{handler}_auth"
 
             try:
-                auth_config.add_config(handler, config_factory(_conf_cls[section],
-                                                               config,
-                                                               section,
-                                                               *_conf_keys[section]))
+                auth_config.add_config(handler, _factories(section, config))
 
             except KeyError:
                 raise ParsingError(f"No configuration found for {handler} authentication")
