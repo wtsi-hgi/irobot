@@ -82,14 +82,16 @@ class ConfigValue(_TreeNode):
     """ Configuration values; i.e., genuine leaf nodes """
     _raw_value:str
     _transformer:Callable[[str], Any]
+    _value:Any
 
     def __init__(self, raw_value:Optional[str], transformer:Callable[[str], Any]) -> None:
         super().__init__()
         self._raw_value = raw_value
         self._transformer = transformer
+        self._value = transformer(raw_value)
 
     def __call__(self) -> Any:
-        return self._transformer(self._raw_value)
+        return self._value
 
 
 class Configuration(_TreeNode):
