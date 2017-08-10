@@ -20,31 +20,31 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from configparser import ParsingError
 
-import irobot.config.authentication.arvados as arv_conf
+import irobot.config._auth as auth
 
 
 class TestArvadosAuthConfig(unittest.TestCase):
     def test_canon_hostname(self):
-        canon_hostname = arv_conf._canon_hostname
+        canon_hostname = auth.arvados_hostname
 
         self.assertEqual(canon_hostname("127.0.0.1"), "127.0.0.1")
         self.assertEqual(canon_hostname("foo.bar"), "foo.bar")
         self.assertRaises(ParsingError, canon_hostname, "-not-cool")
 
     def test_canon_version(self):
-        canon_version = arv_conf._canon_version
+        canon_version = auth.arvados_version
 
         self.assertEqual(canon_version("v1"), "v1")
         self.assertRaises(ParsingError, canon_version, "foo")
 
-    def test_bad_duration(self):
-        self.assertRaises(ParsingError, arv_conf.ArvadosAuthConfig, "sanger.ac.uk", "v1", "foo")
 
-    def test_instance(self):
-        config = arv_conf.ArvadosAuthConfig("api.arvados.example", "v1", "never")
+class TestBasicAuthConfig(unittest.TestCase):
+    def test_canon_url(self):
+        canon_url = auth.url
 
-        self.assertEqual(config.api_base_url, "https://api.arvados.example/arvados/v1")
-        self.assertIsNone(config.cache)
+        self.assertEqual(canon_url("127.0.0.1:5000/foo/bar"), "http://127.0.0.1:5000/foo/bar")
+        self.assertEqual(canon_url("https://foo.bar/quux"), "https://foo.bar/quux")
+        self.assertRaises(ParsingError, canon_url, "-not-cool")
 
 
 if __name__ == "__main__":
