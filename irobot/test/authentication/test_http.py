@@ -27,7 +27,8 @@ from requests import HTTPError, Response, Request, Session
 
 import irobot.authentication._base as base
 import irobot.authentication._http as http
-from irobot.config._base import BaseConfig
+from irobot.config import Configuration
+from irobot.config._tree_builder import ConfigValue
 
 
 class _MockHTTPAuthentication(http.HTTPAuthHandler):
@@ -48,9 +49,10 @@ class _MockHTTPAuthentication(http.HTTPAuthHandler):
         return "foo"
 
 
-class _MockHTTPAuthConfig(BaseConfig):
+class _MockHTTPAuthConfig(Configuration):
     def __init__(self, cache):
-        self.cache = cache
+        super().__init__()
+        self.add_value("cache", ConfigValue(cache, lambda x: x))
 
 
 @patch("irobot.authentication._base.datetime", spec=True)

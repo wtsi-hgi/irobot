@@ -24,7 +24,8 @@ from subprocess import CalledProcessError
 from threading import Lock
 
 from irobot.common import AsyncTaskStatus
-from irobot.config.irods import iRODSConfig
+from irobot.config import iRODSConfig
+from irobot.config._tree_builder import ConfigValue
 from irobot.irods._types import MetadataJSONDecoder
 from irobot.irods.irods import _exists, iRODS, iRODSError
 from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
@@ -49,7 +50,8 @@ class TestExists(unittest.TestCase):
 
 class TestiRODS(unittest.TestCase):
     def setUp(self):
-        config = iRODSConfig(max_connections="1")
+        config = iRODSConfig()
+        config.add_value("max_connections", ConfigValue(1, lambda x: x))
         self.irods = iRODS(config)
 
     def tearDown(self):
