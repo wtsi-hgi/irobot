@@ -19,28 +19,38 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-from typing import List
+from typing import List, NamedTuple, Optional
 
 from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
-from .config import iRobotConfiguration, LoggingConfig
+from .config import iRobotConfiguration
 from .irods import iRODS
 from .httpd import start_httpd
 from .precache import Precache
 from .logging import create_logger
 
 
-def _log_config(config:Configuration, logger:logging.Logger) -> None:
-    """ Log configuration """
-    logger.info("Configuration loaded from %s", config.file)
+class _BootstrapLoggingConfig(NamedTuple):
+    """ Quick-and-dirty LoggingConfig stub """
+    output:Optional[str] = None
+    level:int = logging.CRITICAL
 
-    for section_name, section in config.get_sections().items():
-        logger.info("%s Configuration: %s", section_name, str(section))
+class _BootstrapLogging(object):
+    """ Bootstrap logger """
+    def __enter__(self) -> logging.Logger:
+        self.logger = create_logger(_BootstrapLoggingConfig())
+        return self.logger
 
-    for handler in config.httpd.authentication:
-        logger.info("%s Authentication Configuration: %s", handler, str(getattr(config.authentication, handler)))
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        if exc_type:
+            raise exc_val
+
+        self.logger.handlers = []
+        del self.logger
+
+        return True
 
 
-def _instantiate_authentication_handlers(config:Configuration, logger:logging.Logger) -> List[BaseAuthHandler]:
+def _instantiate_authentication_handlers(config:iRobotConfiguration, logger:logging.Logger) -> List[BaseAuthHandler]:
     """ Instantiate authentication handlers """
     handler_mapping = {
         "arvados": ArvadosAuthHandler,
@@ -56,16 +66,11 @@ def _instantiate_authentication_handlers(config:Configuration, logger:logging.Lo
 if __name__ == "__main__":
     # For the sake of homogeneity, create a logger and exception handler
     # for bootstrapping the configuration parsing
-    _bootstrap_logger = create_logger(LoggingConfig("STDERR", "critical"))
-
-    config = Configuration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
-
-    # Upgrade to configured logging
-    _bootstrap_logger.handlers = []
-    logger = create_logger(config.logging)
-    _log_config(config, logger)
+    with _BootstrapLogging():
+        config = iRobotConfiguration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
 
     # Plumb everything together and start
+    logger = create_logger(config.logging)
     irods = iRODS(config.irods, logger)
     precache = Precache(config.precache, irods, logger)
     auth_handlers = _instantiate_authentication_handlers(config, logger)
