@@ -40,8 +40,9 @@ class _TreeNode(object):
         if name in self._leaves:
             return self._leaves[name]
 
-        # FIXME This creates an infinite recursion if you try to access
-        # an attribute that doesn't exist
+        if name not in dir(self):
+            raise AttributeError(f"No such attribute {self.__class__.__name__}.{name}")
+
         return getattr(self, name)
 
     @property
