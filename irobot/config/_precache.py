@@ -170,4 +170,4 @@ def age_threshold(value:Optional[str]) -> Optional[timedelta]:
 
 
 class PrecacheConfig(Configuration):
-    pass
+    """ Precache configuration stub """

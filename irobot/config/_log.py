@@ -58,4 +58,4 @@ def level(value:str) -> int:
 
 
 class LoggingConfig(Configuration):
-    pass
+    """ Logging configuration stub """

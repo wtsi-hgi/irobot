@@ -103,4 +103,4 @@ def authentication(value:str) -> List[str]:
 
 
 class HTTPdConfig(Configuration):
-    pass
+    """ HTTPd configuration stub """

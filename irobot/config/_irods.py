@@ -38,4 +38,4 @@ def max_connections(value:str) -> int:
 
 
 class iRODSConfig(Configuration):
-    pass
+    """ iRODS configuration stub """
