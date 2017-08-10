@@ -1,5 +1,6 @@
 from irobot.config._tree_builder import Configuration
 from irobot.config.config import iRobotConfiguration
+from irobot.config._json import ConfigJSONEncoder
 
 # Stub classes for subconfigurations
 from irobot.config._auth import ArvadosAuthConfig, BasicAuthConfig

@@ -61,7 +61,7 @@ def start_httpd(httpd_config:HTTPdConfig, precache:Precache, auth_handlers:List[
                                                       _middleware.authentication])
 
     # Thread through application variables
-    app["irobot_config"] = httpd_config.parent
+    app["irobot_config"] = httpd_config.root
     app["irobot_timeout"] = httpd_config.timeout
     app["irobot_precache"] = precache
     app["irobot_auth_handlers"] = auth_handlers
