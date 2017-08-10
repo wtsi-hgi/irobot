@@ -85,7 +85,7 @@ def arvados_version(value:str) -> str:
 
 
 class BasicAuthConfig(Configuration):
-    pass
+    """ Basic authentication configuration stub """
 
 class ArvadosAuthConfig(Configuration):
-    pass
+    """ Arvados authentication configuration stub """
