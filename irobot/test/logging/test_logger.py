@@ -25,7 +25,8 @@ from logging import Logger
 from tempfile import NamedTemporaryFile
 
 import irobot.logging.logger as logger
-from irobot.config.log import LoggingConfig
+from irobot.config import LoggingConfig
+from irobot.config._tree_builder import ConfigValue
 
 
 # Mock logger's timestamper
@@ -51,7 +52,9 @@ class TestLogWriter(unittest.TestCase):
 class TestLoggerCreation(unittest.TestCase):
     def test_create_logger(self):
         with NamedTemporaryFile(mode="w+t") as log_file:
-            config = LoggingConfig(log_file.name, "debug")
+            config = LoggingConfig()
+            config.add_value("output", ConfigValue(log_file.name, str))
+            config.add_value("level", ConfigValue(10, int))
             log = logger.create_logger(config)
 
             _set_log_time(datetime(1970, 1, 1))

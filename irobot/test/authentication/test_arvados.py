@@ -19,19 +19,25 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 from unittest.mock import MagicMock, patch
+from datetime import timedelta
 from threading import Timer
 
 from requests import Response
 
 import irobot.authentication._http as http
 import irobot.authentication.arvados as arv
-from irobot.config.authentication import ArvadosAuthConfig
+from irobot.config import ArvadosAuthConfig
+from irobot.config._tree_builder import ConfigValue
 
 
 @patch("irobot.authentication._http.Timer", spec=True)
 class TestArvadosAuthHandler(unittest.TestCase):
     def setUp(self):
-        self.config = ArvadosAuthConfig("foo", "v1", "10 min")
+        self.config = ArvadosAuthConfig()
+        self.config.add_value("api_host", ConfigValue("foo", str))
+        self.config.add_value("api_version", ConfigValue("v1", str))
+        self.config.add_value("api_base_url", ConfigValue("https://foo/arvados/v1", str))
+        self.config.add_value("cache", ConfigValue(123, timedelta))
 
     def test_parser(self, *args):
         auth = arv.ArvadosAuthHandler(self.config)

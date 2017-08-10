@@ -20,19 +20,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock, patch
 from base64 import b64encode
+from datetime import timedelta
 from threading import Timer
 
 import requests
 
 import irobot.authentication._http as http
 import irobot.authentication.basic as basic
-from irobot.config.authentication import BasicAuthConfig
+from irobot.config import BasicAuthConfig
+from irobot.config._tree_builder import ConfigValue
 
 
 @patch("irobot.authentication._http.Timer", spec=True)
 class TestHTTPBasicAuthHandler(unittest.TestCase):
     def setUp(self):
-        self.config = MagicMock(spec=BasicAuthConfig)
+        self.config = BasicAuthConfig()
+        self.config.add_value("url", ConfigValue("foo", str))
+        self.config.add_value("cache", ConfigValue(123, timedelta))
 
     def test_parser(self, *args):
         auth = basic.HTTPBasicAuthHandler(self.config)

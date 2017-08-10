@@ -27,7 +27,8 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Lock
 
 from irobot.common import AsyncTaskStatus
-from irobot.config.precache import PrecacheConfig
+from irobot.config import PrecacheConfig
+from irobot.config._tree_builder import ConfigValue
 from irobot.precache._checksummer import Checksummer, _checksum, _parse_checksum_record
 
 
@@ -93,7 +94,12 @@ class TestChecksummer(unittest.TestCase):
     def setUp(self):
         self.chunk_size = chunk_size = 10 # bytes
 
-        config = PrecacheConfig("/foo", "bar", "unlimited", "unlimited", f"{chunk_size}B")
+        config = PrecacheConfig()
+        config.add_value("location", ConfigValue("/foo", str))
+        config.add_value("index", ConfigValue("/foo/bar", str))
+        config.add_value("size", ConfigValue(None, lambda x: x))
+        config.add_value("expiry", ConfigValue(None, lambda x: x))
+        config.add_value("chunk_size", ConfigValue(chunk_size, int))
         self.checksummer = Checksummer(config)
 
         self.temp_precache = TemporaryDirectory()
