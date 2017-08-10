@@ -20,21 +20,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from configparser import ParsingError
 
-import irobot.config.irods as irods
+import irobot.config._irods as irods
 
 
 class TestiRODSConfig(unittest.TestCase):
     def test_max_connection_parsing(self):
-        canon_max_connections = irods._canon_max_connections
+        canon_max_connections = irods.max_connections
 
         self.assertEqual(canon_max_connections("10"), 10)
         self.assertRaises(ParsingError, canon_max_connections, "0")
         self.assertRaises(ParsingError, canon_max_connections, "-5")
-
-    def test_instance(self):
-        config = irods.iRODSConfig("123")
-
-        self.assertEqual(config.max_connections, 123)
 
 
 if __name__ == "__main__":
