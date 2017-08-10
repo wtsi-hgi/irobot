@@ -22,7 +22,7 @@ import unittest
 from configparser import ParsingError
 from datetime import datetime, timedelta
 
-import irobot.config.precache as precache
+import irobot.config._precache as precache
 from irobot.common import add_years
 
 
@@ -32,15 +32,8 @@ class TestPrecacheConfig(unittest.TestCase):
         self.cwd = os.getcwd()
         self.homedir = os.path.expanduser("~")
 
-    def test_location_parsing(self):
-        canon_location = precache._canon_location
-
-        self.assertEqual(canon_location("/foo"), "/foo")
-        self.assertEqual(canon_location("~/foo"), os.path.join(self.homedir, "foo"))
-        self.assertEqual(canon_location("foo"), os.path.join(self.cwd, "foo"))
-
     def test_index_parsing(self):
-        canon_index = precache._canon_index
+        canon_index = precache.index
 
         self.assertRaises(ParsingError, canon_index, "", "foo/")
         self.assertEqual(canon_index("", "foo"), "foo")
@@ -48,8 +41,8 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertEqual(canon_index("", "/foo/bar"), "/foo/bar")
 
     def test_size_parsing(self):
-        canon_limited_size = precache._canon_limited_size
-        canon_unlimited_size = precache._canon_unlimited_size
+        canon_limited_size = precache.limited_size
+        canon_unlimited_size = precache.unlimited_size
 
         self.assertRaises(ParsingError, canon_limited_size, "foo")
         self.assertRaises(ParsingError, canon_limited_size, "unlimited")
@@ -59,50 +52,50 @@ class TestPrecacheConfig(unittest.TestCase):
         self.assertIsNone(canon_unlimited_size("unlimited"))
         self.assertEqual(canon_limited_size("123"), 123)
 
-    def test_expiry_parsing(self):
-        canon_expiry = precache._canon_expiry
+    def test_parse_expiry(self):
+        parse_expiry = precache._parse_expiry
 
-        self.assertRaises(ParsingError, canon_expiry, "foo")
-        self.assertIsNone(canon_expiry("unlimited"))
-        self.assertEqual(canon_expiry("1h"), timedelta(hours = 1))
-        self.assertEqual(canon_expiry("1 hour"), timedelta(hours = 1))
-        self.assertEqual(canon_expiry("1.2 hours"), timedelta(hours = 1.2))
-        self.assertEqual(canon_expiry("1d"), timedelta(days = 1))
-        self.assertEqual(canon_expiry("1 day"), timedelta(days = 1))
-        self.assertEqual(canon_expiry("1.2 days"), timedelta(days = 1.2))
-        self.assertEqual(canon_expiry("1w"), timedelta(weeks = 1))
-        self.assertEqual(canon_expiry("1 week"), timedelta(weeks = 1))
-        self.assertEqual(canon_expiry("1.2 weeks"), timedelta(weeks = 1.2))
-        self.assertEqual(canon_expiry("1y"), 1)
-        self.assertEqual(canon_expiry("1 year"), 1)
-        self.assertEqual(canon_expiry("1.2 years"), 1.2)
+        self.assertRaises(ParsingError, parse_expiry, "foo")
+        self.assertIsNone(parse_expiry("unlimited"))
+        self.assertEqual(parse_expiry("1h"), (1, "h"))
+        self.assertEqual(parse_expiry("1 hour"), (1, "h"))
+        self.assertEqual(parse_expiry("1.2 hours"), (1.2, "h"))
+        self.assertEqual(parse_expiry("1d"), (1, "d"))
+        self.assertEqual(parse_expiry("1 day"), (1, "d"))
+        self.assertEqual(parse_expiry("1.2 days"), (1.2, "d"))
+        self.assertEqual(parse_expiry("1w"), (1, "w"))
+        self.assertEqual(parse_expiry("1 week"), (1, "w"))
+        self.assertEqual(parse_expiry("1.2 weeks"), (1.2, "w"))
+        self.assertEqual(parse_expiry("1y"), (1, "y"))
+        self.assertEqual(parse_expiry("1 year"), (1, "y"))
+        self.assertEqual(parse_expiry("1.2 years"), (1.2, "y"))
+
+    def test_expiry_parsing(self):
+        now = datetime.utcnow()
+        dt = lambda exp: precache.expiry(exp)(now) - now
+
+        self.assertIsNone(precache.expiry("unlimited")(now))
+        self.assertEqual(dt("1h"), timedelta(hours = 1))
+        self.assertEqual(dt("1 hour"), timedelta(hours = 1))
+        self.assertEqual(dt("1.2 hours"), timedelta(hours = 1.2))
+        self.assertEqual(dt("1d"), timedelta(days = 1))
+        self.assertEqual(dt("1 day"), timedelta(days = 1))
+        self.assertEqual(dt("1.2 days"), timedelta(days = 1.2))
+        self.assertEqual(dt("1w"), timedelta(weeks = 1))
+        self.assertEqual(dt("1 week"), timedelta(weeks = 1))
+        self.assertEqual(dt("1.2 weeks"), timedelta(weeks = 1.2))
+        self.assertEqual(dt("1y"), add_years(now, 1) - now)
+        self.assertEqual(dt("1 year"), add_years(now, 1) - now)
+        self.assertEqual(dt("1.2 years"), add_years(now, 1.2) - now)
 
     def test_age_threshold_parsing(self):
-        canon_age_threshold = precache._canon_age_threshold
+        canon_age_threshold = precache.age_threshold
 
         self.assertIsNone(canon_age_threshold(None))
+        self.assertEqual(canon_age_threshold("1 hour"), timedelta(hours=1))
+        self.assertEqual(canon_age_threshold("1 day"), timedelta(days=1))
+        self.assertEqual(canon_age_threshold("1 week"), timedelta(days=7))
         self.assertEqual(canon_age_threshold("1 year"), timedelta(days=365))
-
-    def test_instance(self):
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "unlimited", "64MB")
-        self.assertEqual(config.location, "/foo")
-        self.assertEqual(config.index, "/foo/bar")
-        self.assertEqual(config.size, 123 * (1000**3))
-        self.assertIsNone(config.age_threshold)
-        self.assertIsNone(config.expiry(self.now))
-        self.assertEqual(config.chunk_size, 64 * (1000**2))
-        self.assertRegex(str(config), r"expiry = unlimited")
-
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "3 weeks", "64MB")
-        self.assertEqual(config.expiry(self.now), self.now + timedelta(weeks = 3))
-        self.assertRegex(str(config), r"expiry = 21 days")
-
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB")
-        self.assertEqual(config.expiry(self.now), add_years(self.now, 1.2))
-        self.assertRegex(str(config), r"expiry = 1.2 years")
-
-        config = precache.PrecacheConfig("/foo", "bar", "123 GB", "1.2 years", "64MB", age_threshold="3 years")
-        self.assertEqual(config.age_threshold, 3 * timedelta(days=365))
 
 
 if __name__ == "__main__":
