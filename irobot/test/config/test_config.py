@@ -23,9 +23,7 @@ from configparser import ParsingError
 from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 
-from irobot.config import Configuration
-from irobot.config._base import BaseConfig
-from irobot.config.config import _AuthHandlers
+from irobot.config import iRobotConfiguration
 
 
 PRECACHE_CONF = [
@@ -70,23 +68,6 @@ LOGGING_CONF = [
 ]
 
 
-class _FooConfig(BaseConfig):
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-
-    def get(self, k):
-        return self.kwargs[k]
-
-
-class TestAuthHandlers(unittest.TestCase):
-    def test_container(self):
-        configs = {"a": BaseConfig(), "b": BaseConfig(), "c": BaseConfig()}
-        container = _AuthHandlers(**configs)
-
-        for k, v in configs.items():
-            self.assertEqual(getattr(container, k), v)
-
-
 class TestConfiguration(unittest.TestCase):
     def setUp(self):
         self.config_file = NamedTemporaryFile(mode="w+t", delete=True)
@@ -97,8 +78,7 @@ class TestConfiguration(unittest.TestCase):
             HTTPD_CONF +
             BASIC_AUTH_CONF +
             ARVADOS_AUTH_CONF +
-            LOGGING_CONF +
-            ["[foo]", "bar = 123", "quux = 456", "xyzzy = 789"]
+            LOGGING_CONF
         ))
         self.config_file.flush()
 
@@ -106,32 +86,21 @@ class TestConfiguration(unittest.TestCase):
         self.config_file.close()
 
     def test_invalid_file(self):
-        self.assertRaises(IOError, Configuration, "/this_file_probably_does_not_exist")
-
-    def test_builder(self):
-        config = Configuration(self.config_file.name)
-        foo = config._build_config(_FooConfig, "foo", "bar", "quux", "xyzzy")
-
-        self.assertEqual(foo.get("bar"),   "123")
-        self.assertEqual(foo.get("quux"),  "456")
-        self.assertEqual(foo.get("xyzzy"), "789")
+        self.assertRaises(IOError, iRobotConfiguration, "/this_file_probably_does_not_exist")
 
     def test_get_config(self):
-        config = Configuration(self.config_file.name)
+        config = iRobotConfiguration(self.config_file.name)
 
-        sections = list(config.get_sections().keys())
-        expected = ["precache", "irods", "httpd", "logging"]
+        sections = [section for section in config]
+        expected = ["precache", "irods", "httpd", "logging", "authentication"]
         self.assertEqual(sorted(sections), sorted(expected))
 
     def test_config(self):
-        config = Configuration(self.config_file.name)
-
-        self.assertEqual(config.file, self.config_file.name)
+        config = iRobotConfiguration(self.config_file.name)
 
         self.assertEqual(config.precache.location, "/foo")
         self.assertEqual(config.precache.index, "/foo/bar")
         self.assertIsNone(config.precache.size)
-        self.assertIsNone(config.precache.age_threshold)
         self.assertIsNone(config.precache.expiry(datetime.utcnow()))
         self.assertEqual(config.precache.chunk_size, 64 * (1000**2))
 
@@ -159,7 +128,7 @@ class TestConfiguration(unittest.TestCase):
             config_file.write("\n".join(PRECACHE_CONF + IRODS_CONF + LOGGING_CONF + bad_httpd_conf))
             config_file.flush()
 
-            self.assertRaises(ParsingError, Configuration, config_file.name)
+            self.assertRaises(ParsingError, iRobotConfiguration, config_file.name)
 
 
 if __name__ == "__main__":
