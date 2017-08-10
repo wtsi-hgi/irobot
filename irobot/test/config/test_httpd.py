@@ -21,12 +21,12 @@ import unittest
 from configparser import ParsingError
 from datetime import timedelta
 
-import irobot.config.httpd as httpd
+import irobot.config._httpd as httpd
 
 
 class TestHTTPdConfig(unittest.TestCase):
     def test_listening_port_parsing(self):
-        canon_listening_port = httpd._canon_listening_port
+        canon_listening_port = httpd.listening_port
 
         self.assertRaises(ValueError, canon_listening_port, "foo")
         self.assertRaises(ParsingError, canon_listening_port, "-1")
@@ -34,7 +34,7 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertEqual(canon_listening_port("1234"), 1234)
 
     def test_timeout_parsing(self):
-        canon_timeout = httpd._canon_timeout
+        canon_timeout = httpd.timeout
 
         self.assertRaises(ParsingError, canon_timeout, "foo")
         self.assertRaises(ParsingError, canon_timeout, "-1")
@@ -49,24 +49,13 @@ class TestHTTPdConfig(unittest.TestCase):
         self.assertIsNone(canon_timeout("unlimited"))
 
     def test_authentication_parsing(self):
-        canon_auth = httpd._canon_authentication
+        canon_auth = httpd.authentication
 
         self.assertRaises(ParsingError, canon_auth, "")
         self.assertEqual(canon_auth("foo"), ["foo"])
         self.assertEqual(canon_auth("foo,bar"), ["foo", "bar"])
         self.assertEqual(canon_auth("fOo,BaR"), ["foo", "bar"])
         self.assertEqual(canon_auth("foo,bar  ,    baz"), ["foo", "bar", "baz"])
-
-    def test_bad_bind_address(self):
-        self.assertRaises(ParsingError, httpd.HTTPdConfig, "foo", "5000", "1000ms", "basic")
-
-    def test_instance(self):
-        config = httpd.HTTPdConfig("0.0.0.0", "5000", "1000ms", "basic,foo, bar ,baz")
-
-        self.assertEqual(config.bind_address, "0.0.0.0")
-        self.assertEqual(config.listen, 5000)
-        self.assertEqual(config.timeout, timedelta(milliseconds=1000))
-        self.assertEqual(config.authentication, ["basic", "foo", "bar", "baz"])
 
 
 if __name__ == "__main__":
