@@ -49,10 +49,10 @@ managing a connection pool to iRODS.
     - [x] Status endpoint
     - [x] Configuration endpoint
     - [ ] Precache manifest endpoint
-- [ ] Installation/containerisation
+- [x] Installation/containerisation
   - [x] Base system
   - [x] Kerberos support
-  - [ ] iRobot
+  - [x] iRobot (n.b., change to master branch for release)
 - [ ] Testing
   - [ ] Unit testing
   - [ ] Integration testing
