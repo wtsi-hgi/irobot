@@ -19,25 +19,31 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-from typing import List, NamedTuple, Optional
+from typing import List, Optional
 
 from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
-from .config import iRobotConfiguration
+from .config import iRobotConfiguration, LoggingConfig
 from .irods import iRODS
 from .httpd import start_httpd
 from .precache import Precache
 from .logging import create_logger
 
 
-class _BootstrapLoggingConfig(NamedTuple):
-    """ Quick-and-dirty LoggingConfig stub """
-    output:Optional[str] = None
-    level:int = logging.CRITICAL
-
 class _BootstrapLogging(object):
     """ Bootstrap logger """
+    logger:logging.Logger
+    config:LoggingConfig
+
+    def __init__(self) -> None:
+        # This is a bit of a hack, but never mind :P
+        self.config = LoggingConfig()
+        self.config._leaves = {
+            "output": None,
+            "level":  logging.CRITICAL
+        }
+
     def __enter__(self) -> logging.Logger:
-        self.logger = create_logger(_BootstrapLoggingConfig())
+        self.logger = create_logger(self.config)
         return self.logger
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
