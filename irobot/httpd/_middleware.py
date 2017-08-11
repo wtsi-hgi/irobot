@@ -145,8 +145,7 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
     www_authenticate = ", ".join(auth_method.www_authenticate for auth_method in auth_handlers)
 
     # Set up HTTP 401 response/exception
-    HTTPAuthenticationFailure = error_factory(401, "Could not authenticate credentials",
-                                              headers={"WWW-Authenticate": www_authenticate})
+    HTTPAuthenticationFailure = lambda msg: error_factory(401, msg, headers={"WWW-Authenticate": www_authenticate})
 
     async def _middleware(request:web.Request) -> web.Response:
         """
@@ -159,7 +158,7 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
             auth_header = request.headers["Authorization"]
         except KeyError:
             # Fail on missing Authorization header
-            raise HTTPAuthenticationFailure
+            raise HTTPAuthenticationFailure("No authentication credentials provided")
 
         user = None
         for auth_handler in auth_handlers:
@@ -174,7 +173,7 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
 
         if not user:
             # Fail on inability to authenticate
-            raise HTTPAuthenticationFailure
+            raise HTTPAuthenticationFailure("Could not authenticate credentials")
 
         # Success: Thread the authenticated user into the request
         request["irobot_auth_user"] = user
