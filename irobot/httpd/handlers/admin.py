@@ -120,9 +120,19 @@ async def manifest(req:Request) -> Response:
 
     resp = Response(status=200, content_type=_json, charset=ENCODING)
 
-    irobot_precache:List[Dict] = []
+    precache_manifest:List[Dict] = [
+        {
+            "path": data_object.irods_path,
+            "availability": {
+                "data":      data_object.status[Datatype.data],
+                "metadata":  data_object.status[Datatype.metadata],
+                "checksums": data_object.status[Datatype.checksums]
+            }
+        }
+        for data_object in req.app["irobot_precache"]
+    ]
 
-    body = json.dumps(irobot_precache).encode(ENCODING)
+    body = json.dumps(precache_manifest).encode(ENCODING)
     content_length = len(body)
 
     if req.method == "GET":
