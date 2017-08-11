@@ -44,11 +44,11 @@ managing a connection pool to iRODS.
     - [ ] `GET` and `HEAD`
     - [ ] `POST`
     - [ ] `DELETE`
-  - [ ] Administrative endpoints
+  - [x] Administrative endpoints
     - [x] Common middleware
     - [x] Status endpoint
     - [x] Configuration endpoint
-    - [ ] Precache manifest endpoint
+    - [x] Precache manifest endpoint
 - [x] Installation/containerisation
   - [x] Base system
   - [x] Kerberos support
