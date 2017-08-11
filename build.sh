@@ -35,6 +35,7 @@ new_working_file() {
 
 cleanup() {
   # Delete the working files and their manifest
+  # FIXME -a is a GNU xargs option
   xargs -a "${CLEANUP_FILE}" rm -f
   rm -f "${CLEANUP_FILE}"
 }
