@@ -46,7 +46,7 @@ managing a connection pool to iRODS.
     - [ ] `DELETE`
   - [ ] Administrative endpoints
     - [x] Common middleware
-    - [ ] Status endpoint
+    - [x] Status endpoint
     - [x] Configuration endpoint
     - [ ] Precache manifest endpoint
 - [ ] Installation/containerisation

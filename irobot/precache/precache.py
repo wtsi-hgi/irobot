@@ -37,6 +37,11 @@ from irobot.precache.db import (TrackingDB, Datatype, Status,
                                 SummaryStat, DataObjectFileStatus,
                                 StatusExists, PrecacheExists)
 
+# TODO Precache interface for HTTPd
+# * precache.commitment property -> int
+# * precache.current_downloads property -> int
+# * precache.production_rates property -> Dict[Datatype, Optional[SummaryStat]]
+# * __iter__ returns collection of currently tracked data objects
 
 class _WorkerMetrics(object):
     """ Simple container for worker metrics """

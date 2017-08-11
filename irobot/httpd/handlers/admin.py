@@ -25,6 +25,7 @@ from aiohttp.web import Request, Response
 from irobot.config import ConfigJSONEncoder
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
+from irobot.precache.precache import Datatype
 
 
 _json = "application/json"
@@ -43,6 +44,16 @@ async def status(req:Request) -> Response:
 
     resp = Response(status=200, content_type=_json, charset=ENCODING)
 
+    precache = req.app["irobot_precache"]
+
+    production_rates = {
+        process: {
+            "average": rate.mean if rate else None,
+            "stderr":  rate.stderr if rate else None
+        }
+        for process, rate in precache.production_rates.items()
+    }
+
     irobot_status:Dict = {
         "connections": {
             "active": req.app["irobot_connections_active"],
@@ -50,18 +61,12 @@ async def status(req:Request) -> Response:
             "since":  req.app["irobot_start_time"]
         },
         "precache": {
-            "commitment": 123,
-            "checksum_rate": {
-                "average": 123,
-                "stderr":  123
-            }
+            "commitment": precache.commitment,
+            "checksum_rate": production_rates[Datatype.checksums]
         },
         "irods": {
-            "active": 123,
-            "download_rate": {
-                "average": 123,
-                "stderr": 123
-            }
+            "active": precache.current_downloads,
+            "download_rate": production_rates[Datatype.data]
         }
     }
 
