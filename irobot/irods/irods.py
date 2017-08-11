@@ -62,10 +62,12 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         @param   logger        Logger
         """
         self._config = irods_config
+        self._active = 0
 
         # Initialise superclasses (multiple inheritance is a PITA)
         super().__init__(logger=logger)
         self.add_listener(self._broadcast_iget_to_log)
+        self.add_listener(self._set_active)
 
         self.log(logging.INFO, "Starting iget pool")
         self._iget_pool = ThreadPoolExecutor(max_workers=self._config.max_connections)
@@ -76,7 +78,19 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         self.log(logging.DEBUG, "Shutting down iget pool")
         self._iget_pool.shutdown()
 
-    def _broadcast_iget_to_log(self, _timestamp:datetime, status:AsyncTaskStatus, irods_path:str, local_path:str) -> None:
+    def _set_active(self, _t, status:AsyncTaskStatus, _i, _l) -> None:
+        """
+        Keep count of currently active downloads
+
+        @param   status      iGet status (AsyncTaskStatus)
+        """
+        if status == AsyncTaskStatus.started:
+            self._active += 1
+
+        if status in [AsyncTaskStatus.finished, AsyncTaskStatus.failed]:
+            self._active -= 1
+
+    def _broadcast_iget_to_log(self, _t, status:AsyncTaskStatus, irods_path:str, local_path:str) -> None:
         """
         Log all broadcast iget messages
 
@@ -91,6 +105,11 @@ class iRODS(Listenable, LogWriter, WorkerPool):
     def workers(self) -> int:
         """ The total/maximum number of workers """
         return self._config.max_connections
+
+    @property
+    def active(self) -> int:
+        """ The number of currently active workers """
+        return self._active
 
     def get_dataobject(self, irods_path:str, local_path:str) -> None:
         """
