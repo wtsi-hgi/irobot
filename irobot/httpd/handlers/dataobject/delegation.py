@@ -26,20 +26,17 @@ from aiohttp.web import Request, Response
 from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
 from irobot.httpd.handlers import _decorators as request
-
-
-async def _todo(req:Request) -> Response:
-    """ Placeholder handler """
-    irods_path = req["irobot_irods_path"]
-    raise NotImplementedError(f"Watch this space... {irods_path}")
+from irobot.httpd.handlers.dataobject._get import handler as get_handler
+from irobot.httpd.handlers.dataobject._post import handler as post_handler
+from irobot.httpd.handlers.dataobject._delete import handler as delete_handler
 
 
 # Method -> Handler delegation table
 _delegates:Dict[str, HandlerT] = {
-    "GET":    _todo,
-    "HEAD":   _todo,
-    "POST":   _todo,
-    "DELETE": _todo
+    "GET":    get_handler,
+    "HEAD":   get_handler,
+    "POST":   post_handler,
+    "DELETE": delete_handler
 }
 
 
@@ -58,7 +55,7 @@ async def data_object(req:Request) -> Response:
     # Initial sanity check on iRODS path: We cannot have data objects in
     # the root collection, so we must be at least one level deep
     if not re.match(r".+/.+", irods_path):
-        raise error_factory(404, f"No such data object {irods_path}; "
+        raise error_factory(404, f"No such data object \"{irods_path}\"; "
                                   "must be at least one collection deep.")
 
     req["irobot_irods_path"] = irods_path
