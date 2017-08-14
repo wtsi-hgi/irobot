@@ -43,7 +43,7 @@ managing a connection pool to iRODS.
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
     - [ ] `POST`
-    - [ ] `DELETE`
+    - [x] `DELETE`
   - [x] Administrative endpoints
     - [x] Common middleware
     - [x] Status endpoint
