@@ -22,10 +22,11 @@ from typing import Optional
 
 from irobot.common import AsyncTaskStatus
 from irobot.irods import Metadata
+from irobot.precache._abc import AbstractDataObject
 
 
 # TODO Flesh this out based on the usage in irobot.precache.Precache
-class DataObject(object):
+class DataObject(AbstractDataObject):
     """ Data object state """
     def __init__(self, irods_path:str, precache:"Precache") -> None:
         """
