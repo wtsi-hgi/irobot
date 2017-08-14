@@ -29,6 +29,7 @@ from irobot.common import AsyncTaskStatus, WorkerPool
 from irobot.config import PrecacheConfig
 from irobot.irods import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder, iRODS
 from irobot.logging import LogWriter
+from irobot.precache._abc import AbstractPrecache
 from irobot.precache._checksummer import Checksummer
 from irobot.precache._dir_utils import new_name, create, delete
 from irobot.precache._do import DataObject
@@ -37,15 +38,6 @@ from irobot.precache.db import (TrackingDB, Datatype, Status,
                                 SummaryStat, DataObjectFileStatus,
                                 StatusExists, PrecacheExists)
 
-# TODO Precache interface for HTTPd
-# * precache.commitment property -> int
-# * precache.current_downloads property -> int
-# * precache.production_rates property -> Dict[Datatype, Optional[SummaryStat]]
-# * __iter__ returns collection of currently tracked data objects
-#
-# TODO Data object interface for HTTPd
-# * irods_path property -> str
-# * status -> Dict[Datatype, str]
 
 class _WorkerMetrics(object):
     """ Simple container for worker metrics """
@@ -85,7 +77,7 @@ class InProgress(Exception):
         return self._eta
 
 
-class Precache(LogWriter):
+class Precache(AbstractPrecache, LogWriter):
     """ High-level precache management interface """
     def __init__(self, precache_config:PrecacheConfig, irods:iRODS, logger:Optional[logging.Logger] = None) -> None:
         """
