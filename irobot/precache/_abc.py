@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Optional, Callable, Collection
 
-from irobot.precache.db import Datatype, Status, SummaryStat
+from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
 
 
 class AbstractDataObject(metaclass=ABCMeta):
@@ -32,7 +32,7 @@ class AbstractDataObject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def status(self) -> Dict[Datatype, Status]:
+    def status(self) -> Dict[DataObjectState, AsyncTaskStatus]:
         """
         Status of each part of the data object's state (i.e., data,
         metadata and checksums)
@@ -78,7 +78,7 @@ class AbstractPrecache(Callable[[str], AbstractDataObject], Collection[AbstractD
 
     @property
     @abstractmethod
-    def production_rates(self) -> Dict[Datatype, Optional[SummaryStat]]:
+    def production_rates(self) -> Dict[DataObjectState, Optional[SummaryStat]]:
         """
         The production rates for the relevant part of the data object's
         state (i.e., data and checksums), as a tuple of arithmetic mean
