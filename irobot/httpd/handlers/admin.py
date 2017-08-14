@@ -145,9 +145,8 @@ async def manifest(req:Request) -> Response:
         {
             "path": data_object.irods_path,
             "availability": {
-                "data":      _human_readable_status(data_object, DataObjectState.data),
-                "metadata":  _human_readable_status(data_object, DataObjectState.metadata),
-                "checksums": _human_readable_status(data_object, DataObjectState.checksums)
+                datatype.name: _human_readable_status(data_object, datatype)
+                for datatype in DataObjectState
             }
         }
         for data_object in req.app["irobot_precache"]
