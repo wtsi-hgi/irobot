@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from abc import ABCMeta, abstractmethod
 from typing import Dict, Optional, Callable, Collection
 
-from irobot.precache.db import Datatype, SummaryStat
+from irobot.precache.db import Datatype, Status, SummaryStat
 
 
 class AbstractDataObject(metaclass=ABCMeta):
@@ -32,12 +32,16 @@ class AbstractDataObject(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def status(self) -> Dict[Datatype, str]:
+    def status(self) -> Dict[Datatype, Status]:
         """
         Status of each part of the data object's state (i.e., data,
-        metadata and checksums), as a human readable string. For
-        example: "Pending"; "ETA <timestamp>"; "Ready"
+        metadata and checksums)
         """
+
+    @property
+    @abstractmethod
+    def contention(self) -> int:
+        """ The number of active connections to this data object """
 
 
 class AbstractPrecache(Callable[[str], AbstractDataObject], Collection[AbstractDataObject], metaclass=ABCMeta):
