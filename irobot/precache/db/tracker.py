@@ -41,7 +41,7 @@ def _nuple(n:int = 1) -> Tuple:
 
 
 Datatype = Enum("Datatype", "data metadata checksums")
-Status = Enum("Status", "requested producing ready")
+Status = Enum("Status", "requested producing ready")  # FIXME? Do we need Status and AsyncTaskStatus?
 
 class SummaryStat(NamedTuple):
     mean:Number
