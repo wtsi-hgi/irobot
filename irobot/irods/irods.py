@@ -32,26 +32,6 @@ from irobot.irods._types import Metadata
 from irobot.logging import LogWriter
 
 
-def _exists(irods_path:str) -> None:
-    """
-    Check data object exists on iRODS
-
-    @param   irods_path  Path to data object on iRODS (string)
-    """
-    try:
-        ils(irods_path)
-
-    except iRODSError as e:
-        if e.error == (317000, "USER_INPUT_PATH_ERR"):
-            raise FileNotFoundError(f"Data object \"{irods_path}\" not found")
-
-        elif e.error == (818000, "CAT_NO_ACCESS_PERMISSION"):
-            raise PermissionError(f"Not authorised to access data object \"{irods_path}\"")
-
-        else:
-            raise IOError(f"Data object \"{irods_path}\" inaccessible")
-
-
 class iRODS(Listenable, LogWriter, WorkerPool):
     """ High level iRODS interface with iget pool management """
     def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None) -> None:
@@ -111,6 +91,27 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         """ The number of currently active workers """
         return self._active
 
+    @staticmethod
+    def check_access(irods_path:str) -> None:
+        """
+        Check data object access status on iRODS, raising an appropriate
+        exception if the data object cannot be accessed
+
+        @param   irods_path  Path to data object on iRODS (string)
+        """
+        try:
+            ils(irods_path)
+
+        except iRODSError as e:
+            if e.error == (317000, "USER_INPUT_PATH_ERR"):
+                raise FileNotFoundError(f"Data object \"{irods_path}\" not found")
+
+            elif e.error == (818000, "CAT_NO_ACCESS_PERMISSION"):
+                raise PermissionError(f"Not authorised to access data object \"{irods_path}\"")
+
+            else:
+                raise IOError(f"Data object \"{irods_path}\" inaccessible")
+
     def get_dataobject(self, irods_path:str, local_path:str) -> None:
         """
         Enqueue retrieval of data object from iRODS and store it in the
@@ -119,7 +120,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         @param   irods_path  Path to data object on iRODS (string)
         @param   local_path  Local filesystem target file (string)
         """
-        _exists(irods_path)
+        iRODS.check_access(irods_path)
         self.broadcast(AsyncTaskStatus.queued, irods_path, local_path)
         self._iget_pool.submit(self._iget, irods_path, local_path)
 
@@ -147,7 +148,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         @param   irods_path  Path to data object on iRODS (string)
         @return  AVU and filesystem metadata (tuple of list and dictionary)
         """
-        _exists(irods_path)
+        iRODS.check_access(irods_path)
 
         self.log(logging.INFO, f"Getting metadata for {irods_path}")
         return baton(irods_path)
