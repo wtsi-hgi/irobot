@@ -43,6 +43,10 @@ class AbstractDataObject(metaclass=ABCMeta):
     def contention(self) -> int:
         """ The number of active connections to this data object """
 
+    @abstractmethod
+    def delete(self) -> None:
+        """ Delete data object (i.e., self) from the precache """
+
 
 class AbstractPrecache(Callable[[str], AbstractDataObject], Collection[AbstractDataObject], metaclass=ABCMeta):
     """

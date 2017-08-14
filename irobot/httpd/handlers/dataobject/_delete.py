@@ -24,7 +24,7 @@ from irobot.precache.db import Datatype, Status
 
 
 async def handler(req:Request) -> Response:
-    """ Placeholder handler """
+    """ Delete data object from precache if it is not contended """
     precache = req.app["irobot_precache"]
     irods_path = req["irobot_irods_path"]
 
@@ -34,7 +34,8 @@ async def handler(req:Request) -> Response:
 
     data_object = precache(irods_path)
     if data_object.status[Datatype.data] != Status.ready or data_object.contention:
-        raise error_factory(409, f"Data object \"{irods_path}\" is in "
-                                  "use; cannot delete.")
+        raise error_factory(409, f"Data object \"{irods_path}\" is "
+                                  "inflight; cannot delete.")
 
-    raise NotImplementedError(f"DELETE {irods_path}: Watch this space...")
+    data_object.delete()
+    return Response(status=204)
