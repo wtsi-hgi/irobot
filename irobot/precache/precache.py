@@ -25,7 +25,7 @@ from threading import Lock, Timer
 from typing import Dict, List, Optional, Tuple
 
 # A *lot* of moving parts come together here...
-from irobot.common import AsyncTaskStatus, WorkerPool
+from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat, WorkerPool
 from irobot.config import PrecacheConfig
 from irobot.irods import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder, iRODS
 from irobot.logging import LogWriter
@@ -34,8 +34,7 @@ from irobot.precache._checksummer import Checksummer
 from irobot.precache._dir_utils import new_name, create, delete
 from irobot.precache._do import DataObject
 from irobot.precache._types import ByteRange, ByteRangeChecksum
-from irobot.precache.db import (TrackingDB, Datatype, Status,
-                                SummaryStat, DataObjectFileStatus,
+from irobot.precache.db import (TrackingDB, DataObjectFileStatus,
                                 StatusExists, PrecacheExists)
 
 
@@ -111,8 +110,8 @@ class Precache(AbstractPrecache, LogWriter):
 
         # Statistics for workers
         self.worker_stats = {
-            Datatype.data:      _WorkerMetrics(self.irods.workers),
-            Datatype.checksums: _WorkerMetrics(self.checksummer.workers)
+            DataObjectState.data:      _WorkerMetrics(self.irods.workers),
+            DataObjectState.checksums: _WorkerMetrics(self.checksummer.workers)
         }
         self._update_worker_stats()
 

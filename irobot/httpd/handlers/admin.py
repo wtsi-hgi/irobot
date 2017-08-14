@@ -22,10 +22,10 @@ from typing import Dict, List
 
 from aiohttp.web import Request, Response
 
+from irobot.common import DataObjectState
 from irobot.config import ConfigJSONEncoder
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
-from irobot.precache.precache import Datatype
 
 
 _json = "application/json"
@@ -62,11 +62,11 @@ async def status(req:Request) -> Response:
         },
         "precache": {
             "commitment": precache.commitment,
-            "checksum_rate": production_rates[Datatype.checksums]
+            "checksum_rate": production_rates[DataObjectState.checksums]
         },
         "irods": {
             "active": precache.current_downloads,
-            "download_rate": production_rates[Datatype.data]
+            "download_rate": production_rates[DataObjectState.data]
         }
     }
 
@@ -124,9 +124,9 @@ async def manifest(req:Request) -> Response:
         {
             "path": data_object.irods_path,
             "availability": {
-                "data":      data_object.status[Datatype.data],
-                "metadata":  data_object.status[Datatype.metadata],
-                "checksums": data_object.status[Datatype.checksums]
+                "data":      data_object.status[DataObjectState.data],
+                "metadata":  data_object.status[DataObjectState.metadata],
+                "checksums": data_object.status[DataObjectState.checksums]
             }
         }
         for data_object in req.app["irobot_precache"]

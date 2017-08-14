@@ -18,11 +18,18 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from abc import ABCMeta, abstractmethod
-from enum import Enum
+from enum import IntEnum
+from numbers import Number
+from typing import NamedTuple
 
 
-AsyncTaskStatus = Enum("AsyncTaskStatus", "queued started finished unknown failed")
+AsyncTaskStatus = IntEnum("AsyncTaskStatus", "queued started finished unknown failed")
+DataObjectState = IntEnum("DataObjectState", "data metadata checksums")
 
+class SummaryStat(NamedTuple):
+    """ Tuple of arithmetic mean and standard error """
+    mean:Number
+    stderr:Number
 
 class WorkerPool(metaclass=ABCMeta):
     """ Interface for worker pools """

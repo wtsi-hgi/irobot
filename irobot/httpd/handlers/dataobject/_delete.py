@@ -19,8 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from aiohttp.web import Request, Response
 
+from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.httpd._error import error_factory
-from irobot.precache.db import Datatype, Status
 
 
 async def handler(req:Request) -> Response:
@@ -33,7 +33,7 @@ async def handler(req:Request) -> Response:
                                   "in precache; cannot delete.")
 
     data_object = precache(irods_path)
-    if data_object.status[Datatype.data] != Status.ready or data_object.contention:
+    if data_object.status[DataObjectState.data] != AsyncTaskStatus.finished or data_object.contention:
         raise error_factory(409, f"Data object \"{irods_path}\" is "
                                   "inflight; cannot delete.")
 

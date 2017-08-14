@@ -27,7 +27,8 @@ from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 
 import irobot.precache.db.tracker as _tracker
-from irobot.precache.db import TrackingDB, Datatype, Status
+from irobot.common import AsyncTaskStatus, DataObjectState
+from irobot.precache.db import TrackingDB
 from irobot.precache.db._exceptions import PrecacheExists, StatusExists
 
 
@@ -51,12 +52,12 @@ class TestDBMagic(unittest.TestCase):
         self.do_id, = self.tracker._exec("select id from data_objects where irods_path = ?", ("foo",)).fetchone() or (None,)
 
     def test_auto_first_status_trigger(self):
-        for datatype in Datatype:
+        for datatype in DataObjectState:
             status, = self.tracker._exec("select status from status_log where data_object = ? and datatype = ?", (self.do_id, datatype)).fetchone() or (None,)
-            self.assertEqual(status, Status.requested)
+            self.assertEqual(status, AsyncTaskStatus.queued)
 
     def test_cascade_delete_data_object(self):
-        for datatype, size in (Datatype.data, 123), (Datatype.metadata, 456), (Datatype.checksums, 789):
+        for datatype, size in (DataObjectState.data, 123), (DataObjectState.metadata, 456), (DataObjectState.checksums, 789):
             self.tracker._exec("""
                 insert into data_sizes (data_object, datatype, size)
                                 values (?, ?, ?);
@@ -92,7 +93,7 @@ class TestDBMagic(unittest.TestCase):
 
                 commit;
             """).fetchall()
-            self.assertEqual(before_count, len(Datatype))
+            self.assertEqual(before_count, len(DataObjectState))
 
             before.conn.close()
             del before
@@ -102,7 +103,7 @@ class TestDBMagic(unittest.TestCase):
             self.assertEqual(after_count, 0)
 
             sanity_check, = after._exec("select count(*) from current_status where status = 1").fetchone()
-            self.assertEqual(sanity_check, len(Datatype))
+            self.assertEqual(sanity_check, len(DataObjectState))
 
 
 class TestTrackingDB(unittest.TestCase):
@@ -138,7 +139,7 @@ class TestTrackingDB(unittest.TestCase):
             self.assertEqual(tracker.commitment, os.stat(db_file).st_size)
 
     def test_production_rates(self):
-        self.assertEqual(self.tracker.production_rates, {Datatype.data: None, Datatype.checksums: None})
+        self.assertEqual(self.tracker.production_rates, {DataObjectState.data: None, DataObjectState.checksums: None})
 
         data_size      = random.randint(500, 2000)
         start_time     = random.randint(0, 3600)
@@ -174,16 +175,16 @@ class TestTrackingDB(unittest.TestCase):
             insert into status_log (timestamp, data_object, datatype, status)
                         values     (?,         ?,          ?,        ?)
         """, [
-            (timestamp, data_object, Datatype.data, Status.ready)
+            (timestamp, data_object, DataObjectState.data, AsyncTaskStatus.finished)
             for data_object, timestamp
             in  enumerate(download_times, 1)
         ] + [
-            (timestamp, data_object, Datatype.checksums, Status.ready)
+            (timestamp, data_object, DataObjectState.checksums, AsyncTaskStatus.finished)
             for data_object, timestamp
             in  enumerate(checksum_times, 1)
         ])
 
-        for stat, times in (Datatype.data, download_times), (Datatype.checksums, checksum_times):
+        for stat, times in (DataObjectState.data, download_times), (DataObjectState.checksums, checksum_times):
             rates = [data_size / (t - start_time) for t in times]
 
             self.assertAlmostEqual(
@@ -232,23 +233,23 @@ class TestTrackingDB(unittest.TestCase):
         self.assertLessEqual(last_access - first_access, op_duration)
 
     def test_status(self):
-       self.assertIsNone(self.tracker.get_current_status(123, Datatype.data))
+       self.assertIsNone(self.tracker.get_current_status(123, DataObjectState.data))
 
        do_id = self.tracker.new_request("foo", "bar", (0, 0, 0))
-       self.assertEqual(self.tracker.get_current_status(do_id, Datatype.data).status, Status.requested)
+       self.assertEqual(self.tracker.get_current_status(do_id, DataObjectState.data).status, AsyncTaskStatus.queued)
 
-       self.tracker.set_status(do_id, Datatype.data, Status.producing)
-       self.assertEqual(self.tracker.get_current_status(do_id, Datatype.data).status, Status.producing)
+       self.tracker.set_status(do_id, DataObjectState.data, AsyncTaskStatus.started)
+       self.assertEqual(self.tracker.get_current_status(do_id, DataObjectState.data).status, AsyncTaskStatus.started)
 
-       self.assertRaises(StatusExists, self.tracker.set_status, do_id, Datatype.data, Status.producing)
+       self.assertRaises(StatusExists, self.tracker.set_status, do_id, DataObjectState.data, AsyncTaskStatus.started)
 
     def test_size(self):
-        self.assertIsNone(self.tracker.get_size(123, Datatype.data))
+        self.assertIsNone(self.tracker.get_size(123, DataObjectState.data))
 
         do_id = self.tracker.new_request("foo", "bar", (123, 456, 789))
-        self.assertEqual(self.tracker.get_size(do_id, Datatype.data), 123)
-        self.assertEqual(self.tracker.get_size(do_id, Datatype.metadata), 456)
-        self.assertEqual(self.tracker.get_size(do_id, Datatype.checksums), 789)
+        self.assertEqual(self.tracker.get_size(do_id, DataObjectState.data), 123)
+        self.assertEqual(self.tracker.get_size(do_id, DataObjectState.metadata), 456)
+        self.assertEqual(self.tracker.get_size(do_id, DataObjectState.checksums), 789)
 
     def test_new_request(self):
         do_id = self.tracker.new_request("foo", "bar", (123, 456, 789))

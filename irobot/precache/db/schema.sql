@@ -36,9 +36,13 @@ create table if not exists statuses (
   description  text     not null unique
 ) without rowid;
 
-insert or ignore into statuses(id, description) values (1, "requested"),
-                                                       (2, "producing"),
-                                                       (3, "ready");
+-- NOTE "unknown" and "failed" aren't used by the tracking DB, they just
+-- exist to reflect the internal application enumeration type
+insert or ignore into statuses(id, description) values (1, "queued"),
+                                                       (2, "started"),
+                                                       (3, "finished"),
+                                                       (4, "unknown"),
+                                                       (5, "failed");
 
 create table if not exists data_objects (
   id             integer    primary key,

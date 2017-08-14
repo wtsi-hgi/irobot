@@ -23,11 +23,11 @@ import os
 from os.path import dirname, join
 from datetime import datetime, timedelta
 from enum import Enum
-from numbers import Number
 from threading import Timer
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import irobot.common.canon as canon
+from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
 from irobot.logging import LogWriter
 from irobot.precache.db._adaptors_convertors import Adaptor, Convertor
 from irobot.precache.db._dbi import Connection, apsw
@@ -40,16 +40,9 @@ def _nuple(n:int = 1) -> Tuple:
     return (None,) * n
 
 
-Datatype = Enum("Datatype", "data metadata checksums")
-Status = Enum("Status", "requested producing ready")  # FIXME? Do we need Status and AsyncTaskStatus?
-
-class SummaryStat(NamedTuple):
-    mean:Number
-    stderr:Number
-
 class DataObjectFileStatus(NamedTuple):
     timestamp:datetime
-    status:Status
+    status:AsyncTaskStatus
 
 
 class TrackingDB(LogWriter):
@@ -73,12 +66,12 @@ class TrackingDB(LogWriter):
 
         # Register host function hooks
         self.conn.register_aggregate_function("stderr", StandardError)
-        self.conn.register_adaptor(Datatype, Adaptor.enum)
-        self.conn.register_adaptor(Status, Adaptor.enum)
+        self.conn.register_adaptor(DataObjectState, Adaptor.enum)
+        self.conn.register_adaptor(AsyncTaskStatus, Adaptor.enum)
         self.conn.register_adaptor(datetime, Adaptor.datetime)
         self.conn.register_adaptor(timedelta, Adaptor.timedelta)
-        self.conn.register_convertor("DATATYPE", Convertor.enum_factory(Datatype))
-        self.conn.register_convertor("STATUS", Convertor.enum_factory(Status))
+        self.conn.register_convertor("DATATYPE", Convertor.enum_factory(DataObjectState))
+        self.conn.register_convertor("STATUS", Convertor.enum_factory(AsyncTaskStatus))
         self.conn.register_convertor("TIMESTAMP", Convertor.datetime)
 
         schema = canon.path(join(dirname(__file__), "schema.sql"))
@@ -88,7 +81,7 @@ class TrackingDB(LogWriter):
         _ = self._exec(schema_script).fetchall()
 
         # Sanity check our enumerations for parity
-        for enum_type, table in (Datatype, "datatypes"), (Status, "statuses"):
+        for enum_type, table in (DataObjectState, "datatypes"), (AsyncTaskStatus, "statuses"):
             for member in enum_type:
                 assert self._exec(f"""
                     select sum(case when id = ? and description = ? then 1 else 0 end),
@@ -152,15 +145,15 @@ class TrackingDB(LogWriter):
         return db_size + precache_commitment
 
     @property
-    def production_rates(self) -> Dict[Datatype, Optional[SummaryStat]]:
+    def production_rates(self) -> Dict[DataObjectState, Optional[SummaryStat]]:
         """
         Retrieve the current production rates
 
         @return  Dictionary of production rates, where available (dict)
         """
         return {
-            Datatype.data: None,
-            Datatype.checksums: None,
+            DataObjectState.data: None,
+            DataObjectState.checksums: None,
 
             **{
                 process: SummaryStat(rate, stderr)
@@ -244,12 +237,12 @@ class TrackingDB(LogWriter):
             commit;
         """, (data_object,))
 
-    def get_current_status(self, data_object:int, datatype:Datatype) -> Optional[DataObjectFileStatus]:
+    def get_current_status(self, data_object:int, datatype:DataObjectState) -> Optional[DataObjectFileStatus]:
         """
         Get the current status of the data object file
 
         @param   data_object  Data object ID (int)
-        @param   datatype     File type (Datatype)
+        @param   datatype     File type (DataObjectState)
         @return  Current status (DataObjectFileStatus; None if not found)
         """
         status = self._exec("""
@@ -261,13 +254,13 @@ class TrackingDB(LogWriter):
         """, (data_object, datatype)).fetchone()
         return DataObjectFileStatus(*status) if status else None
 
-    def set_status(self, data_object:int, datatype:Datatype, status:Status) -> None:
+    def set_status(self, data_object:int, datatype:DataObjectState, status:AsyncTaskStatus) -> None:
         """
         Set the status of the given data object file
 
         @param   data_object  Data object ID (int)
-        @param   datatype     File type (Datatype)
-        @param   status       New status (Status)
+        @param   datatype     File type (DataObjectState)
+        @param   status       New status (AsyncTaskStatus)
         """
         try:
             self._exec("""
@@ -283,12 +276,12 @@ class TrackingDB(LogWriter):
             self._exec("rollback")
             raise StatusExists(f"Data object file already has {status.name} status")
 
-    def get_size(self, data_object:int, datatype:Datatype) -> Optional[int]:
+    def get_size(self, data_object:int, datatype:DataObjectState) -> Optional[int]:
         """
         Get the size of a data object file
 
         @param   data_object  Data object ID (int)
-        @param   datatype     File type (Datatype)
+        @param   datatype     File type (DataObjectState)
         @return  File size in bytes (int; None if not found)
         """
         size, = self._exec("""
@@ -299,14 +292,14 @@ class TrackingDB(LogWriter):
         """, (data_object, datatype)).fetchone() or _nuple()
         return size
 
-    def set_size(self, data_object:int, datatype:Datatype, size:int) -> None:
+    def set_size(self, data_object:int, datatype:DataObjectState, size:int) -> None:
         """
         Set the size of a data object file
 
         @note    This probably doesn't need to be called externally
 
         @param   data_object  Data object ID (int)
-        @param   datatype     File type (Datatype)
+        @param   datatype     File type (DataObjectState)
         @param   size         File size in bytes (int)
         """
         assert size >= 0
@@ -359,7 +352,7 @@ class TrackingDB(LogWriter):
             raise PrecacheExists(f"Precache entity already exists in {precache_path}")
 
         # Set file sizes
-        for datatype, size in zip(Datatype, sizes):
+        for datatype, size in zip(DataObjectState, sizes):
             self.set_size(do_id, datatype, size)
 
         return do_id
