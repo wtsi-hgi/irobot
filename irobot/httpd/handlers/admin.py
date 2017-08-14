@@ -22,13 +22,34 @@ from typing import Dict, List
 
 from aiohttp.web import Request, Response
 
-from irobot.common import DataObjectState
+from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.config import ConfigJSONEncoder
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
+from irobot.precache import DataObject
 
 
 _json = "application/json"
+
+
+def _human_readable_status(data_object:DataObject, datatype:DataObjectState) -> str:
+    """
+    Human readable status of data object state
+
+    @param   data_object  iRODS data object (DataObject)
+    @param   datatype     Datatype (DataObjectState)
+    @return  Human readable string
+    """
+    if data_object.status[datatype] == AsyncTaskStatus.finished:
+        return "Ready"
+
+    if datatype == DataObjectState.metadata:
+        # Metadata doesn't have a production rate, so if it isn't
+        # available, then it's pending
+        return "Pending"
+
+    # TODO Get ETA from InProgress exception
+    return "Pending"
 
 
 @request.allow("GET", "HEAD")
@@ -124,9 +145,9 @@ async def manifest(req:Request) -> Response:
         {
             "path": data_object.irods_path,
             "availability": {
-                "data":      data_object.status[DataObjectState.data],
-                "metadata":  data_object.status[DataObjectState.metadata],
-                "checksums": data_object.status[DataObjectState.checksums]
+                "data":      _human_readable_status(data_object, DataObjectState.data),
+                "metadata":  _human_readable_status(data_object, DataObjectState.metadata),
+                "checksums": _human_readable_status(data_object, DataObjectState.checksums)
             }
         }
         for data_object in req.app["irobot_precache"]
