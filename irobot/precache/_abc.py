@@ -23,7 +23,6 @@ from typing import Dict, Optional, Callable, Collection
 from irobot.precache.db import Datatype, SummaryStat
 
 
-
 class AbstractDataObject(metaclass=ABCMeta):
     """ Abstract metaclass for data object active records """
     @property
@@ -50,6 +49,10 @@ class AbstractPrecache(Callable[[str], AbstractDataObject], Collection[AbstractD
     * __contains__(self, irods_path:str) -> bool
     * __len__(self) -> int
     * __call__(self, irods_path:str) -> AbstractDataObject
+
+    NOTE Mapping may be better than Callable + Collection, implementing
+    __getitem__ instead of the "unusual" __call__, but then we'd also
+    have to implement keys, items, values, get, __eq__ and __ne__...
     """
     @property
     @abstractmethod
