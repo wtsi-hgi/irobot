@@ -2,7 +2,7 @@
 requests==2.13.0
 
 # aiohttp
-aiohttp==2.2.3
+aiohttp==2.2.5
 aiodns==1.1.1
 cchardet==2.1.1
 async_timeout==1.2.1
