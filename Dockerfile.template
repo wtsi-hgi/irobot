@@ -54,9 +54,8 @@ K             irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb \
 # Kerberos: Plus keytab and crontab to renew credentials every 8hrs
 * RUN groupadd -fg ${gid} ${group} \
 *  && useradd -mg ${gid} -u ${uid} ${user} \
-N  && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user}
-K  && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user} \
-K  && echo "0 */8 * * * ${user} kinit -R ${user}@${krb_realm} -kt /home/${user}/${keytab}" > /etc/cron.d/renew-kerberos
+*  && echo "${user} ALL=(ALL:ALL) NOPASSWD:ALL" > /etc/sudoers.d/${user}
+K RUN echo "0 */8 * * * ${user} kinit -R ${user}@${krb_realm} -kt /home/${user}/${keytab}" > /etc/cron.d/renew-kerberos
 K ADD ${keytab} /home/${user}/${keytab}
 * ADD ${irods_env} /home/${user}/.irods/irods_environment.json
 * RUN chown -R ${user}:${group} /home/${user}
@@ -71,9 +70,10 @@ K RUN kinit -r7d ${user}@${krb_realm} -kt /home/${user}/${keytab}
 
 # Clone latest master branch of iRobot repo and install dependencies
 # TODO s/develop/master
+# TODO? Download release from GitHub, rather than clone
 * RUN git clone -b develop --single-branch https://github.com/wtsi-hgi/irobot.git \
 *  && sudo -H pip3.6 install -r irobot/requirements.txt
 
 * WORKDIR /home/${user}/irobot
-K CMD sudo cron && python3.6 -m irobot.main
 N CMD python3.6 -m irobot.main
+K CMD sudo cron && python3.6 -m irobot.main
