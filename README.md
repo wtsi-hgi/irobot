@@ -421,7 +421,7 @@ response header `iRobot-ETA` containing an ISO8601 UTC timestamp and an
 indication of confidence (in whole seconds) of when the data will be
 available. For example:
 
-    iRobot-ETA: 2017-09-25T12:34:56Z+00:00 +/- 123
+    iRobot-ETA: 2017-09-25T12:34:56Z+0000 +/- 123
 
 A client may choose to use this information to inform the rate at which
 it reissues requests.
