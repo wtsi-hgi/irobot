@@ -35,7 +35,7 @@ async def handler(req:Request) -> Response:
     data_object = precache(irods_path)
     if data_object.status[DataObjectState.data] != AsyncTaskStatus.finished or data_object.contention:
         raise error_factory(409, f"Data object \"{irods_path}\" is "
-                                  "inflight; cannot delete.")
+                                  "inflight or contended; cannot delete.")
 
     data_object.delete()
     return Response(status=204)
