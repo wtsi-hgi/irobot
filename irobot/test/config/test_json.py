@@ -66,7 +66,7 @@ class TestJSONEncoder(unittest.TestCase):
         self.assertEqual(default(ConfigValue("1.23", float)), 1.23)
         self.assertEqual(default(ConfigValue("foo", bool)), True)
         self.assertEqual(default(ConfigValue("a,b,c", _split)), ["a", "b", "c"])
-        self.assertEqual(default(ConfigValue("0", _t)), "1970-01-01 00:00:00")
+        self.assertEqual(default(ConfigValue("0", _t)), "1970-01-01T00:00:00Z+0000")
         self.assertEqual(default(ConfigValue("1", _dt)), "1:00:00")
         self.assertEqual(default(ConfigValue("none", _none)), None)
         self.assertEqual(default(ConfigValue("something", _none)), "something")

@@ -23,6 +23,7 @@ import sys
 import time
 from typing import Callable, Optional, Type
 
+from irobot.common import ISO8601_UTC
 from irobot.config import LoggingConfig
 
 
@@ -75,8 +76,8 @@ def create_logger(config:LoggingConfig) -> logging.Logger:
         # Tab-delimited: Timestamp Level Message
         fmt="%(asctime)s\t%(levelname)s\t%(message)s",
 
-        # ISO 8601
-        datefmt="%Y-%m-%dT%H:%M:%SZ+00:00"
+        # ISO8601 assumed UTC
+        datefmt=ISO8601_UTC
     )
     formatter.converter = time.gmtime  # Force to UTC
 

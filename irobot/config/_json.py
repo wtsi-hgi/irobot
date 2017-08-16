@@ -22,6 +22,7 @@ from json import JSONEncoder
 from numbers import Number
 from typing import Any, Sequence, Text
 
+from irobot.common import ISO8601_UTC
 from irobot.config._tree_builder import Configuration, ConfigValue
 
 
@@ -39,8 +40,12 @@ class ConfigJSONEncoder(JSONEncoder):
                 # Already JSON serialisable
                 return computed
 
-            if isinstance(computed, (datetime, timedelta)):
-                # Meaningful string representation
+            if isinstance(computed, datetime):
+                # ISO8601 UTC formatted timestamps
+                return datetime.strftime(computed, ISO8601_UTC)
+
+            if isinstance(computed, (timedelta,)):
+                # Meaningful string representations
                 return str(computed)
 
             if computed is None:

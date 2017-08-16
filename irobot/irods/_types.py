@@ -22,10 +22,12 @@ from datetime import datetime
 from json import JSONDecoder, JSONEncoder
 from typing import Any, Dict, List, NamedTuple, Optional
 
+from irobot.common import ISO8601_UTC
+
 
 # iRODS timestamps are of the form "YYYY-MM-DDTHH:MM:SS" and
 # (experimentally) always UTC
-_IRODS_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S"
+_IRODS_TIMESTAMP_FORMAT = ISO8601_UTC[:-6]  # Strip the timezone
 _IRODS_TIMESTAMP_RE = re.compile(r"""
     ^
     \d{4} - \d{2} - \d{2}

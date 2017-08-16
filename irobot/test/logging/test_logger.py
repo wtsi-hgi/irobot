@@ -68,8 +68,8 @@ class TestLoggerCreation(unittest.TestCase):
             log_file.seek(0)
             logged = log_file.readlines()
 
-            self.assertEqual(logged[0], "1970-01-01T00:00:00Z+00:00\tDEBUG\tfoo\n")
-            self.assertEqual(logged[1], "1981-09-25T05:55:00Z+00:00\tINFO\tHello World!\n")
+            self.assertEqual(logged[0], "1970-01-01T00:00:00Z+0000\tDEBUG\tfoo\n")
+            self.assertEqual(logged[1], "1981-09-25T05:55:00Z+0000\tINFO\tHello World!\n")
 
 
 @patch("irobot.logging.logger.sys.exit", spec=True)
