@@ -514,18 +514,20 @@ iRobot's current state:
 
 iRobot's current configuration, as a JSON object.
 
-#### `/precache`
+#### `/manifest`
 
 An overview of the contents of the precache. This will return a JSON
 array of objects of the following form:
 
-* `path` Full path of the data object.
+* `path` Full iRODS path of the data object.
 * `availability` A JSON object where each key's value is a string of
-  `pending`, an ETA (in the same format as the ETA response), or
-  `ready` for the following keys:
+  `Pending`, an ETA (in the same format as the ETA response), or
+  `Ready` for the following keys:
   * `data`
   * `metadata`
   * `checksums`
+* `last_accessed` The last access timestamp.
+* `contention` The number of currently active requests.
 
 ### Error Responses
 
