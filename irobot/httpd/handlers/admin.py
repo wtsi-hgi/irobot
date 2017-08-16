@@ -18,11 +18,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
+from datetime import datetime
 from typing import Dict, List
 
 from aiohttp.web import Request, Response
 
-from irobot.common import AsyncTaskStatus, DataObjectState
+from irobot.common import AsyncTaskStatus, DataObjectState, ISO8601_UTC
 from irobot.config import ConfigJSONEncoder
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
@@ -147,7 +148,9 @@ async def manifest(req:Request) -> Response:
             "availability": {
                 datatype.name: _human_readable_status(data_object, datatype)
                 for datatype in DataObjectState
-            }
+            },
+            "last_accessed": datetime.strftime(data_object.last_accessed, ISO8601_UTC),
+            "contention": data_object.contention,
         }
         for data_object in req.app["irobot_precache"]
     ]

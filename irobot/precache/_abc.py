@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 from abc import ABCMeta, abstractmethod
+from datetime import datetime
 from typing import Dict, Optional, Callable, Collection
 
 from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
@@ -42,6 +43,11 @@ class AbstractDataObject(metaclass=ABCMeta):
     @abstractmethod
     def contention(self) -> int:
         """ The number of active connections to this data object """
+
+    @property
+    @abstractmethod
+    def last_accessed(self) -> datetime:
+        """ Last accessed timestamp (UTC) """
 
     @abstractmethod
     def delete(self) -> None:
