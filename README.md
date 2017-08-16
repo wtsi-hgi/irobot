@@ -438,12 +438,15 @@ checksums; thus warranting its title of "precache"!
  403    | Access denied to iRobot iRODS user
  404    | No such data object on iRODS
  405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
+ 409    | Inflight or contended data object could not be refetched
  504    | Response timeout
  507    | Precache full
 
 Note that if the data object's state is already in the precache, this
 action will forcibly refetch it, providing the filesystem metadata has
-changed.
+changed and the precached data object is not currently inflight or
+contended. That is, it is not being fetched from iRODS or being pushed
+by iRobot to a connected client.
 
 #### `DELETE`
 
@@ -456,14 +459,13 @@ precache is designed to manage itself automatically.
 :------:|:--------------------------------------------------------------
  204    | Data object removed from precache
  401    | Authentication failure
- 409    | Inflight data object could not be deleted from the precache
  404    | No such data object in precache
  405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
+ 409    | Inflight or contended data object could not be deleted from the precache
  504    | Response timeout
 
 A data object can only be deleted from the precache if it is currently
-not inflight. That is, it is not being fetched from iRODS or being
-pushed by iRobot to a connected client.
+not inflight or contended.
 
 ### Administrative Endpoints
 
