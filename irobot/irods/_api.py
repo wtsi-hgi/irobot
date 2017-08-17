@@ -99,7 +99,7 @@ class iRODSError(Exception):
         super().__init__(*args, **kwargs)
 
     @property
-    def error(self):
+    def error(self) -> Tuple[int, str]:
         """
         iRODS error identifier
 
