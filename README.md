@@ -42,7 +42,7 @@ managing a connection pool to iRODS.
   - [x] Authentication middleware
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
-    - [ ] `POST`
+    - [x] `POST`
     - [x] `DELETE`
   - [x] Administrative endpoints
     - [x] Common middleware
@@ -447,9 +447,9 @@ checksums; thus warranting its title of "precache"!
 
 Note that if the data object's state is already in the precache, this
 action will forcibly refetch it, providing the filesystem metadata has
-changed and the precached data object is not currently inflight or
-contended. That is, it is not being fetched from iRODS or being pushed
-by iRobot to a connected client.
+changed (file size, checksum and timestamps) and the precached data
+object is not currently inflight or contended. That is, it is not being
+fetched from iRODS or being pushed by iRobot to a connected client.
 
 #### `DELETE`
 

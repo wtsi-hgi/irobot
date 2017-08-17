@@ -22,7 +22,7 @@ from datetime import datetime
 from aiohttp.web import Response
 
 from irobot.common import ISO8601_UTC
-from irobot.precache import InProgress
+from irobot.precache import AbstractDataObject, InProgress
 
 
 class ETAResponse(Response):
@@ -36,3 +36,16 @@ class ETAResponse(Response):
         eta, stderr = exc.eta
         headers = {"iRobot-ETA": datetime.strftime(eta, ISO8601_UTC) + f" +/- {stderr}"}
         super().__init__(status=202, headers=headers)
+
+
+def metadata_has_changed(data_object:AbstractDataObject) -> bool:
+    """
+    Check whether the cached metadata and the most recent metadata for a
+    data object has changed, in terms of its file size, checksum and
+    timestamps
+
+    @param   data_object  Data object (AbstractDataObject)
+    @return  Changed status (boolean)
+    """
+    # TODO
+    pass
