@@ -337,6 +337,7 @@ Found` response will be returned.
  405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
  406    | Unsupported requested media type
  416    | Invalid range request
+ 502    | An invalid operation occurred while interacting with iRODS
  504    | Response timeout
  507    | Precache full
 
@@ -439,6 +440,7 @@ checksums; thus warranting its title of "precache"!
  404    | No such data object on iRODS
  405    | Method not allowed (only `GET`, `HEAD`, `POST`, `DELETE` and `OPTIONS` are supported)
  409    | Inflight or contended data object could not be refetched
+ 502    | An invalid operation occurred while interacting with iRODS
  504    | Response timeout
  507    | Precache full
 
