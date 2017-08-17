@@ -27,17 +27,17 @@ from irobot.common import AsyncTaskStatus, DataObjectState, ISO8601_UTC
 from irobot.config import ConfigJSONEncoder
 from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
-from irobot.precache import DataObject
+from irobot.precache import AbstractDataObject
 
 
 _json = "application/json"
 
 
-def _human_readable_status(data_object:DataObject, datatype:DataObjectState) -> str:
+def _human_readable_status(data_object:AbstractDataObject, datatype:DataObjectState) -> str:
     """
     Human readable status of data object state
 
-    @param   data_object  iRODS data object (DataObject)
+    @param   data_object  iRODS data object (AbstractDataObject)
     @param   datatype     Datatype (DataObjectState)
     @return  Human readable string
     """
