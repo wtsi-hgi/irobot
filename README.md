@@ -434,6 +434,7 @@ checksums; thus warranting its title of "precache"!
 
  Status | Semantics
 :------:|:--------------------------------------------------------------
+ 201    | Seeded the precache with data object
  202    | Seed the precache with data object; ETA returned, if possible
  401    | Authentication failure
  403    | Access denied to iRobot iRODS user
