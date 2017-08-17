@@ -21,15 +21,19 @@ from aiohttp.web import Request, Response
 
 from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.httpd._error import error_factory
-from irobot.httpd.handlers.dataobject._common import ETAResponse
-from irobot.precache import PrecacheFull, InProgress
+from irobot.httpd.handlers.dataobject._common import ETAResponse, metadata_has_changed
+from irobot.precache import AbstractPrecache, PrecacheFull, InProgress
 
 
-async def handler(req:Request) -> Response:
-    """ (Re)fetch data object from iRODS if it is not contended """
-    precache = req.app["irobot_precache"]
-    irods_path = req["irobot_irods_path"]
+def _seed_data_object(precache:AbstractPrecache, irods_path:str) -> Response:
+    """
+    Seed data object; factored out from the request handler so it can be
+    more easily called recursively
 
+    @param   precache    Precache (AbstractPrecache)
+    @param   irods_path  iRODS data object path (string)
+    @return  POST response (Response)
+    """
     if irods_path not in precache:
         try:
             # This call will begin the data seeding and almost certainly
@@ -59,7 +63,7 @@ async def handler(req:Request) -> Response:
 
         # This could happen if the fetching operation completes *really*
         # quickly, but it's unlikely. Either way, just return an empty
-        # 201 created response
+        # 201 Created response
         return Response(status=201)
 
     data_object = precache(irods_path)
@@ -67,5 +71,19 @@ async def handler(req:Request) -> Response:
         raise error_factory(409, f"Data object \"{irods_path}\" is "
                                   "inflight or contended; cannot delete.")
 
-    # TODO Check metadata has changed; if so, refetch
-    raise NotImplementedError(f"POST {irods_path}: Watch this space...")
+    # Delete and refetch if needs be
+    if metadata_has_changed(data_object):
+        data_object.delete()
+        return _seed_data_object(precache, irods_path)
+
+    # If nothing needs to be done, then fallback to an empty 201 Created
+    # (which isn't technically true, but it's close enough)
+    return Response(status=201)
+
+
+async def handler(req:Request) -> Response:
+    """ (Re)fetch data object from iRODS if it is not contended """
+    precache = req.app["irobot_precache"]
+    irods_path = req["irobot_irods_path"]
+
+    return _seed_data_object(precache, irods_path)
