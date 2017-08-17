@@ -110,7 +110,9 @@ class iRODS(Listenable, LogWriter, WorkerPool):
                 raise PermissionError(f"Not authorised to access data object \"{irods_path}\"")
 
             else:
-                raise IOError(f"Data object \"{irods_path}\" inaccessible")
+                errno, errname = e.error
+                raise IOError(f"Data object \"{irods_path}\" inaccessible; "
+                              f"iRODS error {errno} {errname}")
 
     def get_dataobject(self, irods_path:str, local_path:str) -> None:
         """
