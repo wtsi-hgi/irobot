@@ -38,9 +38,6 @@ async def metadata_handler(req:Request) -> Response:
 
 
 # Media type -> Handler delegation table
-_data = "application/octet-stream"
-_metadata = "application/vnd.irobot.metadata+json"
-
 _media_delegates:Dict[str, HandlerT] = {
     "application/octet-stream":             data_handler,
     "application/vnd.irobot.metadata+json": metadata_handler
