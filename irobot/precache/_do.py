@@ -132,10 +132,9 @@ class DataObject(AbstractDataObject):
 
         return self._metadata
 
-    @metadata.setter
-    def metadata(self, metadata:Metadata) -> None:
-        # TODO Set metadata: if tracked, then update the persistent
-        # state; otherwise just keep in-memory
+    def refetch_metadata(self) -> None:
+        # TODO Refetch metadata from iRODS and update the persistent
+        # state, if the object is tracked
 
         # if not self._is_tracked:
         #     raise ValueError(f"Data object {self._irods_path} is not tracked")

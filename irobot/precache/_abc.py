@@ -27,10 +27,25 @@ from irobot.irods import Metadata
 
 class AbstractDataObject(metaclass=ABCMeta):
     """ Abstract metaclass for data object active records """
+
+    ## iRODS and Precache Paths ########################################
+
     @property
     @abstractmethod
     def irods_path(self) -> str:
         """ The absolute iRODS path of the data object """
+
+    @property
+    @abstractmethod
+    def precache_path(self) -> str:
+        """ The absolute path to the precached data object's state """
+
+    @precache_path.setter
+    @abstractmethod
+    def precache_path(self, path:str) -> None:
+        """ Precache path setter """
+
+    ## Data Object Status ##############################################
 
     @property
     @abstractmethod
@@ -45,10 +60,18 @@ class AbstractDataObject(metaclass=ABCMeta):
     def contention(self) -> int:
         """ The number of active connections to the data object """
 
+    ## Last Access Time ################################################
+
     @property
     @abstractmethod
     def last_accessed(self) -> datetime:
         """ Last accessed timestamp (UTC) """
+
+    @abstractmethod
+    def update_last_access(self) -> None:
+        """ Update the last access timestamp to now """
+
+    ## Metadata ########################################################
 
     @property
     @abstractmethod
@@ -58,6 +81,8 @@ class AbstractDataObject(metaclass=ABCMeta):
     @abstractmethod
     def refetch_metadata(self) -> Metadata:
         """ Forcibly refetch the iRODS metadata for the data object """
+
+    ## Methods #########################################################
 
     @abstractmethod
     def delete(self) -> None:
@@ -77,6 +102,13 @@ class AbstractPrecache(Callable[[str], AbstractDataObject], Collection[AbstractD
     NOTE Mapping may be better than Callable + Collection, implementing
     __getitem__ instead of the "unusual" __call__, but then we'd also
     have to implement keys, items, values, get, __eq__ and __ne__...
+
+    NOTE __call__ is expected to raise the following exceptions:
+    * InProgress         When a data object is still being fetched
+    * FileNotFoundError  When the data object doesn't exist on iRODS
+    * PermissionError    When the user doesn't have access to the data object on iRODS
+    * IOError            When some other iRODS problem occurs
+    * PrecacheFull       When the precache is full
     """
     @property
     @abstractmethod
