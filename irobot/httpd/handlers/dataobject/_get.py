@@ -17,10 +17,44 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from typing import Dict
+
 from aiohttp.web import Request, Response
 
+from irobot.httpd._common import HandlerT
+from irobot.httpd.handlers import _decorators as request
 
-async def handler(req:Request) -> Response:
-    """ Placeholder handler """
+
+async def data_handler(req:Request) -> Response:
+    """ Data handler """
     irods_path = req["irobot_irods_path"]
-    raise NotImplementedError(f"GET/HEAD {irods_path}: Watch this space...")
+    raise NotImplementedError(f"I don't know how to get the data for {irods_path}")
+
+
+async def metadata_handler(req:Request) -> Response:
+    """ Metadata handler """
+    irods_path = req["irobot_irods_path"]
+    raise NotImplementedError(f"I don't know how to get the metadata for {irods_path}")
+
+
+# Media type -> Handler delegation table
+_data = "application/octet-stream"
+_metadata = "application/vnd.irobot.metadata+json"
+
+_media_delegates:Dict[str, HandlerT] = {
+    "application/octet-stream":             data_handler,
+    "application/vnd.irobot.metadata+json": metadata_handler
+}
+
+@request.accept(*_media_delegates.keys())
+async def handler(req:Request) -> Response:
+    """ Delegate GET (and HEAD) requests based on preferred media type """
+    preferred = req["irobot_preferred"]
+    resp = await _media_delegates[preferred](req)
+
+    if req.method == "HEAD":
+        content_length = resp.content_length
+        resp.body = None
+        resp.headers["Content-Length"] = str(content_length)
+
+    return resp

@@ -100,7 +100,7 @@ async def status(req:Request) -> Response:
         resp.body = body
 
     if req.method == "HEAD":
-        resp.headers["Content-Length"] = f"{content_length}"
+        resp.headers["Content-Length"] = str(content_length)
 
     return resp
 
@@ -125,7 +125,7 @@ async def config(req:Request) -> Response:
         resp.body = body
 
     if req.method == "HEAD":
-        resp.headers["Content-Length"] = f"{content_length}"
+        resp.headers["Content-Length"] = str(content_length)
 
     return resp
 
@@ -163,6 +163,6 @@ async def manifest(req:Request) -> Response:
         resp.body = body
 
     if req.method == "HEAD":
-        resp.headers["Content-Length"] = f"{content_length}"
+        resp.headers["Content-Length"] = str(content_length)
 
     return resp
