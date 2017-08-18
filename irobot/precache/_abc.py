@@ -23,7 +23,7 @@ from typing import Dict, Optional, Callable, Collection
 
 from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
 from irobot.irods import Metadata
-from irobot.precache.precache import InProgress
+from irobot.precache._types import InProgress
 
 
 class AbstractDataObject(metaclass=ABCMeta):
