@@ -49,8 +49,9 @@ def _human_readable_status(data_object:AbstractDataObject, datatype:DataObjectSt
         # available, then it's pending
         return "Pending"
 
-    # TODO Get ETA from InProgress exception
-    return "Pending"
+    # ETA response (or "Ready", if downloading has completed within the
+    # last few lines of code!)
+    return str(data_object.progress or "Ready")
 
 
 @request.allow("GET", "HEAD")

@@ -25,7 +25,7 @@ from threading import Lock, Timer
 from typing import Dict, List, Optional, Tuple
 
 # A *lot* of moving parts come together here...
-from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat, WorkerPool
+from irobot.common import AsyncTaskStatus, DataObjectState, ISO8601_UTC, SummaryStat, WorkerPool
 from irobot.config import PrecacheConfig
 from irobot.irods import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder, iRODS
 from irobot.logging import LogWriter
@@ -74,6 +74,11 @@ class InProgress(Exception):
         @return  Tuple of ETA (datetime) and standard error of seconds (int)
         """
         return self._eta
+
+    def __str__(self) -> str:
+        """ ETA string representation """
+        eta, stderr = self._eta
+        return datetime.strftime(eta, ISO8601_UTC) + f" +/- {stderr}"
 
 
 class Precache(AbstractPrecache, LogWriter):

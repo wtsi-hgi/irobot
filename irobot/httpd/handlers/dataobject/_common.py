@@ -17,24 +17,20 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from datetime import datetime
-
 from aiohttp.web import Response
 
-from irobot.common import ISO8601_UTC
 from irobot.precache import AbstractDataObject, InProgress
 
 
 class ETAResponse(Response):
     """ ETA response: 202 Accepted with an iRobot-ETA header """
-    def __init__(self, exc:InProgress) -> None:
+    def __init__(self, progress:InProgress) -> None:
         """
         Constructor
 
-        @param   exc  In progress exception (InProgress)
+        @param   progress  In progress exception (InProgress)
         """
-        eta, stderr = exc.eta
-        headers = {"iRobot-ETA": datetime.strftime(eta, ISO8601_UTC) + f" +/- {stderr}"}
+        headers = {"iRobot-ETA": str(progress)}
         super().__init__(status=202, headers=headers)
 
 
