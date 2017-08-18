@@ -22,6 +22,7 @@ from datetime import datetime
 from typing import Dict, Optional, Callable, Collection
 
 from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
+from irobot.irods import Metadata
 
 
 class AbstractDataObject(metaclass=ABCMeta):
@@ -42,12 +43,21 @@ class AbstractDataObject(metaclass=ABCMeta):
     @property
     @abstractmethod
     def contention(self) -> int:
-        """ The number of active connections to this data object """
+        """ The number of active connections to the data object """
 
     @property
     @abstractmethod
     def last_accessed(self) -> datetime:
         """ Last accessed timestamp (UTC) """
+
+    @property
+    @abstractmethod
+    def metadata(self) -> Metadata:
+        """ The iRODS filesystem and AVU metadata for the data object """
+
+    @abstractmethod
+    def refetch_metadata(self) -> Metadata:
+        """ Forcibly refetch the iRODS metadata for the data object """
 
     @abstractmethod
     def delete(self) -> None:

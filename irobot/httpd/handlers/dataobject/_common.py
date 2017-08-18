@@ -47,5 +47,10 @@ def metadata_has_changed(data_object:AbstractDataObject) -> bool:
     @param   data_object  Data object (AbstractDataObject)
     @return  Changed status (boolean)
     """
-    # TODO
-    pass
+    current = data_object.metadata
+    new = data_object.refetch_metadata()
+
+    return current.checksum != new.checksum \
+        or current.size     != new.size \
+        or current.created  != new.created \
+        or current.modified != new.modified
