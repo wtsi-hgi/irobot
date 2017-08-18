@@ -34,42 +34,37 @@ def _seed_data_object(precache:AbstractPrecache, irods_path:str) -> Response:
     @param   irods_path  iRODS data object path (string)
     @return  POST response (Response)
     """
-    if irods_path not in precache:
-        try:
-            # This call will begin the data seeding and almost certainly
-            # raise an exception to communicate its status
-            _data_object = precache(irods_path)
+    try:
+        # This call will begin the data seeding, if the data object is
+        # not already in the precache, and almost certainly raise an
+        # exception to communicate its status. If it is already in the
+        # precache, then we just fall through to normal processing.
+        data_object = precache(irods_path)
 
-        except InProgress as e:
-            # Fetching in progress => 202 Accepted
-            return ETAResponse(e)
+    except InProgress as e:
+        # Fetching in progress => 202 Accepted
+        return ETAResponse(e)
 
-        except FileNotFoundError as e:
-            # File not found on iRODS => 404 Not Found
-            raise error_factory(404, str(e))
+    except FileNotFoundError as e:
+        # File not found on iRODS => 404 Not Found
+        raise error_factory(404, str(e))
 
-        except PermissionError as e:
-            # Couldn't access file on iRODS => 403 Forbidden
-            raise error_factory(403, str(e))
+    except PermissionError as e:
+        # Couldn't access file on iRODS => 403 Forbidden
+        raise error_factory(403, str(e))
 
-        except IOError as e:
-            # Some other iRODS IO error => 502 Bad Gateway
-            raise error_factory(502, str(e))
+    except IOError as e:
+        # Some other iRODS IO error => 502 Bad Gateway
+        raise error_factory(502, str(e))
 
-        except PrecacheFull as e:
-            # Precache full => 507 Insufficient Storage
-            raise error_factory(507, f"Cannot fetch \"{irods_path}\"; "
-                                      "precache is full.")
+    except PrecacheFull as e:
+        # Precache full => 507 Insufficient Storage
+        raise error_factory(507, f"Cannot fetch \"{irods_path}\"; "
+                                  "precache is full.")
 
-        # This could happen if the fetching operation completes *really*
-        # quickly, but it's unlikely. Either way, just return an empty
-        # 201 Created response
-        return Response(status=201)
-
-    data_object = precache(irods_path)
     if data_object.status[DataObjectState.data] != AsyncTaskStatus.finished or data_object.contention:
         raise error_factory(409, f"Data object \"{irods_path}\" is "
-                                  "inflight or contended; cannot delete.")
+                                  "inflight or contended; cannot refetch.")
 
     # Delete and refetch if needs be
     if metadata_has_changed(data_object):
@@ -77,7 +72,7 @@ def _seed_data_object(precache:AbstractPrecache, irods_path:str) -> Response:
         return _seed_data_object(precache, irods_path)
 
     # If nothing needs to be done, then fallback to an empty 201 Created
-    # (which isn't technically true, but it's close enough)
+    # (which isn't technically true, necessarily, but it's close enough)
     return Response(status=201)
 
 
