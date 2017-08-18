@@ -23,6 +23,7 @@ from typing import Dict, Optional, Callable, Collection
 
 from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
 from irobot.irods import Metadata
+from irobot.precache.precache import InProgress
 
 
 class AbstractDataObject(metaclass=ABCMeta):
@@ -54,6 +55,11 @@ class AbstractDataObject(metaclass=ABCMeta):
         Status of each part of the data object's state (i.e., data,
         metadata and checksums)
         """
+
+    @property
+    @abstractmethod
+    def progress(self) -> Optional[InProgress]:
+        """ Return the data fetching progress, or None if ready """
 
     @property
     @abstractmethod
