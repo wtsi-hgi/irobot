@@ -42,6 +42,9 @@ managing a connection pool to iRODS.
   - [x] Authentication middleware
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
+      - [ ] Data request
+      - [ ] Ranged data request
+      - [x] Metadata request
     - [x] `POST`
     - [x] `DELETE`
   - [x] Administrative endpoints
