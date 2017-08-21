@@ -19,7 +19,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from aiohttp.web import Response
 
-from irobot.precache import AbstractDataObject, InProgress
+from irobot.common import AsyncTaskStatus, DataObjectState
+from irobot.httpd._error import error_factory
+from irobot.precache import AbstractDataObject, AbstractPrecache, InProgress
 
 
 class ETAResponse(Response, Exception):
@@ -33,6 +35,55 @@ class ETAResponse(Response, Exception):
         eta = str(progress)
         Response.__init__(self, status=202, headers={"iRobot-ETA": eta})
         Exception.__init__(self, eta)
+
+
+def get_data_object(precache:AbstractPrecache, irods_path:str, *,
+                    raise_inprogress:bool = False,
+                    raise_inflight:bool = False) -> AbstractDataObject:
+    """
+    Get a reference to the data object in the precache, initialising the
+    data seeding if the data object is not already in the precache. On
+    initial fetch, the precache will almost certainly raise an
+    exception, which will be caught and converted to the appropriate
+    response, to be handled upstream.
+
+    @param   precache          Precache (AbstractPrecache)
+    @param   irods_path        iRODS data object path (string)
+    @param   raise_inprogress  Raise if data object fetching is in progress (bool; default False)
+    @param   raise_inflight    Check if the data object is inflight or contended (bool; default False)
+    @return  Data object active record (AbstractDataObject)
+    """
+    try:
+        data_object = precache(irods_path)
+
+    except InProgress as e:
+        # Fetching in progress => 202 Accepted
+        if raise_inprogress:
+            raise ETAResponse(e)
+
+    except FileNotFoundError as e:
+        # File not found on iRODS => 404 Not Found
+        raise error_factory(404, str(e))
+
+    except PermissionError as e:
+        # Couldn't access file on iRODS => 403 Forbidden
+        raise error_factory(403, str(e))
+
+    except IOError as e:
+        # Some other iRODS IO error => 502 Bad Gateway
+        raise error_factory(502, str(e))
+
+    except PrecacheFull as e:
+        # Precache full => 507 Insufficient Storage
+        raise error_factory(507, f"Cannot fetch \"{irods_path}\"; "
+                                  "precache is full.")
+
+    if raise_inflight and \
+      (data_object.status[DataObjectState.data] != AsyncTaskStatus.finished or data_object.contention):
+        raise error_factory(409, f"Data object \"{irods_path}\" is "
+                                  "inflight or contended; cannot fulfil request.")
+
+    return data_object
 
 
 def metadata_has_changed(data_object:AbstractDataObject) -> bool:

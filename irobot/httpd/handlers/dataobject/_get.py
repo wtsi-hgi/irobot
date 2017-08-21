@@ -25,8 +25,7 @@ from aiohttp.web import Request, Response
 from irobot.irods import MetadataJSONEncoder
 from irobot.httpd._common import ENCODING, HandlerT
 from irobot.httpd.handlers import _decorators as request
-from irobot.httpd.handlers.dataobject._common import ETAResponse
-from irobot.precache import PrecacheFull, InProgress
+from irobot.httpd.handlers.dataobject._common import get_data_object
 
 # Media types
 _data = "application/octet-stream"
@@ -55,40 +54,18 @@ _media_delegates:Dict[str, HandlerT] = {
 @request.accept(*_media_delegates.keys())
 async def handler(req:Request) -> Response:
     """ Delegate GET (and HEAD) requests based on preferred media type """
-    # FIXME This is copied-and-pasted, more-or-less, from the POST
-    # handler's module. Move this higher up the call chain...
-    try:
-        precache = req.app["irobot_precache"]
-        irods_path = req["irobot_irods_path"]
-        req["irobot_data_object"] = precache(irods_path)
-
-    except InProgress as e:
-        # Fetching in progress => 202 Accepted
-        # FIXME This shouldn't happen for a metadata request, because
-        # the metadata is fetched synchronously...
-        return ETAResponse(e)
-
-    except FileNotFoundError as e:
-        # File not found on iRODS => 404 Not Found
-        raise error_factory(404, str(e))
-
-    except PermissionError as e:
-        # Couldn't access file on iRODS => 403 Forbidden
-        raise error_factory(403, str(e))
-
-    except IOError as e:
-        # Some other iRODS IO error => 502 Bad Gateway
-        raise error_factory(502, str(e))
-
-    except PrecacheFull as e:
-        # Precache full => 507 Insufficient Storage
-        raise error_factory(507, f"Cannot fetch \"{irods_path}\"; "
-                                  "precache is full.")
+    precache = req.app["irobot_precache"]
+    irods_path = req["irobot_irods_path"]
+    req["irobot_data_object"] = get_data_object(precache,
+                                                irods_path,
+                                                raise_inprogress=False,
+                                                raise_inflight=False)
 
     preferred = req["irobot_preferred"]
     resp = await _media_delegates[preferred](req)
 
     if req.method == "HEAD":
+        # It seems like this should be easier...
         content_length = resp.content_length
         resp.body = None
         resp.headers["Content-Length"] = str(content_length)
