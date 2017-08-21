@@ -22,7 +22,7 @@ from aiohttp.web import Response
 from irobot.precache import AbstractDataObject, InProgress
 
 
-class ETAResponse(Response):
+class ETAResponse(Response, Exception):
     """ ETA response: 202 Accepted with an iRobot-ETA header """
     def __init__(self, progress:InProgress) -> None:
         """
@@ -30,8 +30,9 @@ class ETAResponse(Response):
 
         @param   progress  In progress exception (InProgress)
         """
-        headers = {"iRobot-ETA": str(progress)}
-        super().__init__(status=202, headers=headers)
+        eta = str(progress)
+        Response.__init__(self, status=202, headers={"iRobot-ETA": eta})
+        Exception.__init__(self, eta)
 
 
 def metadata_has_changed(data_object:AbstractDataObject) -> bool:
