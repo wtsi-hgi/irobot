@@ -61,11 +61,6 @@ class AbstractDataObject(metaclass=ABCMeta):
     def progress(self) -> Optional[InProgress]:
         """ Return the data fetching progress, or None if ready """
 
-    @property
-    @abstractmethod
-    def contention(self) -> int:
-        """ The number of active connections to the data object """
-
     ## Last Access Time ################################################
 
     @property
