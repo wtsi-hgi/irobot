@@ -19,7 +19,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from aiohttp.web import Request, Response
 
-from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.httpd._error import error_factory
 from irobot.httpd.handlers.dataobject._common import get_data_object
 
@@ -29,14 +28,12 @@ async def handler(req:Request) -> Response:
     precache = req.app["irobot_precache"]
     irods_path = req["irobot_irods_path"]
 
+    # We delete from the precache, so 404 errors are only relevant when
+    # a data object is precached (i.e., we don't care about iRODS)
     if irods_path not in precache:
         raise error_factory(404, f"No such data object \"{irods_path}\" "
                                   "in precache; cannot delete.")
 
-    data_object = get_data_object(precache,
-                                  irods_path,
-                                  raise_inprogress=False,
-                                  raise_inflight=True)
-
+    data_object = get_data_object(req, raise_inprogress=False, raise_inflight=True)
     data_object.delete()
     return Response(status=204)

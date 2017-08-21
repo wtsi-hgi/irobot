@@ -19,6 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
 import logging
+from collections import defaultdict
 from datetime import datetime
 from typing import List, Optional
 
@@ -69,6 +70,7 @@ def start_httpd(httpd_config:HTTPdConfig, precache:AbstractPrecache, auth_handle
     # This doesn't seem like a very satisfactory solution :P
     app["irobot_connections_active"] = 0
     app["irobot_connections_total"] = 0
+    app["irobot_data_object_contention"] = defaultdict(lambda:0)
     app["irobot_start_time"] = int(datetime.utcnow().timestamp())
 
     # Routing
