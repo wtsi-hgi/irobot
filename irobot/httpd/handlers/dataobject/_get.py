@@ -46,6 +46,7 @@ async def data_handler(req:Request) -> Response:
 
     irods_path = req["irobot_irods_path"]
     req.app["irobot_data_object_contention"][irods_path] += 1
+    data_object.update_last_access()
 
     # TODO Reset contention after all file operations have completed
 
@@ -55,6 +56,7 @@ async def data_handler(req:Request) -> Response:
 async def metadata_handler(req:Request) -> Response:
     """ Metadata handler """
     data_object = get_data_object(req, raise_inprogress=False, raise_inflight=False)
+    data_object.update_last_access()
     body = json.dumps(data_object.metadata, cls=MetadataJSONEncoder).encode(ENCODING)
     return Response(status=200, body=body, content_type=_metadata, charset=ENCODING)
 
