@@ -40,8 +40,7 @@ discriminating.
   * Raise an interrupt to alert the requestor that the fetching job has
     been submitted, with an estimated completion time (if possible).
 
-  When data is available (or partially available) and a data request is
-  made:
+  When data is available and a data request is made:
 
   * Update the entity's last access time.
 
@@ -76,9 +75,9 @@ it is not available, a blocking call -- rather than an asynchronous one
   enqueued.
 
 * A forced metadata request, when appropriate, will only refetch data
-  (and checksumming) if the modification timestamp, size and/or checksum
-  have changed from the original; otherwise, the metadata will be
-  updated in-place.
+  (and checksumming) if the created timestamp, modification timestamp,
+  size and/or checksum have changed from the original; otherwise, the
+  metadata will be updated in-place.
 
 ## Cache Invalidation
 
