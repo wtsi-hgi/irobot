@@ -54,12 +54,7 @@ _media_delegates:Dict[str, HandlerT] = {
 @request.accept(*_media_delegates.keys())
 async def handler(req:Request) -> Response:
     """ Delegate GET (and HEAD) requests based on preferred media type """
-    precache = req.app["irobot_precache"]
-    irods_path = req["irobot_irods_path"]
-    req["irobot_data_object"] = get_data_object(precache,
-                                                irods_path,
-                                                raise_inprogress=False,
-                                                raise_inflight=False)
+    req["irobot_data_object"] = get_data_object(req, raise_inprogress=False, raise_inflight=False)
 
     preferred = req["irobot_preferred"]
     resp = await _media_delegates[preferred](req)
