@@ -34,13 +34,27 @@ _metadata = "application/vnd.irobot.metadata+json"
 
 async def data_handler(req:Request) -> Response:
     """ Data handler """
+    data_object = get_data_object(req, raise_inprogress=True, raise_inflight=False)
+
+    # If we've got this far, then we can return actual data!
+
+    # TODO If we want to return a range, then it would be possible to do
+    # so while data is being fetched, provided that range has already
+    # been accounted for. Our iRODS interface doesn't track this, so for
+    # now we just have this simple can we/can't we distinction on the
+    # basis of the complete data...
+
     irods_path = req["irobot_irods_path"]
+    req.app["irobot_data_object_contention"][irods_path] += 1
+
+    # TODO Reset contention after all file operations have completed
+
     raise NotImplementedError(f"I don't know how to get the data for {irods_path}")
 
 
 async def metadata_handler(req:Request) -> Response:
     """ Metadata handler """
-    data_object = req["irobot_data_object"]
+    data_object = get_data_object(req, raise_inprogress=False, raise_inflight=False)
     body = json.dumps(data_object.metadata, cls=MetadataJSONEncoder).encode(ENCODING)
     return Response(status=200, body=body, content_type=_metadata, charset=ENCODING)
 
@@ -54,8 +68,6 @@ _media_delegates:Dict[str, HandlerT] = {
 @request.accept(*_media_delegates.keys())
 async def handler(req:Request) -> Response:
     """ Delegate GET (and HEAD) requests based on preferred media type """
-    req["irobot_data_object"] = get_data_object(req, raise_inprogress=False, raise_inflight=False)
-
     preferred = req["irobot_preferred"]
     resp = await _media_delegates[preferred](req)
 
