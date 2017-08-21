@@ -19,10 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from aiohttp.web import Request, Response
 
-from irobot.common import AsyncTaskStatus, DataObjectState
-from irobot.httpd._error import error_factory
-from irobot.httpd.handlers.dataobject._common import ETAResponse, metadata_has_changed
-from irobot.precache import AbstractPrecache, PrecacheFull, InProgress
+from irobot.httpd.handlers.dataobject._common import get_data_object, metadata_has_changed
+from irobot.precache import AbstractPrecache
 
 
 def _seed_data_object(precache:AbstractPrecache, irods_path:str) -> Response:
@@ -34,37 +32,10 @@ def _seed_data_object(precache:AbstractPrecache, irods_path:str) -> Response:
     @param   irods_path  iRODS data object path (string)
     @return  POST response (Response)
     """
-    try:
-        # This call will begin the data seeding, if the data object is
-        # not already in the precache, and almost certainly raise an
-        # exception to communicate its status. If it is already in the
-        # precache, then we just fall through to normal processing.
-        data_object = precache(irods_path)
-
-    except InProgress as e:
-        # Fetching in progress => 202 Accepted
-        return ETAResponse(e)
-
-    except FileNotFoundError as e:
-        # File not found on iRODS => 404 Not Found
-        raise error_factory(404, str(e))
-
-    except PermissionError as e:
-        # Couldn't access file on iRODS => 403 Forbidden
-        raise error_factory(403, str(e))
-
-    except IOError as e:
-        # Some other iRODS IO error => 502 Bad Gateway
-        raise error_factory(502, str(e))
-
-    except PrecacheFull as e:
-        # Precache full => 507 Insufficient Storage
-        raise error_factory(507, f"Cannot fetch \"{irods_path}\"; "
-                                  "precache is full.")
-
-    if data_object.status[DataObjectState.data] != AsyncTaskStatus.finished or data_object.contention:
-        raise error_factory(409, f"Data object \"{irods_path}\" is "
-                                  "inflight or contended; cannot refetch.")
+    data_object = get_data_object(precache,
+                                  irods_path,
+                                  raise_inprogress=True,
+                                  raise_inflight=True)
 
     # Delete and refetch if needs be
     if metadata_has_changed(data_object):

@@ -21,6 +21,7 @@ from aiohttp.web import Request, Response
 
 from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.httpd._error import error_factory
+from irobot.httpd.handlers.dataobject._common import get_data_object
 
 
 async def handler(req:Request) -> Response:
@@ -32,10 +33,10 @@ async def handler(req:Request) -> Response:
         raise error_factory(404, f"No such data object \"{irods_path}\" "
                                   "in precache; cannot delete.")
 
-    data_object = precache(irods_path)
-    if data_object.status[DataObjectState.data] != AsyncTaskStatus.finished or data_object.contention:
-        raise error_factory(409, f"Data object \"{irods_path}\" is "
-                                  "inflight or contended; cannot delete.")
+    data_object = get_data_object(precache,
+                                  irods_path,
+                                  raise_inprogress=False,
+                                  raise_inflight=True)
 
     data_object.delete()
     return Response(status=204)
