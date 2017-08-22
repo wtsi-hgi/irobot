@@ -33,6 +33,9 @@ class PrecacheFull(Exception):
 
 class InProgress(Exception):
     """ Interrupt raised when data fetching is in progress """
+
+class InProgressWithETA(InProgress):
+    """ Interrupt raised when data fetching is in progress, with ETA """
     def __init__(self, size:int, started:datetime, rate:SummaryStat, *args, **kwargs) -> None:
         """
         Constructor
