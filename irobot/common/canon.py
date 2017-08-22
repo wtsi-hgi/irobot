@@ -161,8 +161,8 @@ def duration(d:str) -> Optional[timedelta]:
     if not match:
         raise ValueError("Could not parse duration")
 
-    unit = match.group("unit").lower()[0]
-    value = {{"m": "minutes", "s": "seconds"}[unit]: float(match.group("value"))}
+    unit = match["unit"].lower()[0]
+    value = {{"m": "minutes", "s": "seconds"}[unit]: float(match["value"])}
 
     # n.b., Zero duration is the same as "never"
     return timedelta(**value) or None
@@ -181,15 +181,15 @@ def ipv4(ip:str) -> str:
         raise ValueError("Invalid IPv4 address")
 
     # Dotted address
-    if match.group("dotted_dec") or match.group("dotted_hex") or match.group("dotted_oct"):
+    if match["dotted_dec"] or match["dotted_hex"] or match["dotted_oct"]:
         parts = []
 
-        address = match.group("dotted_dec") or \
-                  match.group("dotted_hex") or \
-                  match.group("dotted_oct")
+        address = match["dotted_dec"] or \
+                  match["dotted_hex"] or \
+                  match["dotted_oct"]
 
-        base = 10 if match.group("dotted_dec") else \
-               16 if match.group("dotted_hex") else \
+        base = 10 if match["dotted_dec"] else \
+               16 if match["dotted_hex"] else \
                 8
 
         for part in address.split("."):
@@ -201,9 +201,9 @@ def ipv4(ip:str) -> str:
             parts.append(int_part)
 
     # Plain address
-    if match.group("decimal") or match.group("hex"):
-        base = 10 if match.group("decimal") else 16
-        value = int(match.group("decimal") or match.group("hex"), base)
+    if match["decimal"] or match["hex"]:
+        base = 10 if match["decimal"] else 16
+        value = int(match["decimal"] or match["hex"], base)
 
         if not 0 <= value < 2**32:
             raise ValueError("IPv4 address out of range")

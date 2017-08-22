@@ -74,11 +74,11 @@ def timeout(value:str) -> Optional[timedelta]:
     if not match:
         raise ParsingError("Invalid timeout")
 
-    if match.group("milliseconds"):
-        output = timedelta(milliseconds=int(match.group("milliseconds")))
+    if match["milliseconds"]:
+        output = timedelta(milliseconds=int(match["milliseconds"]))
 
-    if match.group("seconds"):
-        output = timedelta(seconds=float(match.group("seconds")))
+    if match["seconds"]:
+        output = timedelta(seconds=float(match["seconds"]))
 
     # zero timeout is not allowed
     if not output:

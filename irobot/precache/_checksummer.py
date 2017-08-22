@@ -62,8 +62,8 @@ def _parse_checksum_record(record:str) -> ByteRangeChecksum:
     if not match:
         raise SyntaxError("Invalid checksum record")
 
-    byte_range = None if match.group("whole") else (int(match.group("from")), int(match.group("to")))
-    return (byte_range, match.group("checksum"))
+    byte_range = None if match["whole"] else (int(match["from"]), int(match["to"]))
+    return (byte_range, match["checksum"])
 
 
 def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tuple[str, List[ByteRangeChecksum]]:

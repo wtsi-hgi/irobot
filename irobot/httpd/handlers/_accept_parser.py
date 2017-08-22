@@ -74,8 +74,8 @@ class _MediaRange(object):
             return True
 
         _m = RE_MEDIA_TYPE.match(media_type)
-        mt_type = _m.group("type")
-        mt_subtype = _m.group("subtype")
+        mt_type = _m["type"]
+        mt_subtype = _m["subtype"]
 
         if mt_type == range_type and range_subtype == "*":
             # Accept any subtype
