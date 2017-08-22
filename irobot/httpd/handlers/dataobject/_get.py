@@ -18,7 +18,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-import os
 from typing import Dict
 
 from aiohttp.web import Request, Response
@@ -45,26 +44,10 @@ async def data_handler(req:Request) -> Response:
     # now we just have this simple can we/can't we distinction on the
     # basis of the complete data...
 
-    irods_path = data_object.irods_path
-
-    do_checksum = data_object.metadata.checksum
-    if req.headers.get("If-None-Match") == do_checksum:
-        # Client's version matches, so there's nothing to do
-        return Response(status=304)
-
-    if "Accept-Ranges" in req.headers.g:
-        # TODO Data range handling
-        pass
-
-    # TODO Responses 200 206 416
-
-    data_object.update_last_access()
+    irods_path = req["irobot_irods_path"]
     req.app["irobot_data_object_contention"][irods_path] += 1
+    data_object.update_last_access()
 
-
-    do_file = os.path.join(data_object.precache_path, "data")
-    do_size = data_object.metadata.size
-    do_checksum = data_object.metadata.checksum
     # TODO Reset contention after all file operations have completed
 
     raise NotImplementedError(f"I don't know how to get the data for {irods_path}")
@@ -89,9 +72,6 @@ async def handler(req:Request) -> Response:
     """ Delegate GET (and HEAD) requests based on preferred media type """
     preferred = req["irobot_preferred"]
     resp = await _media_delegates[preferred](req)
-
-    # We allow byte range requests, so let the client know
-    resp.headers["Accept-Ranges"] = "bytes"
 
     if req.method == "HEAD":
         # It seems like this should be easier...
