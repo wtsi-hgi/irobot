@@ -384,17 +384,17 @@ header then the second without -- or a single request without the
 
 ##### Fetching Data
 
-Fetching of the data supports range requests using the `Accept-Ranges`
-request header. If this header is present and the data exists in its
-entirety, it will be returned with a `206 Partial Content` response
-under the `multipart/byteranges` media type, where byte ranges in the
-response will have the media type `application/octet-stream` and include
-a `Content-MD5` if one exists. The ranges may therefore be chunked
+Fetching of the data supports range requests using the `Range` request
+header. If this header is present and the data exists in its entirety,
+it will be returned with a `206 Partial Content` response under the
+`multipart/byteranges` media type, where byte ranges in the response
+will have the media type `application/octet-stream` and include a
+`Content-MD5` if one exists. The ranges may therefore be chunked
 differently than requested, so that they align with the precache
 checksum chunk size, but the requested range will be fully satisfied.
 
-If the `Accept-Ranges` request header is omitted, then the entirety of
-the data will be returned as a `200 OK` response, with media type
+If the `Range` request header is omitted, then the entirety of the data
+will be returned as a `200 OK` response, with media type
 `application/octet-stream` and a `Content-MD5` header, if available. If
 a range request is not satisfiable due to the request being
 out-of-bounds, then a `416 Range Not Satisfiable` response will be
