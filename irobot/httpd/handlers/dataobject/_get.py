@@ -73,6 +73,9 @@ async def handler(req:Request) -> Response:
     preferred = req["irobot_preferred"]
     resp = await _media_delegates[preferred](req)
 
+    # We allow byte range requests, so let the client know
+    resp.headers["Accept-Ranges"] = "bytes"
+
     if req.method == "HEAD":
         # It seems like this should be easier...
         content_length = resp.content_length
