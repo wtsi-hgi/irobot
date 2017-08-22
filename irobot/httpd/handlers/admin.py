@@ -78,6 +78,7 @@ async def status(req:Request) -> Response:
     }
 
     irobot_status:Dict = {
+        "authenticated_user": req["irobot_auth_user"],
         "connections": {
             "active": req.app["irobot_connections_active"],
             "total":  req.app["irobot_connections_total"],

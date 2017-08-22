@@ -491,6 +491,7 @@ response will be returned.
 
 iRobot's current state:
 
+* `authenticated_user` The authenticated user of the current request.
 * `connections`
   * `active` The current number of active connections.
   * `total` The total number of requests made to iRobot.
