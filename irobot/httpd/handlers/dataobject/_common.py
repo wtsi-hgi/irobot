@@ -17,24 +17,34 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+from typing import Dict
+
 from aiohttp.web import Request, Response
 
 from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.httpd._error import error_factory
-from irobot.precache import AbstractDataObject, InProgress, PrecacheFull
+from irobot.precache import AbstractDataObject, InProgress, InProgressWithETA, PrecacheFull
 
 
 class ETAResponse(Response, Exception):
-    """ ETA response: 202 Accepted with an iRobot-ETA header """
+    """ 202 Accepted with an iRobot-ETA header, when calculable """
     def __init__(self, progress:InProgress) -> None:
         """
-        Constructor: Convert an InProgress exception into an ETAResponse
+        Constructor: Convert an InProgress exception into a 202 Accepted
+        response that can also be raised as an exception
 
         @param   progress  In progress exception (InProgress)
         """
-        eta = str(progress)
-        Response.__init__(self, status=202, headers={"iRobot-ETA": eta})
-        Exception.__init__(self, eta)
+        headers:Dict[str, str] = {}
+        exc_text:str = ""
+
+        # Include ETA, if available
+        if isinstance(progress, InProgressWithETA):
+            exc_text = str(progress)
+            headers = {"iRobot-ETA": exc_text}
+
+        Response.__init__(self, status=202, headers=headers)
+        Exception.__init__(self, exc_text)
 
 
 def get_data_object(req:Request, *, raise_inprogress:bool = False, raise_inflight:bool = False) -> AbstractDataObject:
