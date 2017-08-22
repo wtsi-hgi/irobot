@@ -332,7 +332,7 @@ Found` response will be returned.
 :------:|:--------------------------------------------------------------
  200    | Return data object
  202    | Data object still being fetched from iRODS; ETA returned, if possible
- 206    | Return ranges of data object, with ETA part (if possible) for missing ranges
+ 206    | Return ranges of data object
  304    | Data object matches that expected by client
  401    | Authentication failure
  403    | Access denied to iRobot iRODS user
