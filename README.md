@@ -360,7 +360,8 @@ representation of the specific data object:
 
 * If the primarily accepted media type is
   `application/vnd.irobot.metadata+json`, then a JSON representation of
-  the metadata for the specified data object will be returned.
+  the metadata (see below) for the specified data object will be
+  returned.
 
 * Otherwise, a `406 Not Acceptable` response will be returned.
 
@@ -423,6 +424,24 @@ available. For example:
 
 A client may choose to use this information to inform the rate at which
 it reissues requests.
+
+##### Metadata Response
+
+When fetching data object metadata, the response will be of media type
+`application/vnd.irobot.metadata+json`: A JSON object with the following
+keys:
+
+* `checksum` The MD5 checksum calculated by iRODS
+* `size` The file size in bytes
+* `created` The creation timestamp (Unix epoch)
+* `modified` The modification timestamp (Unix epoch)
+* `avus` A list of iRODS AVU metadata
+
+AVUs are JSON objects with the following keys:
+
+* `attribute` The metadata attribute
+* `value` The metadata value
+* `units` The metadata unit (optional)
 
 #### `POST`
 
