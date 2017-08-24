@@ -28,6 +28,7 @@ DataObjectState = IntEnum("DataObjectState", "data metadata checksums")
 
 class ByteRange(NamedTuple):
     """ Byte range, inclusive, with optional checksum """
+    # n.b., 0 <= start <= finish <= length; this is not enforced
     start: int
     finish: int
     checksum: Optional[str] = None
@@ -39,7 +40,6 @@ class SummaryStat(NamedTuple):
 
 class WorkerPool(metaclass=ABCMeta):
     """ Interface for worker pools """
-    # FIXME? Our WorkerPools are also Listenables (and LogWriters)
     @property
     @abstractmethod
     def workers(self) -> int:

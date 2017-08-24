@@ -23,10 +23,6 @@ from typing import Optional, Tuple
 from irobot.common import ISO8601_UTC, SummaryStat
 
 
-ByteRange = Optional[Tuple[int, int]]  # 0 <= from < to <= data size; None for everything
-ByteRangeChecksum = Tuple[ByteRange, str]
-
-
 class PrecacheFull(Exception):
     """ Exception raised when the precache is full and can't be GC'd """
 

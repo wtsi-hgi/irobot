@@ -21,9 +21,9 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Dict, Callable, Collection, List, Optional
 
-from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
+from irobot.common import AsyncTaskStatus, DataObjectState, ByteRange, SummaryStat
 from irobot.irods import Metadata
-from irobot.precache._types import ByteRange, ByteRangeChecksum, InProgress
+from irobot.precache._types import InProgress
 
 
 class AbstractDataObject(metaclass=ABCMeta):
@@ -90,12 +90,12 @@ class AbstractDataObject(metaclass=ABCMeta):
         """ Delete data object (i.e., self) from the precache """
 
     @abstractmethod
-    def checksums(self, byte_range:ByteRange = None) -> List[ByteRangeChecksum]:
+    def checksums(self, byte_range:Optional[ByteRange] = None) -> List[ByteRange]:
         """
         The calculated (i.e., not iRODS) checksums for a data object,
         either in its entirety or for a range
 
-        @param   byte_range  Range (Tuple of ints, or None for whole file)
+        @param   byte_range  Range (ByteRange; None for whole file)
         @return  Ordered list of available byte range/checksum pairs
                  covering (if possible) the requested range
         """

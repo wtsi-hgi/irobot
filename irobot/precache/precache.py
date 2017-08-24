@@ -33,7 +33,7 @@ from irobot.precache._abc import AbstractPrecache
 from irobot.precache._checksummer import Checksummer
 from irobot.precache._dir_utils import new_name, create, delete
 from irobot.precache._do import DataObject
-from irobot.precache._types import ByteRange, ByteRangeChecksum, PrecacheFull, InProgress
+from irobot.precache._types import PrecacheFull, InProgress, InProgressWithETA
 from irobot.precache.db import (TrackingDB, DataObjectFileStatus,
                                 StatusExists, PrecacheExists)
 

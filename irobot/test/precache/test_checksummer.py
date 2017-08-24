@@ -26,7 +26,7 @@ from multiprocessing import cpu_count
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Lock
 
-from irobot.common import AsyncTaskStatus
+from irobot.common import AsyncTaskStatus, ByteRange
 from irobot.config import PrecacheConfig
 from irobot.config._tree_builder import ConfigValue
 from irobot.precache._checksummer import Checksummer, _checksum, _parse_checksum_record
@@ -38,9 +38,9 @@ _mock_checksum = "0123456789abcdef0123456789abcdef"
 class TestInternals(unittest.TestCase):
     def test_parse_checksum_record(self):
         passing_tests = [
-            (f"*\t{_mock_checksum}", (None, _mock_checksum)),
-            (f"0-10\t{_mock_checksum}", ((0, 10), _mock_checksum)),
-            (f"123-456\t{_mock_checksum}", ((123, 456), _mock_checksum)),
+            (f"*\t{_mock_checksum}", ByteRange(0, -1, _mock_checksum)),
+            (f"0-10\t{_mock_checksum}", ByteRange(0, 10, _mock_checksum)),
+            (f"123-456\t{_mock_checksum}", ByteRange(123, 456, _mock_checksum)),
         ]
 
         for record, expected in passing_tests:
@@ -74,18 +74,18 @@ class TestInternals(unittest.TestCase):
 
         filename, checksums = _checksum(tmp.name, 10)
         self.assertEqual(filename, tmp.name)
-        self.assertEqual(checksums, [(None, whole_checksum),
-                                     ((0, 10), chunk_checksum),
-                                     ((10, 15), remainder_checksum)])
+        self.assertEqual(checksums, [ByteRange(0, -1, whole_checksum),
+                                     ByteRange(0, 10, chunk_checksum),
+                                     ByteRange(10, 15, remainder_checksum)])
 
-        _, checksums = _checksum(tmp.name, 10, (5, 15))
-        self.assertEqual(checksums, [((5, 10), remainder_checksum),
-                                     ((10, 15), remainder_checksum)])
+        _, checksums = _checksum(tmp.name, 10, ByteRange(5, 15))
+        self.assertEqual(checksums, [ByteRange(5, 10, remainder_checksum),
+                                     ByteRange(10, 15, remainder_checksum)])
 
-        _, checksums = _checksum(tmp.name, 5, (0, 15))
-        self.assertEqual(checksums, [((0, 5), remainder_checksum),
-                                     ((5, 10), remainder_checksum),
-                                     ((10, 15), remainder_checksum)])
+        _, checksums = _checksum(tmp.name, 5, ByteRange(0, 15))
+        self.assertEqual(checksums, [ByteRange(0, 5, remainder_checksum),
+                                     ByteRange(5, 10, remainder_checksum),
+                                     ByteRange(10, 15, remainder_checksum)])
 
         os.remove(tmp.name)
 
@@ -181,7 +181,7 @@ class TestChecksummer(unittest.TestCase):
         os.rename(os.path.join(self.temp_precache.name, "manual_checksums"),
                   os.path.join(self.temp_precache.name, "checksums"))
 
-        self.assertRaises(IndexError, self.checksummer.get_checksummed_blocks, self.temp_precache.name, (0, self.data_size + 10))
+        self.assertRaises(IndexError, self.checksummer.get_checksummed_blocks, self.temp_precache.name, ByteRange(0, self.data_size + 10))
 
         whole_checksum = md5(b"\0" * self.data_size).hexdigest()
         chunk_checksum = md5(b"\0" * self.chunk_size).hexdigest()
@@ -190,21 +190,21 @@ class TestChecksummer(unittest.TestCase):
         # Get whole checksum
         checksums = self.checksummer.get_checksummed_blocks(self.temp_precache.name)
         self.assertEqual(len(checksums), 1)
-        self.assertEqual(checksums[0][1], whole_checksum)
+        self.assertEqual(checksums[0].checksum, whole_checksum)
 
         # Get checksums for range (whole file)
-        checksums = self.checksummer.get_checksummed_blocks(self.temp_precache.name, (0, self.data_size))
-        self.assertEqual(checksums[-1][1], remainder_checksum)
-        for i, chunk in enumerate(checksums[:-1]):
+        checksums = self.checksummer.get_checksummed_blocks(self.temp_precache.name, ByteRange(0, self.data_size))
+        self.assertEqual(checksums[-1].checksum, remainder_checksum)
+        for i, _chunk in enumerate(checksums[:-1]):
             index = i * self.chunk_size, (i + 1) * self.chunk_size
-            self.assertEqual(checksums[i], (index, chunk_checksum))
+            self.assertEqual(checksums[i], ByteRange(*index, chunk_checksum))
 
         # Get checksum for partial chunk
-        partial_chunk = 1, self.chunk_size - 1
-        partial_chunk_size = partial_chunk[1] - partial_chunk[0]
+        partial_chunk = ByteRange(1, self.chunk_size - 1)
+        partial_chunk_size = partial_chunk.finish - partial_chunk.start
         checksums = self.checksummer.get_checksummed_blocks(self.temp_precache.name, partial_chunk)
         self.assertEqual(len(checksums), 1)
-        self.assertEqual(checksums[0], (partial_chunk, md5(b"\0" * partial_chunk_size).hexdigest()))
+        self.assertEqual(checksums[0], ByteRange(partial_chunk.start, partial_chunk.finish, md5(b"\0" * partial_chunk_size).hexdigest()))
 
     def test_calculate_checksum_filesize(self):
         checksum_file_size = os.stat(os.path.join(self.temp_precache.name, "manual_checksums")).st_size

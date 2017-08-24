@@ -28,10 +28,9 @@ from enum import Enum
 from hashlib import md5
 from typing import List, Optional, Tuple
 
-from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
+from irobot.common import AsyncTaskStatus, ByteRange, Listenable, WorkerPool
 from irobot.config import PrecacheConfig
 from irobot.logging import LogWriter
-from irobot.precache._types import ByteRange, ByteRangeChecksum
 
 
 _RE_CHECKSUM_RECORD = re.compile(r"""
@@ -50,23 +49,24 @@ _RE_CHECKSUM_RECORD = re.compile(r"""
     )$                                  # Anchor to end of string
 """, re.VERBOSE | re.IGNORECASE)
 
-def _parse_checksum_record(record:str) -> ByteRangeChecksum:
+def _parse_checksum_record(record:str) -> ByteRange:
     """
     Parse (but don't validate) checksum record
 
     @param   record  Record (string)
-    @return  Byte range size (ByteRangeSize)
+    @return  Byte range (ByteRange)
     """
     match = _RE_CHECKSUM_RECORD.match(record)
 
     if not match:
         raise SyntaxError("Invalid checksum record")
 
-    byte_range = None if match["whole"] else (int(match["from"]), int(match["to"]))
-    return (byte_range, match["checksum"])
+    range_from = 0  if match["whole"] else int(match["from"])
+    range_to   = -1 if match["whole"] else int(match["to"])
+    return ByteRange(range_from, range_to, match["checksum"])
 
 
-def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tuple[str, List[ByteRangeChecksum]]:
+def _checksum(filename:str, chunk_size:int, byte_range:Optional[ByteRange] = None) -> Tuple[str, List[ByteRange]]:
     """
     Calculate the file chunk checksums
 
@@ -74,47 +74,47 @@ def _checksum(filename:str, chunk_size:int, byte_range:ByteRange = None) -> Tupl
     @param   chunk_size  Chunk size in bytes (int)
     @param   byte_range  Byte range to checksum (ByteRange; None for all)
     @return  Tuple of the filename and list of checksums covering the
-             specified range (Tuple of string and list of ByteRangeChecksum)
+             specified range (Tuple of string and list of ByteRange)
     """
     assert chunk_size > 0
 
     whole_file = (byte_range is None)
     file_size = os.stat(filename).st_size
 
-    chunk_checksums:List[ByteRangeChecksum] = []
+    chunk_checksums:List[ByteRange] = []
     if whole_file:
         whole_checksum = md5()
-        byte_range = (0, file_size)
+        byte_range = ByteRange(0, file_size)
 
     # Calculate chunk boundaries
     chunks:List[ByteRange] = []
-    range_from, range_to = byte_range
+    range_from, range_to, _ = byte_range
     range_to = min(range_to, file_size)
     for i in range(range_from // chunk_size, (range_to // chunk_size) + 1):
         chunk_from = max(i * chunk_size, range_from)
         chunk_to = min((i + 1) * chunk_size, range_to)
 
         if chunk_from < chunk_to:
-            chunks.append((chunk_from, chunk_to))
+            chunks.append(ByteRange(chunk_from, chunk_to))
 
     # Do the checksumming
     with open(filename, "rb") as fd:
         for chunk in chunks:
-            chunk_from, chunk_to = chunk
+            chunk_from, chunk_to, _ = chunk
             chunk_length = chunk_to - chunk_from
 
             fd.seek(chunk_from)
             chunk_data = fd.read(chunk_length)
 
             checksum = md5(chunk_data)
-            chunk_checksums.append((chunk, checksum.hexdigest()))
+            chunk_checksums.append(ByteRange(chunk_from, chunk_to, checksum.hexdigest()))
 
             if whole_file:
                 whole_checksum.update(chunk_data)
 
     if whole_file:
         # Prepend checksum for whole file
-        chunk_checksums = [(None, whole_checksum.hexdigest())] + chunk_checksums
+        chunk_checksums = [ByteRange(0, -1, whole_checksum.hexdigest())] + chunk_checksums
 
     return filename, chunk_checksums
 
@@ -154,7 +154,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         """
         self.log(logging.INFO, f"Checksumming {status.name} for {precache_path}")
 
-    def _start_checksumming(self, precache_path:str) -> Tuple[str, List[ByteRangeChecksum]]:
+    def _start_checksumming(self, precache_path:str) -> Tuple[str, List[ByteRange]]:
         """
         Start calculating the checksums for the precache data and notify
         listeners that we've started
@@ -180,13 +180,8 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
             checksum_file = os.path.join(precache_path, "checksums")
 
             with open(checksum_file, "wt") as fd:
-                for byte_range, checksum in chunk_checksums:
-                    if byte_range is None:
-                        index = "*"
-                    else:
-                        index_from, index_to = byte_range
-                        index = f"{index_from}-{index_to}"
-
+                for index_from, index_to, checksum in chunk_checksums:
+                    index = "*" if (index_from, index_to) == (0, -1) else f"{index_from}-{index_to}"
                     fd.write(f"{index}\t{checksum}\n")
 
             self.broadcast(AsyncTaskStatus.finished, precache_path)
@@ -216,7 +211,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         future = self.pool.submit(self._start_checksumming, precache_path)
         future.add_done_callback(self._write_checksum_file)
 
-    def get_checksummed_blocks(self, precache_path:str, byte_range:ByteRange = None) -> List[ByteRangeChecksum]:
+    def get_checksummed_blocks(self, precache_path:str, byte_range:Optional[ByteRange] = None) -> List[ByteRange]:
         """
         Retrieve the checksum blocks of the precache data (from file;
         calculating overlaps/intersections when necessary), or the
@@ -224,7 +219,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
 
         @param   precache_path  Path to the precache data (string)
         @param   byte_range     Byte range for which to get checksums (ByteRange)
-        @return  List of checksums covering the specified range (list of ByteRangeChecksum)
+        @return  List of checksums covering the specified range (list of ByteRange)
         """
         checksum_file = os.path.join(precache_path, "checksums")
 
@@ -240,14 +235,14 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
 
             data_file = os.path.join(precache_path, "data")
             data_size = os.stat(data_file).st_size
-            byte_from, byte_to = byte_range
+            byte_from, byte_to, _ = byte_range
 
             try:
                 assert 0 <= byte_from < byte_to <= data_size
             except AssertionError:
                 raise IndexError("Invalid data range")
 
-            output:List[ByteRangeChecksum] = []
+            output:List[ByteRange] = []
 
             # Read through records to find intersection
             while True:
@@ -257,7 +252,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
                     break
 
                 # Parse the chunk and break if we've got all we want
-                (chunk_from, chunk_to), checksum = this_chunk = _parse_checksum_record(chunk_record)
+                chunk_from, chunk_to, _ = this_chunk = _parse_checksum_record(chunk_record)
                 if byte_to < chunk_from:
                     break
 
@@ -269,7 +264,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
                 else:
                     # ...otherwise we need to calculate the checksums
                     # for the overlapping/contained sections
-                    to_calculate = max(chunk_from, byte_from), min(chunk_to, byte_to)
+                    to_calculate = ByteRange(max(chunk_from, byte_from), min(chunk_to, byte_to))
 
                     # Submit calculation of partial chunk checksum to
                     # the pool and block on result for output
