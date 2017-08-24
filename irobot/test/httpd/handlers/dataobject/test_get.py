@@ -19,6 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
+from aiohttp.web import HTTPRequestRangeNotSatisifable as exc416
+
 from irobot.common import ByteRange
 from irobot.httpd.handlers.dataobject._get import \
     _canonicalise_ranges as c, \
@@ -26,9 +28,43 @@ from irobot.httpd.handlers.dataobject._get import \
 
 
 class TestRangeParser(unittest.TestCase):
-    def test_FOO(self):
-        # TODO
-        pass
+    def test_invalid_input(self):
+        self.assertRaises(exc416, pr, "foo", 123)
+
+    def test_invalid_unit(self):
+        self.assertRaises(exc416, pr, "foo=123", 123)
+
+    def test_invalid_range(self):
+        self.assertRaises(exc416, pr, "bytes=456-123", 500)
+
+    def test_range_out_of_bounds(self):
+        self.assertRaises(exc416, pr, "bytes=500-1000", 400)
+
+    def test_full_range(self):
+        self.assertEqual(pr("bytes=100,200", 500),
+                         [ByteRange(100, 200)])
+
+    def test_from_range(self):
+        self.assertEqual(pr("bytes=100-", 500),
+                         [ByteRange(100, 500)])
+
+    def test_from_end_range(self):
+        self.assertEqual(pr("bytes=-100", 500),
+                         [ByteRange(400, 500)])
+
+    def test_multiple_range(self):
+        self.assertEqual(pr("bytes=10-20,30-40,50-60", 100),
+                         [ByteRange(10, 20), ByteRange(30, 40), ByteRange(50, 60)])
+
+    def test_range_canonicalisation(self):
+        self.assertEqual(pr("bytes=10-20,21-30", 500),
+                         [ByteRange(10, 30)])
+
+        self.assertEqual(pr("bytes=10-20,18-30", 500),
+                         [ByteRange(10, 30)])
+
+        self.assertEqual(pr("bytes=10-20,12-18", 500),
+                         [ByteRange(10, 20)])
 
 
 class TestRangeCanonicaliser(unittest.TestCase):
