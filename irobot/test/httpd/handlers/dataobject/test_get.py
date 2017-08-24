@@ -39,13 +39,22 @@ class TestRangeCanonicaliser(unittest.TestCase):
         self.assertEqual(c([ByteRange(1, 2)]),
                          [ByteRange(1, 2)])
 
-    def test_multiple(self):
+    def test_ordering(self):
+        self.assertEqual(c([ByteRange(7, 8), ByteRange(4, 5, "foo"), ByteRange(1, 2)]),
+                         [ByteRange(1, 2), ByteRange(4, 5, "foo"), ByteRange(7, 8)])
+
+    def test_separate(self):
         self.assertEqual(c([ByteRange(1, 2), ByteRange(4, 5)], [ByteRange(7, 8)]),
                          [ByteRange(1, 2), ByteRange(4, 5), ByteRange(7, 8)])
 
-    def test_ordered(self):
-        self.assertEqual(c([ByteRange(7, 8), ByteRange(4, 5, "foo"), ByteRange(1, 2)]),
-                         [ByteRange(1, 2), ByteRange(4, 5, "foo"), ByteRange(7, 8)])
+        self.assertEqual(c([ByteRange(1, 2), ByteRange(4, 5, "foo")]),
+                         [ByteRange(1, 2), ByteRange(4, 5, "foo")])
+
+        self.assertEqual(c([ByteRange(1, 2, "foo"), ByteRange(4, 5)]),
+                         [ByteRange(1, 2, "foo"), ByteRange(4, 5)])
+
+        self.assertEqual(c([ByteRange(1, 2, "foo"), ByteRange(4, 5, "bar")]),
+                         [ByteRange(1, 2, "foo"), ByteRange(4, 5, "bar")])
 
     def test_juxtaposed(self):
         self.assertEqual(c([ByteRange(1, 2), ByteRange(3, 4)]),
@@ -61,31 +70,24 @@ class TestRangeCanonicaliser(unittest.TestCase):
                          [ByteRange(1, 2, "foo"), ByteRange(3, 4, "foo")])
 
     def test_overlapping(self):
-        self.assertEqual(c([ByteRange(1, 10), ByteRange(10, 20)]),
+        self.assertEqual(c([ByteRange(1, 12), ByteRange(8, 20)]),
                          [ByteRange(1, 20)])
 
-        self.assertEqual(c([ByteRange(1, 10), ByteRange(3, 8)]),
-                         [ByteRange(1, 10)])
+        self.assertEqual(c([ByteRange(1, 12), ByteRange(8, 20, "foo")]),
+                         [ByteRange(1, 7), ByteRange(8, 20, "foo")])
 
-        self.assertEqual(c([ByteRange(10, 20), ByteRange(5, 15)]),
-                         [ByteRange(5, 20)])
+        self.assertEqual(c([ByteRange(1, 12, "foo"), ByteRange(8, 20)]),
+                         [ByteRange(1, 12, "foo"), ByteRange(13, 20)])
 
-    def test_juxtaposed_checksum(self):
-        self.assertEqual(c([ByteRange(1, 10), ByteRange(11, 20, "foo")]),
-                         [ByteRange(1, 10), ByteRange(11, 20, "foo")])
+    def test_interposed(self):
+        self.assertEqual(c([ByteRange(1, 20), ByteRange(5, 15)]),
+                         [ByteRange(1, 20)])
 
-        self.assertEqual(c([ByteRange(1, 10, "foo"), ByteRange(11, 20)]),
-                         [ByteRange(1, 10, "foo"), ByteRange(11, 20)])
+        self.assertEqual(c([ByteRange(1, 20), ByteRange(5, 15, "foo")]),
+                         [ByteRange(1, 4), ByteRange(5, 15, "foo"), ByteRange(16, 20)])
 
-        self.assertEqual(c([ByteRange(1, 10, "foo"), ByteRange(11, 20, "bar")]),
-                         [ByteRange(1, 10, "foo"), ByteRange(11, 20, "bar")])
-
-    def test_interposed_checksum(self):
-        self.assertEqual(c([ByteRange(1, 10), ByteRange(8, 15, "foo")]),
-                         [ByteRange(1, 7), ByteRange(8, 15, "foo")])
-
-        self.assertEqual(c([ByteRange(1, 10), ByteRange(3, 8, "foo")]),
-                         [ByteRange(1, 2), ByteRange(3, 8, "foo"), ByteRange(9, 10)])
+        self.assertEqual(c([ByteRange(1, 20, "foo"), ByteRange(5, 15)]),
+                         [ByteRange(1, 20, "foo")])
 
 
 if __name__ == "__main__":
