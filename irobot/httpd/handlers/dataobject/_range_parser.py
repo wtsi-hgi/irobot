@@ -26,6 +26,9 @@ from irobot.common import ByteRange
 from irobot.httpd._error import error_factory
 
 
+# Range header specification per RFC7233, section 2.1
+# https://tools.ietf.org/html/rfc7233#section-2.1
+
 _RE_RANGE_REQ = re.compile(r"""
     ^
     (?P<units> \w+ )
@@ -122,12 +125,12 @@ def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
         range_to   = range_match["to"]
 
         # Three cases:
-        # a-b  Range from a to b, inclusive, where a <= b
+        # a-b  Range from a to b, inclusive, where a <= filesize <= b (truncated to filesize)
         # a-   Range from a to end, inclusive
         # -b   Range from end to end -b, inclusive
         new_range = ByteRange(
             int(range_from) if range_from else filesize - int(range_to),
-            filesize if not all([range_from, range_to]) else int(range_to)
+            filesize if not all([range_from, range_to]) else min(filesize, int(range_to))
         )
 
         if new_range.finish > new_range.start:

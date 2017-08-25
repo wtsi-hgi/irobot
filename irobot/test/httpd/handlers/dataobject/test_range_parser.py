@@ -44,6 +44,10 @@ class TestRangeParser(unittest.TestCase):
         self.assertEqual(pr("bytes=100,200", 500),
                          [ByteRange(100, 200)])
 
+    def test_right_truncation(self):
+        self.assertEqual(pr("bytes=100,300", 200),
+                         [ByteRange(100, 200)])
+
     def test_from_range(self):
         self.assertEqual(pr("bytes=100-", 500),
                          [ByteRange(100, 500)])
