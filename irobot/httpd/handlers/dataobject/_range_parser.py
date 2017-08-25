@@ -68,7 +68,6 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
     # Merge
     for this in remainder:
         either_checksummed = any([prev.checksum, this.checksum])
-        both_checksummed   = all([prev.checksum, this.checksum])
 
         if prev.finish < this.start - 1 \
            or (either_checksummed and prev.finish == this.start - 1):
@@ -78,7 +77,7 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
             prev = this
 
         else:
-            if not both_checksummed:
+            if not either_checksummed:
                 # Neither ranges are checksummed and they are
                 # juxtaposed, overlap or interposed
                 prev = ByteRange(prev.start, max(prev.finish, this.finish))
@@ -87,25 +86,23 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
                 if prev.checksum:
                     if this.finish > prev.finish:
                         # Checksummed overlaps non-checksummed
-                        # FIXME
                         merged_ranges.append(prev)
                         prev = ByteRange(prev.finish + 1, this.finish)
 
                     # Ignore current range if subsumed by checksummed
 
                 else:
-                    if this.finish > prev.start:
-                        # Non-checksummed overlaps checksummed
-                        merged_ranges.append(ByteRange(prev.start, this.start - 1))
-                        prev = this
-
-                    else:
+                    if prev.start <= this.start <= this.finish <= prev.finish:
                         # Checksummed subsumed by non-checksummed
-                        # FIXME
                         merged_ranges.append(ByteRange(prev.start, this.start - 1))
                         merged_ranges.append(ByteRange(this.start + 1, prev.finish))
                         prev = this
                         out_of_order = True
+
+                    else:
+                        # Non-checksummed overlaps checksummed
+                        merged_ranges.append(ByteRange(prev.start, this.start - 1))
+                        prev = this
 
     # Ensure last range gets appended
     merged_ranges.append(prev)
