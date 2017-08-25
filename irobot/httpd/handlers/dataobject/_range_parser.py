@@ -167,11 +167,11 @@ def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
             filesize if not all([range_from, range_to]) else min(filesize, int(range_to))
         )
 
-        if new_range.start > new_range.finish:
-            raise _invalid_range(r, "end before start")
-
         if new_range.start > filesize:
             raise _invalid_range(r, "out of bounds")
+
+        if new_range.start > new_range.finish:
+            raise _invalid_range(r, "end before start")
 
         ranges.append(new_range)
 

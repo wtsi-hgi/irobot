@@ -32,9 +32,10 @@ class TestRangeParser(unittest.TestCase):
         self.assertRaises(exc416, pr, "foo", 123)
 
     def test_invalid_unit(self):
-        self.assertRaises(exc416, pr, "foo=123", 123)
+        self.assertRaises(exc416, pr, "foo=123-456", 500)
 
     def test_invalid_range(self):
+        self.assertRaises(exc416, pr, "bytes=-", 500)
         self.assertRaises(exc416, pr, "bytes=456-123", 500)
 
     def test_range_out_of_bounds(self):

@@ -44,6 +44,7 @@ managing a connection pool to iRODS.
     - [ ] `GET` and `HEAD`
       - [ ] Data request
       - [ ] Ranged data request
+        - [x] Range parser
       - [x] Metadata request
     - [x] `POST`
     - [x] `DELETE`
