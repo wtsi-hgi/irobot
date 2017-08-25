@@ -22,9 +22,9 @@ import unittest
 from aiohttp.web import HTTPRequestRangeNotSatisfiable as exc416
 
 from irobot.common import ByteRange
-from irobot.httpd.handlers.dataobject._get import \
-    _canonicalise_ranges as c, \
-    _parse_range as pr
+from irobot.httpd.handlers.dataobject._range_parser import \
+    canonicalise_ranges as c, \
+    parse_range as pr
 
 
 class TestRangeParser(unittest.TestCase):
