@@ -352,7 +352,8 @@ request, but only the response headers will be returned.
 ##### Using the `Accept` Request Header
 
 The `Accept` request header is used productively to fetch an appropriate
-representation of the specific data object:
+representation of the specific data object, per the semantics of [HTTP
+content negotation](https://tools.ietf.org/html/rfc7231#section-5.3.2):
 
 * If it is omitted, or `application/octet-stream` is the primarily
   accepted media type, then the data (or ranges, thereof) for the
@@ -364,6 +365,11 @@ representation of the specific data object:
   returned.
 
 * Otherwise, a `406 Not Acceptable` response will be returned.
+
+Note that, arguably, serving very different representations from the
+same endpoint breaks the true purpose of content negotiation. However
+the protocol followed by iRobot is seen as a better trade-off, given
+its primary objective of fetching data.
 
 ##### Client Cache Validity
 
