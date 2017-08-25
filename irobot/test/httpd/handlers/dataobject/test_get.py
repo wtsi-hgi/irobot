@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
-from aiohttp.web import HTTPRequestRangeNotSatisifable as exc416
+from aiohttp.web import HTTPRequestRangeNotSatisfiable as exc416
 
 from irobot.common import ByteRange
 from irobot.httpd.handlers.dataobject._get import \
@@ -70,6 +70,7 @@ class TestRangeParser(unittest.TestCase):
 class TestRangeCanonicaliser(unittest.TestCase):
     def test_nothing(self):
         self.assertRaises(AssertionError, c)
+        self.assertRaises(AssertionError, c, [])
 
     def test_single(self):
         self.assertEqual(c([ByteRange(1, 2)]),
