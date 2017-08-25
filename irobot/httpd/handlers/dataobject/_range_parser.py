@@ -67,16 +67,53 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
 
     # Merge
     for this in remainder:
-        # TODO
-        pass
+        either_checksummed = any([prev.checksum, this.checksum])
+        both_checksummed   = all([prev.checksum, this.checksum])
 
-    # Ensure last one gets added
+        if prev.finish < this.start - 1 \
+           or (either_checksummed and prev.finish == this.start - 1):
+            # Ranges are completely separated or in juxtaposition with
+            # at least one checksummed range
+            merged_ranges.append(prev)
+            prev = this
+
+        else:
+            if not both_checksummed:
+                # Neither ranges are checksummed and they are
+                # juxtaposed, overlap or interposed
+                prev = ByteRange(prev.start, max(prev.finish, this.finish))
+
+            else:
+                if prev.checksum:
+                    if this.finish > prev.finish:
+                        # Checksummed overlaps non-checksummed
+                        # FIXME
+                        merged_ranges.append(prev)
+                        prev = ByteRange(prev.finish + 1, this.finish)
+
+                    # Ignore current range if subsumed by checksummed
+
+                else:
+                    if this.finish > prev.start:
+                        # Non-checksummed overlaps checksummed
+                        merged_ranges.append(ByteRange(prev.start, this.start - 1))
+                        prev = this
+
+                    else:
+                        # Checksummed subsumed by non-checksummed
+                        # FIXME
+                        merged_ranges.append(ByteRange(prev.start, this.start - 1))
+                        merged_ranges.append(ByteRange(this.start + 1, prev.finish))
+                        prev = this
+                        out_of_order = True
+
+    # Ensure last range gets appended
     merged_ranges.append(prev)
 
     if out_of_order:
-        # If we've split off a range's tail, then it will necessarily be
+        # If we've split out a range's tail, then it will necessarily be
         # out of order and we'll have to run through this process again
-        # to resort and potentially merge the split off range
+        # to resort and potentially merge the split out range
         merged_ranges = canonicalise_ranges(merged_ranges)
 
     return merged_ranges

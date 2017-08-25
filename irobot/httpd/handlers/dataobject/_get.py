@@ -18,109 +18,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-import re
-from typing import Dict, List, Tuple
+from typing import Dict
 
 from aiohttp.web import Request, Response
 
 from irobot.irods import MetadataJSONEncoder
 from irobot.httpd._common import ENCODING, HandlerT
-from irobot.httpd._error import error_factory
 from irobot.httpd.handlers import _decorators as request
 from irobot.httpd.handlers.dataobject._common import get_data_object
+from irobot.httpd.handlers.dataobject._range_parser import canonicalise_ranges, parse_range
+
 
 # Media types
 _data = "application/octet-stream"
 _metadata = "application/vnd.irobot.metadata+json"
-
-
-_RE_RANGE_REQ = re.compile(r"""
-    ^
-    (?P<units> \w+ )
-    =
-    (?P<ranges> \d* - \d* (?: , \d* - \d* )* )
-    $
-""", re.IGNORECASE | re.VERBOSE)
-
-_RE_RANGE = re.compile(r"""
-    (?= .* \d )        # Must contain at least one number
-    ^
-    (?P<from> \d+ )?   # Range from
-    -
-    (?P<to> \d+ )?     # Range to
-    $
-""", re.VERBOSE)
-
-def _parse_range(range_header:str, filesize:int) -> List[Tuple[int, int]]:
-    """
-    Parse and canonicalise the required byte range, raising a 416
-    Range Not Satisfiable error if the requested range is invalid in
-    any way.
-
-    @param   range_header  Value of the range request header (string)
-    @param   filesize      File size (int)
-    @return  Ordered list of ranges, merged if overlapping (list)
-    """
-    req = _RE_RANGE_REQ.match(range_header)
-    ranges = []
-
-    if not req:
-        raise error_factory(416, "Could not parse range request")
-
-    if req["units"].lower() != "bytes":
-        unit = req["units"]
-        raise error_factory(416, "Can only respond with byte ranges; "
-                                 f"\"{unit}\" is not an understood unit.")
-
-    # Parse the ranges
-    for r in req["ranges"].split(","):
-        range_match = _RE_RANGE.match(r)
-        invalid_range = error_factory(416, f"Invalid range \"{r}\".")
-
-        if not range_match:
-            raise invalid_range
-
-        range_from = range_match["from"]
-        range_to   = range_match["to"]
-
-        # Three cases:
-        # a-b  Range from a to b, inclusive, where a <= b
-        # a-   Range from a to end, inclusive
-        # -b   Range from end to end -b, inclusive
-
-        if range_from:
-            range_from = int(range_from)
-            range_to   = int(range_to) if range_to else filesize
-        else:
-            range_from = filesize - int(range_to)
-            range_to   = filesize
-
-        if range_from > range_to or range_from > filesize:
-            raise invalid_range
-
-        ranges.append((range_from, range_to))
-
-    ranges = sorted(ranges)
-    merged_ranges = []
-
-    # Merge overlapping ranges
-    new_range = None
-    for r in ranges:
-        if not new_range:
-            new_range = r
-
-        last_from, last_to = new_range
-        this_from, this_to = r
-
-        if last_to >= this_from - 1:
-            new_range = (last_from, this_to)
-        else:
-            merged_ranges.append(new_range)
-            new_range = r
-
-    merged_ranges.append(new_range)
-
-    return merged_ranges
 
 
 async def data_handler(req:Request) -> Response:
