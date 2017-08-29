@@ -23,7 +23,7 @@ from aiohttp.web import Request, Response
 
 from irobot.common import AsyncTaskStatus, DataObjectState
 from irobot.httpd._error import error_factory
-from irobot.precache import AbstractDataObject, InProgress, InProgressWithETA, PrecacheFull
+from irobot.precache import AbstractDataObject, AbstractPrecache, InProgress, InProgressWithETA, PrecacheFull
 
 
 class ETAResponse(Response, Exception):
@@ -47,7 +47,7 @@ class ETAResponse(Response, Exception):
         Exception.__init__(self, exc_text)
 
 
-def get_data_object(req:Request, *, raise_inprogress:bool = False, raise_inflight:bool = False) -> AbstractDataObject:
+def get_data_object(precache:AbstractPrecache, irods_path:str, *, raise_inprogress:bool = False, raise_inflight:bool = False) -> AbstractDataObject:
     """
     Get a reference to the data object in the precache, initialising the
     data seeding if the data object is not already in the precache. On
@@ -55,19 +55,12 @@ def get_data_object(req:Request, *, raise_inprogress:bool = False, raise_infligh
     exception, which will be caught and converted to the appropriate
     response, to be handled upstream.
 
-    @note    We have to pass in the entire request, to get access to the
-             data object contention table. It's not pretty :P
-
-    @param   req               The HTTP request (Request)
+    @param   precache          Precache
+    @param   irods_path        iRODS data object path (string)
     @param   raise_inprogress  Raise if data object fetching is in progress (bool; default False)
     @param   raise_inflight    Check if the data object is inflight or contended (bool; default False)
     @return  Data object active record (AbstractDataObject)
     """
-    # Get the app and request local data
-    precache = req.app["irobot_precache"]
-    irods_path = req["irobot_irods_path"]
-    contention = req.app["irobot_data_object_contention"][irods_path]
-
     try:
         data_object = precache(irods_path)
 
@@ -94,7 +87,7 @@ def get_data_object(req:Request, *, raise_inprogress:bool = False, raise_infligh
                                   "precache is full.")
 
     if raise_inflight:
-        if contention or data_object.status[DataObjectState.data] != AsyncTaskStatus.finished:
+        if data_object.contention or data_object.status[DataObjectState.data] != AsyncTaskStatus.finished:
             raise error_factory(409, f"Data object \"{irods_path}\" is "
                                       "inflight or contended; cannot fulfil request.")
 

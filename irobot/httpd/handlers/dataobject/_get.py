@@ -36,7 +36,9 @@ _metadata = "application/vnd.irobot.metadata+json"
 
 async def data_handler(req:Request) -> Response:
     """ Data handler """
-    data_object = get_data_object(req, raise_inprogress=True, raise_inflight=False)
+    precache = req["irobot_precache"]
+    irods_path = req["irobot_irods_path"]
+    data_object = get_data_object(precache, irods_path, raise_inprogress=True, raise_inflight=False)
 
     # If we've got this far, then we can return actual data!
 
@@ -46,8 +48,6 @@ async def data_handler(req:Request) -> Response:
     # now we just have this simple can we/can't we distinction on the
     # basis of the complete data...
 
-    irods_path = req["irobot_irods_path"]
-    req.app["irobot_data_object_contention"][irods_path] += 1
     data_object.update_last_access()
 
     # TODO Reset contention after all file operations have completed
@@ -57,7 +57,10 @@ async def data_handler(req:Request) -> Response:
 
 async def metadata_handler(req:Request) -> Response:
     """ Metadata handler """
-    data_object = get_data_object(req, raise_inprogress=False, raise_inflight=False)
+    precache = req["irobot_precache"]
+    irods_path = req["irobot_irods_path"]
+    data_object = get_data_object(precache, irods_path, raise_inprogress=False, raise_inflight=False)
+
     data_object.update_last_access()
     body = json.dumps(data_object.metadata, cls=MetadataJSONEncoder).encode(ENCODING)
     return Response(status=200, body=body, content_type=_metadata, charset=ENCODING)
@@ -68,6 +71,7 @@ _media_delegates:Dict[str, HandlerT] = {
     _data:     data_handler,
     _metadata: metadata_handler
 }
+
 
 @request.accept(*_media_delegates.keys())
 async def handler(req:Request) -> Response:

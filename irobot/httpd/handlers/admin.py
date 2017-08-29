@@ -152,7 +152,7 @@ async def manifest(req:Request) -> Response:
                 for datatype in DataObjectState
             },
             "last_accessed": datetime.strftime(data_object.last_accessed, ISO8601_UTC),
-            "contention": req.app["irobot_data_object_contention"][data_object.irods_path],
+            "contention": data_object.contention,
         }
         for data_object in req.app["irobot_precache"]
     ]

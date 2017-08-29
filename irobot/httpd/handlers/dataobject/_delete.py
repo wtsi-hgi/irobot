@@ -34,6 +34,6 @@ async def handler(req:Request) -> Response:
         raise error_factory(404, f"No such data object \"{irods_path}\" "
                                   "in precache; cannot delete.")
 
-    data_object = get_data_object(req, raise_inprogress=False, raise_inflight=True)
+    data_object = get_data_object(precache, irods_path, raise_inprogress=False, raise_inflight=True)
     data_object.delete()
     return Response(status=204)

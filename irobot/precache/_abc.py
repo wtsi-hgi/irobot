@@ -40,11 +40,13 @@ class AbstractDataObject(metaclass=ABCMeta):
     @abstractmethod
     def precache_path(self) -> str:
         """ The absolute path to the precached data object's state """
+        # NOTE We might not need this
 
     @precache_path.setter
     @abstractmethod
     def precache_path(self, path:str) -> None:
         """ Precache path setter """
+        # NOTE We might not need this
 
     ## Data Object Status ##############################################
 
@@ -60,6 +62,14 @@ class AbstractDataObject(metaclass=ABCMeta):
     @abstractmethod
     def progress(self) -> Optional[InProgress]:
         """ Return the data fetching progress, or None if ready """
+
+    @property
+    @abstractmethod
+    def contention(self) -> int:
+        """
+        Return the number of currently open file descriptors to the
+        precached data object's data file
+        """
 
     ## Last Access Time ################################################
 
