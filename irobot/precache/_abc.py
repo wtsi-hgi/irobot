@@ -19,14 +19,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import Dict, Callable, Collection, List, Optional
+from typing import Callable, Collection, ContextManager, Dict, IO, List, Optional
 
 from irobot.common import AsyncTaskStatus, DataObjectState, ByteRange, SummaryStat
 from irobot.irods import Metadata
 from irobot.precache._types import InProgress
 
 
-class AbstractDataObject(metaclass=ABCMeta):
+# FIXME? Should this be an AsyncContextManager?...
+class AbstractDataObject(ContextManager[IO], metaclass=ABCMeta):
     """ Abstract metaclass for data object active records """
 
     ## iRODS and Precache Paths ########################################
