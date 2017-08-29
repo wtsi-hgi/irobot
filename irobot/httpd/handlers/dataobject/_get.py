@@ -18,11 +18,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-from typing import Dict
+from typing import Dict, Generator, IO, Optional
 
 from aiohttp.multipart import MultipartWriter
 from aiohttp.web import Request, Response, StreamResponse
 
+from irobot.common import ByteRange
 from irobot.irods import MetadataJSONEncoder
 from irobot.httpd._common import ENCODING, HandlerT
 from irobot.httpd.handlers import _decorators as request
@@ -34,6 +35,43 @@ from irobot.httpd.handlers.dataobject._range_parser import canonicalise_ranges, 
 _data      = "application/octet-stream"
 _metadata  = "application/vnd.irobot.metadata+json"
 _multipart = "multipart/bytes"
+
+
+# TODO Get default chunk size from, e.g., environment
+def _get_data(fd:IO[bytes], *, byte_range:Optional[ByteRange] = None, chunk_size:int = 8192) -> Generator[bytes, None, None]:
+    """
+    @param   fd          File descriptor
+    @param   byte_range  Byte range (ByteRange; None for everything, default)
+    @param   chunk_size  Chunk size (default 8KB)
+    @return  Generator that yields the requested data (bytes)
+    """
+    assert chunk_size > 0
+
+    if byte_range:
+        start, finish, _ = byte_range
+        assert 0 <= start < finish
+        to_consume = finish - start
+        consumed = 0
+
+    else:
+        start = 0
+
+    fd.seek(start)
+    to_read = chunk_size
+
+    while True:
+        if byte_range:
+            if consumed >= to_consume:
+                break
+
+            to_read = min(chunk_size, to_consume - consumed)
+            consumed += to_read
+
+        data = fd.read(to_read)
+        if not data:
+            break
+
+        yield data
 
 
 async def data_handler(req:Request) -> StreamResponse:
@@ -61,15 +99,20 @@ async def data_handler(req:Request) -> StreamResponse:
 
     # Steam out the data
     with data_object as do_file:
-        status_code = 202 if is_range_request else 200
-        content_type = _multipart if is_range_request else _data
+        if is_range_request:
+            status_code = 202
+            content_type = _multipart
+        else:
+            status_code = 200
+            content_type = _data
+
         headers = {**headers, "Content-Type": content_type}
 
         resp = StreamResponse(status=status_code, headers=headers)
         resp.enable_chunked_encoding()
         resp.enable_compression()
 
-        await resp.prepare(request)
+        await resp.prepare(req)
 
         if is_range_request:
             # Fetch ranges from header and mix with checksums, if they exist
@@ -84,21 +127,19 @@ async def data_handler(req:Request) -> StreamResponse:
                     **({"Content-MD5": r.checksum} if r.checksum else {})
                 }
 
-                do_file.seek(r.start)
-                range_size = (r.finish - r.start) + 1
-                multipart_writer.append(do_file.read(range_size), range_header)
+                data = b""
+                for chunk in _get_data(do_file, byte_range=r):
+                    data += chunk
+
+                multipart_writer.append(data, range_header)
 
                 # TODO? Write to response??
 
         else:
-            while True:
-                # TODO Get the chunking size from, e.g., environment
-                data = do_file.read(8192)
-                if not data:
-                    await resp.drain()
-                    break
-
+            for data in _get_data(do_file):
                 resp.write(data)
+
+            await resp.drain()
 
         return resp
 
