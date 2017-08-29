@@ -20,7 +20,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import json
 from typing import Dict
 
-from aiohttp.web import Request, Response
+from aiohttp.multipart import MultipartWriter
+from aiohttp.web import Request, Response, StreamResponse
 
 from irobot.irods import MetadataJSONEncoder
 from irobot.httpd._common import ENCODING, HandlerT
@@ -30,11 +31,12 @@ from irobot.httpd.handlers.dataobject._range_parser import canonicalise_ranges, 
 
 
 # Media types
-_data = "application/octet-stream"
-_metadata = "application/vnd.irobot.metadata+json"
+_data      = "application/octet-stream"
+_metadata  = "application/vnd.irobot.metadata+json"
+_multipart = "multipart/bytes"
 
 
-async def data_handler(req:Request) -> Response:
+async def data_handler(req:Request) -> StreamResponse:
     """ Data handler """
     precache = req["irobot_precache"]
     irods_path = req["irobot_irods_path"]
@@ -48,11 +50,57 @@ async def data_handler(req:Request) -> Response:
     # now we just have this simple can we/can't we distinction on the
     # basis of the complete data...
 
+    if req.headers.get("If-None-Match") == data_object.metadata.checksum:
+        # Client's version matches, so there's nothing to do
+        return Response(status=304)
+
     data_object.update_last_access()
+    headers = {"ETag": data_object.metadata.checksum}
 
-    # TODO Reset contention after all file operations have completed
+    is_range_request = "Range" in req.headers
 
-    raise NotImplementedError(f"I don't know how to get the data for {irods_path}")
+    # Steam out the data
+    with data_object as do_file:
+        status_code = 202 if is_range_request else 200
+        content_type = _multipart if is_range_request else _data
+        headers = {**headers, "Content-Type": content_type}
+
+        resp = StreamResponse(status=status_code, headers=headers)
+        resp.enable_chunked_encoding()
+        resp.enable_compression()
+
+        await resp.prepare(request)
+
+        if is_range_request:
+            # Fetch ranges from header and mix with checksums, if they exist
+            _ranges = parse_range(req.headers["Range"], data_object.metadata.size)
+            _checksummed_ranges = map(data_object.checksums, _ranges)
+            ranges = canonicalise_ranges(_ranges, *_checksummed_ranges)
+
+            multipart_writer = MultipartWriter("bytes")
+            for r in ranges:
+                range_header = {
+                    "Content-Type": _data,
+                    **({"Content-MD5": r.checksum} if r.checksum else {})
+                }
+
+                do_file.seek(r.start)
+                range_size = (r.finish - r.start) + 1
+                multipart_writer.append(do_file.read(range_size), range_header)
+
+                # TODO? Write to response??
+
+        else:
+            while True:
+                # TODO Get the chunking size from, e.g., environment
+                data = do_file.read(8192)
+                if not data:
+                    await resp.drain()
+                    break
+
+                resp.write(data)
+
+        return resp
 
 
 async def metadata_handler(req:Request) -> Response:
