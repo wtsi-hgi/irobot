@@ -20,6 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import asyncio
 import logging
 from datetime import datetime
+from random import choice
 from typing import List, Optional
 
 from aiohttp import web
@@ -32,10 +33,17 @@ from irobot.precache import AbstractPrecache
 
 _noop = lambda *_, **__: None
 
+_laws = [
+    "A robot may not injure a human being or, through inaction, allow a human being to come to harm.",
+    "A robot must obey the orders given it by human beings except where such orders would conflict with the First Law.",
+    "A robot must protect its own existence as long as such protection does not conflict with the First or Second Laws."
+]
+
 
 async def _set_server_header(_request:web.Request, response:web.Response) -> None:
     """ Set the Server response header """
     response.headers["Server"] = "iRobot"
+    response.headers["iRobot-MOTD"] = choice(_laws)
 
 
 async def _shutdown_server(app:web.Application) -> None:
