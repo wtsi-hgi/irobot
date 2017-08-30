@@ -370,7 +370,9 @@ content negotation](https://tools.ietf.org/html/rfc7231#section-5.3.2):
 Note that, arguably, serving very different representations from the
 same endpoint breaks the true purpose of content negotiation. However
 the protocol followed by iRobot is seen as a better trade-off, given
-its primary objective of fetching data.
+its primary objective of fetching data. If, however, this representation
+duplicity is too much for you to stomach, you can simply stick a reverse
+proxy in front of iRobot with an appropriate set of rewrite rules.
 
 ##### Client Cache Validity
 
