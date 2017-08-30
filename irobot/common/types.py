@@ -27,8 +27,9 @@ AsyncTaskStatus = IntEnum("AsyncTaskStatus", "queued started finished unknown fa
 DataObjectState = IntEnum("DataObjectState", "data metadata checksums")
 
 class ByteRange(NamedTuple):
-    """ Byte range, inclusive, with optional checksum """
-    # n.b., 0 <= start <= finish <= length; this is not enforced
+    """ Byte range, with optional checksum """
+    # n.b., 0 <= start < finish <= length; not enforced by constructor
+    # i.e., start is included in the range, finish isn't
     start: int
     finish: int
     checksum: Optional[str] = None

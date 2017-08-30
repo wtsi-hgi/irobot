@@ -27,7 +27,7 @@ from irobot.precache._types import InProgress
 
 
 # FIXME? Should this be an AsyncContextManager?...
-class AbstractDataObject(ContextManager[IO], metaclass=ABCMeta):
+class AbstractDataObject(ContextManager[IO[bytes]], metaclass=ABCMeta):
     """ Abstract metaclass for data object active records """
 
     ## iRODS and Precache Paths ########################################

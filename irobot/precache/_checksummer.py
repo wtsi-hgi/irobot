@@ -100,14 +100,13 @@ def _checksum(filename:str, chunk_size:int, byte_range:Optional[ByteRange] = Non
     # Do the checksumming
     with open(filename, "rb") as fd:
         for chunk in chunks:
-            chunk_from, chunk_to, _ = chunk
-            chunk_length = chunk_to - chunk_from
+            chunk_length = chunk.finish - chunk.start
 
-            fd.seek(chunk_from)
+            fd.seek(chunk.start)
             chunk_data = fd.read(chunk_length)
 
             checksum = md5(chunk_data)
-            chunk_checksums.append(ByteRange(chunk_from, chunk_to, checksum.hexdigest()))
+            chunk_checksums.append(ByteRange(chunk.start, chunk.finish, checksum.hexdigest()))
 
             if whole_file:
                 whole_checksum.update(chunk_data)

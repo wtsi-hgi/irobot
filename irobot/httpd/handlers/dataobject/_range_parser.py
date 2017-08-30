@@ -69,8 +69,8 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
     for this in remainder:
         either_checksummed = any([prev.checksum, this.checksum])
 
-        if prev.finish < this.start - 1 \
-           or (either_checksummed and prev.finish == this.start - 1):
+        if prev.finish < this.start \
+           or (either_checksummed and prev.finish == this.start):
             # Ranges are completely separated or in juxtaposition with
             # at least one checksummed range
             merged_ranges.append(prev)
@@ -87,21 +87,21 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
                     if this.finish > prev.finish:
                         # Checksummed overlaps non-checksummed
                         merged_ranges.append(prev)
-                        prev = ByteRange(prev.finish + 1, this.finish)
+                        prev = ByteRange(prev.finish, this.finish)
 
                     # Ignore current range if subsumed by checksummed
 
                 else:
-                    if prev.start <= this.start <= this.finish <= prev.finish:
+                    if prev.start <= this.start < this.finish <= prev.finish:
                         # Checksummed subsumed by non-checksummed
-                        merged_ranges.append(ByteRange(prev.start, this.start - 1))
-                        merged_ranges.append(ByteRange(this.start + 1, prev.finish))
+                        merged_ranges.append(ByteRange(prev.start, this.start))
+                        merged_ranges.append(ByteRange(this.finish, prev.finish))
                         prev = this
                         out_of_order = True
 
                     else:
                         # Non-checksummed overlaps checksummed
-                        merged_ranges.append(ByteRange(prev.start, this.start - 1))
+                        merged_ranges.append(ByteRange(prev.start, this.start))
                         prev = this
 
     # Ensure last range gets appended
@@ -131,6 +131,12 @@ def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
     Parse and canonicalise the required byte range, raising a 416
     Range Not Satisfiable error if the requested range is invalid in
     any way.
+
+    @note    RFC7233 clearly states that byte range specifiers are
+             inclusive at both ends. While this doesn't make an awful
+             lot of sense for a 0-based index, iRobot will obviously
+             comply with the specification, but convert it to a sane
+             representation internally (i.e., ByteRange)
 
     @param   range_header  Value of the range request header (string)
     @param   filesize      File size (int)
@@ -164,13 +170,13 @@ def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
         # -b   Range from end to end -b, inclusive
         new_range = ByteRange(
             int(range_from) if range_from else filesize - int(range_to),
-            filesize if not all([range_from, range_to]) else min(filesize, int(range_to))
+            filesize if not all([range_from, range_to]) else min(filesize, int(range_to) + 1)
         )
 
-        if new_range.start > filesize:
+        if new_range.start >= filesize:
             raise _invalid_range(r, "out of bounds")
 
-        if new_range.start > new_range.finish:
+        if new_range.start >= new_range.finish:
             raise _invalid_range(r, "end before start")
 
         ranges.append(new_range)

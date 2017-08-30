@@ -43,7 +43,7 @@ class TestRangeParser(unittest.TestCase):
 
     def test_full_range(self):
         self.assertEqual(pr("bytes=100-200", 500),
-                         [ByteRange(100, 200)])
+                         [ByteRange(100, 201)])
 
     def test_right_truncation(self):
         self.assertEqual(pr("bytes=100-300", 200),
@@ -59,17 +59,17 @@ class TestRangeParser(unittest.TestCase):
 
     def test_multiple_range(self):
         self.assertEqual(pr("bytes=10-20,30-40,50-60", 100),
-                         [ByteRange(10, 20), ByteRange(30, 40), ByteRange(50, 60)])
+                         [ByteRange(10, 21), ByteRange(30, 41), ByteRange(50, 61)])
 
     def test_range_canonicalisation(self):
         self.assertEqual(pr("bytes=10-20,21-30", 500),
-                         [ByteRange(10, 30)])
+                         [ByteRange(10, 31)])
 
         self.assertEqual(pr("bytes=10-20,18-30", 500),
-                         [ByteRange(10, 30)])
+                         [ByteRange(10, 31)])
 
         self.assertEqual(pr("bytes=10-20,12-18", 500),
-                         [ByteRange(10, 20)])
+                         [ByteRange(10, 21)])
 
 
 class TestRangeCanonicaliser(unittest.TestCase):
@@ -99,34 +99,34 @@ class TestRangeCanonicaliser(unittest.TestCase):
                          [ByteRange(1, 2, "foo"), ByteRange(4, 5, "bar")])
 
     def test_juxtaposed(self):
-        self.assertEqual(c([ByteRange(1, 2), ByteRange(3, 4)]),
-                         [ByteRange(1, 4)])
+        self.assertEqual(c([ByteRange(1, 2), ByteRange(2, 3)]),
+                         [ByteRange(1, 3)])
 
-        self.assertEqual(c([ByteRange(1, 2), ByteRange(3, 4, "foo")]),
-                         [ByteRange(1, 2), ByteRange(3, 4, "foo")])
+        self.assertEqual(c([ByteRange(1, 2), ByteRange(2, 3, "foo")]),
+                         [ByteRange(1, 2), ByteRange(2, 3, "foo")])
 
-        self.assertEqual(c([ByteRange(1, 2, "foo"), ByteRange(3, 4)]),
-                         [ByteRange(1, 2, "foo"), ByteRange(3, 4)])
+        self.assertEqual(c([ByteRange(1, 2, "foo"), ByteRange(2, 3)]),
+                         [ByteRange(1, 2, "foo"), ByteRange(2, 3)])
 
-        self.assertEqual(c([ByteRange(1, 2, "foo"), ByteRange(3, 4, "foo")]),
-                         [ByteRange(1, 2, "foo"), ByteRange(3, 4, "foo")])
+        self.assertEqual(c([ByteRange(1, 2, "foo"), ByteRange(2, 3, "foo")]),
+                         [ByteRange(1, 2, "foo"), ByteRange(2, 3, "foo")])
 
     def test_overlapping(self):
         self.assertEqual(c([ByteRange(1, 12), ByteRange(8, 20)]),
                          [ByteRange(1, 20)])
 
         self.assertEqual(c([ByteRange(1, 12), ByteRange(8, 20, "foo")]),
-                         [ByteRange(1, 7), ByteRange(8, 20, "foo")])
+                         [ByteRange(1, 8), ByteRange(8, 20, "foo")])
 
         self.assertEqual(c([ByteRange(1, 12, "foo"), ByteRange(8, 20)]),
-                         [ByteRange(1, 12, "foo"), ByteRange(13, 20)])
+                         [ByteRange(1, 12, "foo"), ByteRange(12, 20)])
 
     def test_interposed(self):
         self.assertEqual(c([ByteRange(1, 20), ByteRange(5, 15)]),
                          [ByteRange(1, 20)])
 
         self.assertEqual(c([ByteRange(1, 20), ByteRange(5, 15, "foo")]),
-                         [ByteRange(1, 4), ByteRange(5, 15, "foo"), ByteRange(16, 20)])
+                         [ByteRange(1, 5), ByteRange(5, 15, "foo"), ByteRange(15, 20)])
 
         self.assertEqual(c([ByteRange(1, 20, "foo"), ByteRange(5, 15)]),
                          [ByteRange(1, 20, "foo")])
