@@ -29,25 +29,6 @@ from irobot.precache._types import InProgress
 class AbstractDataObject(ContextManager[IO[bytes]], metaclass=ABCMeta):
     """ Abstract metaclass for data object active records """
 
-    ## iRODS and Precache Paths ########################################
-
-    @property
-    @abstractmethod
-    def irods_path(self) -> str:
-        """ The absolute iRODS path of the data object """
-
-    @property
-    @abstractmethod
-    def precache_path(self) -> str:
-        """ The absolute path to the precached data object's state """
-        # NOTE We might not need this
-
-    @precache_path.setter
-    @abstractmethod
-    def precache_path(self, path:str) -> None:
-        """ Precache path setter """
-        # NOTE We might not need this
-
     ## Data Object Status ##############################################
 
     @property
@@ -70,6 +51,13 @@ class AbstractDataObject(ContextManager[IO[bytes]], metaclass=ABCMeta):
         Return the number of currently open file descriptors to the
         precached data object's data file
         """
+
+    ## iRODS Path ######################################################
+
+    @property
+    @abstractmethod
+    def irods_path(self) -> str:
+        """ The absolute iRODS path of the data object """
 
     ## Last Access Time ################################################
 
