@@ -124,7 +124,8 @@ async def data_handler(req:Request) -> StreamResponse:
             for r in ranges:
                 range_header = {
                     "Content-Type": _data,
-                    **({"Content-MD5": r.checksum} if r.checksum else {})
+                    "Content-Range": f"bytes {r.start}-{r.finish + 1}/{data_object.metadata.size}",
+                    **({"ETag": r.checksum} if r.checksum else {})
                 }
 
                 data = b""

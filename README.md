@@ -377,12 +377,13 @@ proxy in front of iRobot with an appropriate set of rewrite rules.
 ##### Client Cache Validity
 
 The response will always include the `ETag` header with its value
-corresponding to the MD5 checksum of the data object cached by iRobot.
-This will allow the client to verify it is requesting the same version
-of the data object that it is expecting.
+corresponding to the MD5 checksum of the data object cached by iRobot,
+as calculated by iRODS. (iRobot will also calculate its own MD5 sum, to
+check they match.) This will allow the client to verify it is requesting
+the same version of the data object that it is expecting.
 
 A client can ensure this programmatically by using the `If-None-Match`
-request header, with the given ETag. If the tags match, a `304 Not
+request header, with the given entity tag. If the tags match, a `304 Not
 Modified` response will be returned; otherwise, a full response will be
 returned.
 
@@ -398,17 +399,17 @@ Fetching of the data supports range requests using the `Range` request
 header. If this header is present and the data exists in its entirety,
 it will be returned with a `206 Partial Content` response under the
 `multipart/byteranges` media type, where byte ranges in the response
-will have the media type `application/octet-stream` and include a
-`Content-MD5` if one exists. The ranges may therefore be chunked
-differently than requested, so that they align with the precache
-checksum chunk size, but the requested range will be fully satisfied.
+will have the media type `application/octet-stream` and include an
+entity tag of the range MD5 checksum, if one exists. The ranges may
+therefore be chunked differently than requested, so that they align with
+the precache checksum chunk size, but the requested range will be fully
+satisfied.
 
 If the `Range` request header is omitted, then the entirety of the data
 will be returned as a `200 OK` response, with media type
-`application/octet-stream` and a `Content-MD5` header, if available. If
-a range request is not satisfiable due to the request being
-out-of-bounds, then a `416 Range Not Satisfiable` response will be
-issued.
+`application/octet-stream`. If a range request is not satisfiable due to
+the request being out-of-bounds, then a `416 Range Not Satisfiable`
+response will be issued.
 
 Note that an initial range request (i.e., for data that has yet to be
 precached) will still fetch the entirety of the data into the precache;
