@@ -38,7 +38,7 @@ _multipart = "multipart/bytes"
 
 
 # TODO Get default chunk size from, e.g., environment
-def _get_data(fd:IO[bytes], *, byte_range:Optional[ByteRange] = None, chunk_size:int = 8192) -> Generator[bytes, None, None]:
+def _get_data(fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> Generator[bytes, None, None]:
     """
     @param   fd          File descriptor
     @param   byte_range  Byte range (ByteRange; None for everything, default)
@@ -128,7 +128,7 @@ async def data_handler(req:Request) -> StreamResponse:
                 }
 
                 data = b""
-                for chunk in _get_data(do_file, byte_range=r):
+                for chunk in _get_data(do_file, r):
                     data += chunk
 
                 multipart_writer.append(data, range_header)
