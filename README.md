@@ -42,7 +42,7 @@ managing a connection pool to iRODS.
   - [x] Authentication middleware
   - [ ] Data object endpoint
     - [ ] `GET` and `HEAD`
-      - [ ] Data request
+      - [x] Data request
       - [ ] Ranged data request
         - [x] Range parser
       - [x] Metadata request
