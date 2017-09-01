@@ -19,6 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import json
 import re
+import string
+from random import choice
 from typing import Dict, Generator, IO, List, Optional
 
 from aiohttp.web import Request, Response, StreamResponse
@@ -40,7 +42,9 @@ _MULTIPART = "multipart/byteranges"
 
 # Multipart bits and pieces
 _CRLF = b"\r\n"
-_RE_BOUNDARY = re.compile(r"(?!.* $)^[a-zA-Z0-9'()+_,./:=? -]{1,70}$")
+_DASH = "--".encode("ascii")
+_BOUNDARY_CHARS = string.ascii_letters + string.digits + "'()+_,./:=? -"
+_RE_BOUNDARY = re.compile(rf"(?!.* $)^[{_BOUNDARY_CHARS}]{{1,70}}$")
 
 
 _DataGenerator = Generator[bytes, None, None]
@@ -66,18 +70,45 @@ class _DataObjectResponseWriter(object):
         """
         return f"bytes {byte_range.start}-{byte_range.finish + 1}/{self._data_object.metadata.size}"
 
-    def _generate_boundary(self, ranges:List[ByteRange]) -> str:
+    def _generate_boundary(self, ranges:List[ByteRange], *, length:int = 70) -> str:
         """
         Generate a unique boundary (i.e., when prefixed with "--", its
         ASCII encoding doesn't clash with any of the data starting at
         the specified byte ranges)
 
         @param   ranges    Byte ranges (list of ByteRange)
+        @param   length    Boundary length (int, between 1 and 70; default 70)
         @return  Multipart boundary (string)
         """
-        # TODO
         assert ranges
-        return "ABC123"
+        assert 0 < length <= 70
+
+        taken_boundaries:List[str] = []
+
+        with self._data_object as fd:
+            # Check up to the first 72 bytes of each range for potential
+            # boundary strings for us to avoid
+            for r in ranges:
+                prefix_range = ByteRange(r.start, min(r.start + 72, r.finish))
+
+                prefix = b""
+                for data in self._get_data(fd, prefix_range):
+                    prefix += data
+
+                if len(prefix) > 2:
+                    prefix_head = prefix[0:2].decode("ascii")
+                    prefix_tail = prefix[2:].decode("ascii")
+
+                    if prefix_head == _DASH and _RE_BOUNDARY.match(prefix_tail):
+                        taken_boundaries.append(prefix_tail)
+
+        while True:
+            boundary = "".join(choice(_BOUNDARY_CHARS) for _ in range(length))
+
+            if _RE_BOUNDARY.match(boundary) and boundary not in taken_boundaries:
+                break
+
+        return boundary
 
     def _get_data(self, fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
         """
@@ -168,7 +199,7 @@ class _DataObjectResponseWriter(object):
 
             yield _CRLF
             yield dash_boundary
-            yield "--".encode("ascii")
+            yield _DASH
             yield transport_padding
 
     async def write(self, req:Request) -> StreamResponse:

@@ -35,15 +35,15 @@ managing a connection pool to iRODS.
 - [x] Authentication handlers
   - [x] HTTP Basic
   - [x] Arvados
-- [ ] HTTP interface
+- [x] HTTP interface
   - [x] Request logging middleware
   - [x] Error catching middleware
   - [x] Response timeout middleware
   - [x] Authentication middleware
-  - [ ] Data object endpoint
-    - [ ] `GET` and `HEAD`
+  - [x] Data object endpoint
+    - [x] `GET` and `HEAD`
       - [x] Data request
-      - [ ] Ranged data request
+      - [x] Ranged data request
         - [x] Range parser
       - [x] Metadata request
     - [x] `POST`
