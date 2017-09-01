@@ -32,9 +32,14 @@ from irobot.precache import AbstractDataObject
 
 
 # Media types
-_data      = "application/octet-stream"
-_metadata  = "application/vnd.irobot.metadata+json"
-_multipart = "multipart/byteranges"
+_DATA      = "application/octet-stream"
+_METADATA  = "application/vnd.irobot.metadata+json"
+_MULTIPART = "multipart/byteranges"
+
+
+# Multipart bits and pieces
+_CRLF = b"\r\n"
+_RE_BOUNDARY = re.compile(r"(?!.* $)^[a-zA-Z0-9'()+_,./:=? -]{1,70}$")
 
 
 _DataGenerator = Generator[bytes, None, None]
@@ -142,13 +147,13 @@ class _DataObjectResponseWriter(object):
                 # Multipart response
                 # TODO Generate better boundary string
                 boundary = "ABC123"
-                content_type = f"{_multipart}; boundary={boundary}"
+                content_type = f"{_MULTIPART}; boundary=\"{boundary}\""
 
                 data_generator = self._write_multipart(ranges, boundary=boundary)
 
             else:
                 # If there's only one range, then we don't use multipart
-                content_type = _data
+                content_type = _DATA
                 etag = head_range.checksum or etag
                 headers["Content-Range"] = self._content_range(head_range)
 
@@ -157,7 +162,7 @@ class _DataObjectResponseWriter(object):
         else:
             # Respond with all content
             status_code = 200
-            content_type = _data
+            content_type = _DATA
 
             data_generator = self._get_data()
 
@@ -207,13 +212,13 @@ async def metadata_handler(req:Request) -> Response:
 
     data_object.update_last_access()
     body = json.dumps(data_object.metadata, cls=MetadataJSONEncoder).encode(ENCODING)
-    return Response(status=200, body=body, content_type=_metadata, charset=ENCODING)
+    return Response(status=200, body=body, content_type=_METADATA, charset=ENCODING)
 
 
 # Media type -> Handler delegation table
 _media_delegates:Dict[str, HandlerT] = {
-    _data:     data_handler,
-    _metadata: metadata_handler
+    _DATA:     data_handler,
+    _METADATA: metadata_handler
 }
 
 @request.accept(*_media_delegates.keys())
