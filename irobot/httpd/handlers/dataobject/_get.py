@@ -49,6 +49,43 @@ _RE_BOUNDARY = re.compile(rf"(?!.* $)^[{_BOUNDARY_CHARS}]{{1,70}}$")
 
 _DataGenerator = Generator[bytes, None, None]
 
+def _get_data(fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
+    """
+    Get data or range of data from a file descriptor
+
+    @param   fd          File descriptor (IO[bytes])
+    @param   byte_range  Byte range (ByteRange; None for everything, default)
+    @param   chunk_size  Chunk size (default 8KB)
+    @return  Generator that yields the requested data (bytes)
+    """
+    assert chunk_size > 0
+
+    if byte_range:
+        start, finish, _ = byte_range
+        assert 0 <= start < finish
+        to_consume = finish - start
+        consumed = 0
+
+    else:
+        start = 0
+
+    fd.seek(start)
+    to_read = chunk_size
+
+    while True:
+        if byte_range:
+            if consumed >= to_consume:
+                break
+
+            to_read = min(chunk_size, to_consume - consumed)
+            consumed += to_read
+
+        data = fd.read(to_read)
+        if not data:
+            break
+
+        yield data
+
 class _DataObjectResponseWriter(object):
     """ Data Object data response writer """
     _data_object:AbstractDataObject
@@ -92,7 +129,7 @@ class _DataObjectResponseWriter(object):
                 prefix_range = ByteRange(r.start, min(r.start + 72, r.finish))
 
                 prefix = b""
-                for data in self._get_data(fd, prefix_range):
+                for data in _get_data(fd, prefix_range):
                     prefix += data
 
                 if len(prefix) > 2:
@@ -110,43 +147,6 @@ class _DataObjectResponseWriter(object):
 
         return boundary
 
-    def _get_data(self, fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
-        """
-        Get data or range of data from data object
-
-        @param   fd          File descriptor (IO[bytes])
-        @param   byte_range  Byte range (ByteRange; None for everything, default)
-        @param   chunk_size  Chunk size (default 8KB)
-        @return  Generator that yields the requested data (bytes)
-        """
-        assert chunk_size > 0
-
-        if byte_range:
-            start, finish, _ = byte_range
-            assert 0 <= start < finish
-            to_consume = finish - start
-            consumed = 0
-
-        else:
-            start = 0
-
-        fd.seek(start)
-        to_read = chunk_size
-
-        while True:
-            if byte_range:
-                if consumed >= to_consume:
-                    break
-
-                to_read = min(chunk_size, to_consume - consumed)
-                consumed += to_read
-
-            data = fd.read(to_read)
-            if not data:
-                break
-
-            yield data
-
     def _write_all(self, byte_range:Optional[ByteRange] = None) -> _DataGenerator:
         """
         Generate data/data range payload
@@ -155,7 +155,7 @@ class _DataObjectResponseWriter(object):
         @return  Generator that yields the full response body (bytes)
         """
         with self._data_object as fd:
-            for data in self._get_data(fd, byte_range):
+            for data in _get_data(fd, byte_range):
                 yield data
 
     def _write_multipart(self, ranges:List[ByteRange], *, boundary:str) -> _DataGenerator:
@@ -194,7 +194,7 @@ class _DataObjectResponseWriter(object):
                 yield _CRLF
 
                 # Yield range data
-                for data in self._get_data(fd, r):
+                for data in _get_data(fd, r):
                     yield data
 
             yield _CRLF
