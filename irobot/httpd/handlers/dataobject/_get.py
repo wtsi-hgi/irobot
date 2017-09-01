@@ -18,7 +18,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-from typing import Dict, Generator, List, Optional
+import re
+from typing import Dict, Generator, IO, List, Optional
 
 from aiohttp.web import Request, Response, StreamResponse
 
@@ -69,7 +70,7 @@ class _DataObjectResponseWriter(object):
         """
         Generate a unique boundary (i.e., when prefixed with "--", its
         ASCII encoding doesn't clash with any of the data starting at
-        the specified byte ranges
+        the specified byte ranges)
 
         @param   ranges    Byte ranges (list of ByteRange)
         @return  Multipart boundary (string)
@@ -78,20 +79,15 @@ class _DataObjectResponseWriter(object):
         assert ranges
         return "ABC123"
 
-    def _get_data(self, byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
+    def _get_data(self, fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
         """
         Get data or range of data from data object
 
+        @param   fd          File descriptor (IO[bytes])
         @param   byte_range  Byte range (ByteRange; None for everything, default)
         @param   chunk_size  Chunk size (default 8KB)
         @return  Generator that yields the requested data (bytes)
         """
-        # FIXME Don't open the file descriptor in this generator as it
-        # controls the data object contention. In the range writer,
-        # multiple generators will be used (one per range), so the data
-        # object will go in and out of contention, which puts it in a
-        # position where it could be deleted while streaming...which is
-        # exactly what we want to avoid!
         assert chunk_size > 0
 
         if byte_range:
@@ -103,35 +99,77 @@ class _DataObjectResponseWriter(object):
         else:
             start = 0
 
-        with self.data_object as fd:
-            fd.seek(start)
-            to_read = chunk_size
+        fd.seek(start)
+        to_read = chunk_size
 
-            while True:
-                if byte_range:
-                    if consumed >= to_consume:
-                        break
-
-                    to_read = min(chunk_size, to_consume - consumed)
-                    consumed += to_read
-
-                data = fd.read(to_read)
-                if not data:
+        while True:
+            if byte_range:
+                if consumed >= to_consume:
                     break
 
+                to_read = min(chunk_size, to_consume - consumed)
+                consumed += to_read
+
+            data = fd.read(to_read)
+            if not data:
+                break
+
+            yield data
+
+    def _write_all(self, byte_range:Optional[ByteRange] = None) -> _DataGenerator:
+        """
+        Generate data/data range payload
+
+        @param   ranges    Byte ranges (list of ByteRange)
+        @return  Generator that yields the full response body (bytes)
+        """
+        with self._data_object as fd:
+            for data in self._get_data(fd, byte_range):
                 yield data
 
     def _write_multipart(self, ranges:List[ByteRange], *, boundary:str) -> _DataGenerator:
         """
-        Write multipart payload, per RFC7233
-        https://tools.ietf.org/html/rfc7233#appendix-A
+        Generate multipart payload, per RFC7233 and RFC2046
+        * https://tools.ietf.org/html/rfc7233#appendix-A
+        * https://tools.ietf.org/html/rfc2046#section-5.1
 
         @param   ranges    Byte ranges (list of ByteRange)
         @param   boundary  Multipart boundary (string)
         @return  Generator that yields the multipart response body (bytes)
         """
-        # TODO
-        pass
+        assert ranges
+        assert _RE_BOUNDARY.match(boundary)
+
+        dash_boundary = f"--{boundary}".encode("ascii")
+        transport_padding = b""
+
+        with self._data_object as fd:
+            for r in ranges:
+                yield _CRLF
+                yield dash_boundary
+                yield transport_padding
+                yield _CRLF
+
+                headers = {
+                    "Content-Type":  _DATA,
+                    "Content-Range": self._content_range(r),
+                }
+
+                if r.checksum:
+                    headers["ETag"] = r.checksum
+
+                # Yield range headers
+                yield _CRLF.join(f"{k}: {v}".encode("ascii") for k, v in headers.items())
+                yield _CRLF
+
+                # Yield range data
+                for data in self._get_data(fd, r):
+                    yield data
+
+            yield _CRLF
+            yield dash_boundary
+            yield "--".encode("ascii")
+            yield transport_padding
 
     async def write(self, req:Request) -> StreamResponse:
         """
@@ -175,14 +213,14 @@ class _DataObjectResponseWriter(object):
                 etag = head_range.checksum or etag
                 headers["Content-Range"] = self._content_range(head_range)
 
-                data_generator = self._get_data(head_range)
+                data_generator = self._write_all(head_range)
 
         else:
             # Respond with all content
             status_code = 200
             content_type = _DATA
 
-            data_generator = self._get_data()
+            data_generator = self._write_all()
 
         headers["ETag"] = etag
         headers["Content-Type"] = content_type
