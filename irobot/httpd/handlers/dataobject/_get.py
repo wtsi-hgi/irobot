@@ -65,6 +65,19 @@ class _DataObjectResponseWriter(object):
         """
         return f"bytes {byte_range.start}-{byte_range.finish + 1}/{self._data_object.metadata.size}"
 
+    def _generate_boundary(self, ranges:List[ByteRange]) -> str:
+        """
+        Generate a unique boundary (i.e., when prefixed with "--", its
+        ASCII encoding doesn't clash with any of the data starting at
+        the specified byte ranges
+
+        @param   ranges    Byte ranges (list of ByteRange)
+        @return  Multipart boundary (string)
+        """
+        # TODO
+        assert ranges
+        return "ABC123"
+
     def _get_data(self, byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
         """
         Get data or range of data from data object
@@ -73,6 +86,12 @@ class _DataObjectResponseWriter(object):
         @param   chunk_size  Chunk size (default 8KB)
         @return  Generator that yields the requested data (bytes)
         """
+        # FIXME Don't open the file descriptor in this generator as it
+        # controls the data object contention. In the range writer,
+        # multiple generators will be used (one per range), so the data
+        # object will go in and out of contention, which puts it in a
+        # position where it could be deleted while streaming...which is
+        # exactly what we want to avoid!
         assert chunk_size > 0
 
         if byte_range:
@@ -145,8 +164,7 @@ class _DataObjectResponseWriter(object):
             head_range, *tail_ranges = ranges
             if tail_ranges:
                 # Multipart response
-                # TODO Generate better boundary string
-                boundary = "ABC123"
+                boundary = self._generate_boundary(ranges)
                 content_type = f"{_MULTIPART}; boundary=\"{boundary}\""
 
                 data_generator = self._write_multipart(ranges, boundary=boundary)
