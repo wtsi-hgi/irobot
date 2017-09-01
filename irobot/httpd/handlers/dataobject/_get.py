@@ -286,7 +286,7 @@ async def data_handler(req:Request) -> StreamResponse:
         # Client's version matches, so there's nothing to do
         return Response(status=304)
 
-    # TODO Technically, the data object should be marked as contended
+    # FIXME Technically, the data object should be marked as contended
     # here and the contention released after the function has completed.
     # Currently, this is instead done within the response writing class,
     # so may be subject to data races from intervening async requests.
