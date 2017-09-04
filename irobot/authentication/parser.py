@@ -21,6 +21,7 @@ import re
 from typing import Callable, Dict, Iterator, List, Mapping, Optional, Tuple
 from typing.re import Pattern
 
+
 # Authentication Grammar
 # per RFC7235: https://tools.ietf.org/html/rfc7235#section-2.1
 #
@@ -46,7 +47,7 @@ class ParseError(Exception):
 _ParseT = Tuple[str, str]
 _Parser = Callable[[str], _ParseT]
 
-def _make_terminal(pattern:Pattern) -> _Parser:
+def _terminal(pattern:Pattern) -> _Parser:
     """
     Make a terminal grammar node parser
 
@@ -64,7 +65,7 @@ def _make_terminal(pattern:Pattern) -> _Parser:
 
     return _parser
 
-def _make_conjunction(*parsers:_Parser) -> _Parser:
+def _conjunction(*parsers:_Parser) -> _Parser:
     """
     Make a conjunction parser from parsers
 
@@ -89,7 +90,7 @@ def _make_conjunction(*parsers:_Parser) -> _Parser:
 
     return _parser
 
-def _make_disjunction(*parsers:_Parser) -> _Parser:
+def _disjunction(*parsers:_Parser) -> _Parser:
     """
     Make a disjunction parser from parsers
 
@@ -109,11 +110,11 @@ def _make_disjunction(*parsers:_Parser) -> _Parser:
 
     return _parser
 
-def _make_sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None) -> _Parser:
+def _sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None) -> _Parser:
     """
     Make a sequence parser from parsers
 
-    @note    _make_sequence(parser, maximum=1) makes an optional parser
+    @note    _sequence(parser, maximum=1) makes an optional parser
 
     @param   parser   Parser to match
     @param   minimum  Minimum number of matches
@@ -148,50 +149,50 @@ def _make_sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None
     return _parser
 
 
-_OWS     = _make_terminal(re.compile(r"[\t ]*"))
-_DIGIT   = _make_terminal(re.compile(r"[0-9]"))
-_ALPHA   = _make_terminal(re.compile(r"[a-zA-Z]"))
-_QUOTE   = _make_terminal(re.compile(r"\""))
-_EQUALS  = _make_terminal(re.compile(r"="))
-_ESCAPED = _make_terminal(re.compile(r"\\[\x09\x20-\x7e\x80-\xff]"))
-_TEXT    = _make_terminal(re.compile(r"[\x09\x20\x21\x23-\x5b\x5d-\x7e\x80-\xff]"))
+_OWS     = _terminal(re.compile(r"[\t ]*"))
+_DIGIT   = _terminal(re.compile(r"[0-9]"))
+_ALPHA   = _terminal(re.compile(r"[a-zA-Z]"))
+_QUOTE   = _terminal(re.compile(r"\""))
+_EQUALS  = _terminal(re.compile(r"="))
+_ESCAPED = _terminal(re.compile(r"\\[\x09\x20-\x7e\x80-\xff]"))
+_TEXT    = _terminal(re.compile(r"[\x09\x20\x21\x23-\x5b\x5d-\x7e\x80-\xff]"))
 
-_QUOTED_STRING = _make_conjunction(
+_QUOTED_STRING = _conjunction(
     _QUOTE,
-    _make_sequence(_make_disjunction(_TEXT, _ESCAPED)),
+    _sequence(_disjunction(_TEXT, _ESCAPED)),
     _QUOTE
 )
 
-_TOKEN = _make_sequence(
-    _make_disjunction(
+_TOKEN = _sequence(
+    _disjunction(
         _ALPHA,
         _DIGIT,
-        _make_terminal(re.compile(r"[!#$%&'*+.^_`|~-]"))
+        _terminal(re.compile(r"[!#$%&'*+.^_`|~-]"))
     ),
     minimum=1
 )
 
-_TOKEN68 = _make_conjunction(
-    _make_sequence(
-        _make_disjunction(
+_TOKEN68 = _conjunction(
+    _sequence(
+        _disjunction(
             _ALPHA,
             _DIGIT,
-            _make_terminal(re.compile(r"[-_~+/]"))
+            _terminal(re.compile(r"[-_~+/]"))
         ),
         minimum=1
     ),
-    _make_sequence(_EQUALS)
+    _sequence(_EQUALS)
 )
 
-_LIST_SEPARATOR = _make_conjunction(
+_LIST_SEPARATOR = _conjunction(
     _OWS,
-    _make_terminal(re.compile(r",")),
+    _terminal(re.compile(r",")),
     _OWS
 )
 
 
-_PARAM_SEPARATOR = _make_conjunction(_OWS, _EQUALS, _OWS)
-_PARAM_VALUE = _make_disjunction(_TOKEN, _QUOTED_STRING)
+_PARAM_SEPARATOR = _conjunction(_OWS, _EQUALS, _OWS)
+_PARAM_VALUE = _disjunction(_TOKEN, _QUOTED_STRING)
 
 def _param(s:str) -> Tuple[str, str, str]:
     """
