@@ -288,7 +288,7 @@ def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
     """
     Authentication handler parser
 
-    @param   s
+    @param   s  Input string
     @return  Tuple of authentication handler and remaining string
     """
     auth_method, remainder = _TOKEN(s)
