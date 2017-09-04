@@ -26,7 +26,7 @@ from typing.re import Pattern
 # per RFC7235: https://tools.ietf.org/html/rfc7235#section-2.1
 #
 #   AUTH_HANDLERS := AUTH_HANDLER *( OWS "," OWS AUTH_HANDLER )
-#   AUTH_HANDLER  := TOKEN [ OWS ( TOKEN68 / PARAMS ) ]
+#   AUTH_HANDLER  := TOKEN [ 1*SP ( TOKEN68 / PARAMS ) ]
 #   PARAMS        := PARAM ( OWS "," OWS PARAM )*
 #   PARAM         := TOKEN OWS "=" OWS ( TOKEN / QUOTED_STRING )
 #   TOKEN         := 1*( ALPHA / DIGIT / "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~" )
@@ -37,7 +37,8 @@ from typing.re import Pattern
 #   QUOTE         := %x22
 #   ALPHA         := %x41-5A / %x61-7A
 #   DIGIT         := %x30-39
-#   OWS           := *( %x09 / %x20 )
+#   OWS           := *SP
+#   SP            := %x09 / %x20
 
 
 class ParseError(Exception):
@@ -149,6 +150,7 @@ def _sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None) -> 
     return _parser
 
 
+_WS      = _terminal(re.compile(r"[\t ]+"))
 _OWS     = _terminal(re.compile(r"[\t ]*"))
 _DIGIT   = _terminal(re.compile(r"[0-9]"))
 _ALPHA   = _terminal(re.compile(r"[a-zA-Z]"))
@@ -302,7 +304,7 @@ def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
 
     except ParseError:
         # There's no list separator, so there must be a payload/parameters
-        _, remainder = _OWS(remainder)
+        _, remainder = _WS(remainder)
 
         try:
             params, remainder = _params(remainder)
