@@ -222,14 +222,14 @@ def _params(s:str) -> Tuple[Dict[str, str], str]:
     if remainder:
         while True:
             try:
-                _comma, remainder = _LIST_SEPARATOR(remainder)
+                _comma, next_param = _LIST_SEPARATOR(remainder)
+                param_key, param_value, remainder = _param(next_param)
+                parameters[param_key] = param_value
+
+                if not remainder:
+                    break
+
             except ParseError:
-                break
-
-            param_key, param_value, remainder = _param(remainder)
-            parameters[param_key] = param_value
-
-            if not remainder:
                 break
 
     return parameters, remainder
@@ -295,6 +295,13 @@ def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
     auth_method, remainder = _TOKEN(s)
 
     try:
+        # Lookahead to see if we're at the end of the list item
+        if remainder:
+            _lookahead = _LIST_SEPARATOR(remainder)
+        return AuthHandler(auth_method), remainder
+
+    except ParseError:
+        # There's no list separator, so there must be a payload/parameters
         _, remainder = _OWS(remainder)
 
         try:
@@ -304,9 +311,6 @@ def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
         except ParseError:
             payload, remainder = _TOKEN68(remainder)
             return AuthHandler(auth_method, payload=payload), remainder
-
-    except ParseError:
-        return AuthHandler(auth_method), remainder
 
 def auth_parser(auth_header:str) -> List[AuthHandler]:
     """
