@@ -64,12 +64,37 @@ def _make_terminal(pattern:Pattern) -> _Parser:
 
     return _parser
 
-def _make_alternation(*parsers:_Parser) -> _Parser:
+def _make_conjunction(*parsers:_Parser) -> _Parser:
     """
-    Make an alternation parser from parsers
+    Make a conjunction parser from parsers
 
     @param   parsers  Parsers to match (at least one)
-    @return  Parser that matches alternation
+    @return  Parser that matches the conjunction
+    """
+    assert parsers
+
+    def _parser(s:str) -> _ParseT:
+        matched   = ""
+        remainder = s
+
+        for parser in parsers:
+            try:
+                match, remainder = parser(remainder)
+                matched += match
+
+            except ParseError:
+                raise
+
+        return matched, remainder
+
+    return _parser
+
+def _make_disjunction(*parsers:_Parser) -> _Parser:
+    """
+    Make a disjunction parser from parsers
+
+    @param   parsers  Parsers to match (at least one)
+    @return  Parser that matches this disjunction
     """
     assert parsers
 
@@ -122,31 +147,6 @@ def _make_sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None
 
     return _parser
 
-def _make_juxtaposition(*parsers:_Parser) -> _Parser:
-    """
-    Make a juxtaposition parser from parsers
-
-    @param   parsers  Parsers to match (at least one)
-    @return  Parser that matches juxtaposition
-    """
-    assert parsers
-
-    def _parser(s:str) -> _ParseT:
-        matched   = ""
-        remainder = s
-
-        for parser in parsers:
-            try:
-                match, remainder = parser(remainder)
-                matched += match
-
-            except ParseError:
-                raise
-
-        return matched, remainder
-
-    return _parser
-
 
 _OWS     = _make_terminal(re.compile(r"[\t ]*"))
 _DIGIT   = _make_terminal(re.compile(r"[0-9]"))
@@ -156,14 +156,14 @@ _EQUALS  = _make_terminal(re.compile(r"="))
 _ESCAPED = _make_terminal(re.compile(r"\\[\x09\x20-\x7e\x80-\xff]"))
 _TEXT    = _make_terminal(re.compile(r"[\x09\x20\x21\x23-\x5b\x5d-\x7e\x80-\xff]"))
 
-_QUOTED_STRING = _make_juxtaposition(
+_QUOTED_STRING = _make_conjunction(
     _QUOTE,
-    _make_sequence(_make_alternation(_TEXT, _ESCAPED)),
+    _make_sequence(_make_disjunction(_TEXT, _ESCAPED)),
     _QUOTE
 )
 
 _TOKEN = _make_sequence(
-    _make_alternation(
+    _make_disjunction(
         _ALPHA,
         _DIGIT,
         _make_terminal(re.compile(r"[!#$%&'*+.^_`|~-]"))
@@ -171,9 +171,9 @@ _TOKEN = _make_sequence(
     minimum=1
 )
 
-_TOKEN68 = _make_juxtaposition(
+_TOKEN68 = _make_conjunction(
     _make_sequence(
-        _make_alternation(
+        _make_disjunction(
             _ALPHA,
             _DIGIT,
             _make_terminal(re.compile(r"[-_~+/]"))
@@ -183,15 +183,15 @@ _TOKEN68 = _make_juxtaposition(
     _make_sequence(_EQUALS)
 )
 
-_LIST_SEPARATOR = _make_juxtaposition(
+_LIST_SEPARATOR = _make_conjunction(
     _OWS,
     _make_terminal(re.compile(r",")),
     _OWS
 )
 
 
-_PARAM_SEPARATOR = _make_juxtaposition(_OWS, _EQUALS, _OWS)
-_PARAM_VALUE = _make_alternation(_TOKEN, _QUOTED_STRING)
+_PARAM_SEPARATOR = _make_conjunction(_OWS, _EQUALS, _OWS)
+_PARAM_VALUE = _make_disjunction(_TOKEN, _QUOTED_STRING)
 
 def _param(s:str) -> Tuple[str, str, str]:
     """
