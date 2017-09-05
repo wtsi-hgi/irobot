@@ -18,35 +18,28 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
-import re
 from base64 import b64decode
 from typing import Optional, Tuple
 
 from requests import Response, Request
 
 from irobot.authentication._http import HTTPAuthHandler
+from irobot.authentication.parser import ParseError, auth_parser
 from irobot.config import BasicAuthConfig
-
-
-_BASIC_AUTH_RE = re.compile(r"""
-    ^Basic \s
-    (
-        (?: [a-z0-9+/]{4} )*
-        (?: [a-z0-9+/]{2}== | [a-z0-9+/]{3}= )?
-    )$
-""", re.VERBOSE | re.IGNORECASE)
 
 
 class HTTPBasicAuthHandler(HTTPAuthHandler):
     """ HTTP basic authentication handler """
     def __init__(self, config:BasicAuthConfig, logger:Optional[logging.Logger] = None) -> None:
         super().__init__(config=config, logger=logger)
-        self._auth_re = _BASIC_AUTH_RE
 
     @property
     def www_authenticate(self) -> str:
-        # TODO Support Basic authentication params (e.g., realm, etc.)
-        return "Basic"
+        challenge = "Basic"
+        if self._config.realm:
+            challenge += f" realm=\"{self._config.realm}\""
+
+        return challenge
 
     def parse_auth_header(self, auth_header:str) -> Tuple[str, str]:
         """
@@ -55,12 +48,19 @@ class HTTPBasicAuthHandler(HTTPAuthHandler):
         @param   auth_header  Contents of the "Authorization" header (string)
         @return  Tuple of username (string) and password (string)
         """
-        match = self._auth_re.match(auth_header)
+        try:
+            auth_handlers = auth_parser(auth_header)
+        except ParseError:
+            raise ValueError("Couldn't parse authentication header")
 
-        if not match:
-            raise ValueError("Invalid HTTP basic authentication header")
+        for handler in auth_handlers:
+            if handler.auth_method == "Basic" and handler.payload:
+                basic_handler = handler
+                break
+        else:
+            raise ValueError("No HTTP basic authentication response found")
 
-        return tuple(b64decode(match.group(1)).decode().split(":"))
+        return tuple(b64decode(basic_handler.payload).decode().split(":"))
 
     def auth_request(self, user:str, password:str) -> Request:
         """

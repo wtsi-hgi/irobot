@@ -238,6 +238,9 @@ This is only needed if using HTTP basic authentication.
   either `s` (`sec` or `second`) or `m` (`min` or `minute`), where spelt
   units may be pluralised.
 
+* **`realm`** Optional free text input for the basic authentication
+  realm parameter.
+
 ### Arvados Authentication
 
 This is only needed if using Arvados authentication.

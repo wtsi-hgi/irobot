@@ -65,7 +65,8 @@ _factories.add("httpd", httpd.HTTPdConfig,
 
 _factories.add("basic_auth", auth.BasicAuthConfig,
     RequiredKey("url",             auth.url),
-    RequiredKey("cache",           canon.duration)
+    RequiredKey("cache",           canon.duration),
+    OptionalKey("realm",           canon.free_text)
 )
 
 _factories.add("arvados_auth", auth.ArvadosAuthConfig,

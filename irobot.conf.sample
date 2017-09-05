@@ -77,6 +77,10 @@ url = http://example.com
 # of the following units: s(ec(ond)(s)), m(in(ute)(s))
 cache = 10 min
 
+# The basic authentication realm; this can be omitted or set to any text
+# string
+realm = iRobot authentication realm
+
 [arvados_auth] #########################################################
 # This section must appear if using the Arvados authentication handler
 
