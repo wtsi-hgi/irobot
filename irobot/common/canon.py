@@ -97,6 +97,9 @@ _RE_FQDN_COMPONENT = re.compile(r"""
     $                                   # Anchor to end of string
 """, re.VERBOSE | re.IGNORECASE)
 
+# Escapable characters (add more as required...)
+_RE_ESCAPABLE = re.compile(r"([\x09\x20\x22])")
+
 
 def path(p:str) -> str:
     """
@@ -242,5 +245,4 @@ def free_text(t:str) -> str:
     @param   t  Free text (string)
     @return  Escaped text (string)
     """
-    # TODO This could probably be better!!
-    return re.sub(r"\"", r"\"", t)
+    return _RE_ESCAPABLE.sub(r"\\\1", t)
