@@ -238,11 +238,11 @@ def domain_name(n:str) -> str:
     raise ValueError("Invalid domain name")
 
 
-def free_text(t:str) -> str:
+def free_text(t:Optional[str]) -> str:
     """
     Canonicalise free text so special characters are escaped
 
-    @param   t  Free text (string)
+    @param   t  Free text (string; optional)
     @return  Escaped text (string)
     """
-    return _RE_ESCAPABLE.sub(r"\\\1", t)
+    return _RE_ESCAPABLE.sub(r"\\\1", t or "")

@@ -27,6 +27,7 @@ from irobot.authentication._http import HTTPAuthHandler
 from irobot.config import ArvadosAuthConfig
 
 
+# TODO Write a parser to decode Bearer authentication
 _ARV_AUTH_RE =  re.compile(r"""
     ^Arvados \s
     ( .+ )$
@@ -41,7 +42,7 @@ class ArvadosAuthHandler(HTTPAuthHandler):
 
     @property
     def www_authenticate(self) -> str:
-        return "Arvados"
+        return f"Bearer realm=\"{self._config.api_host}\""
 
     def parse_auth_header(self, auth_header:str) -> Tuple[str]:
         """

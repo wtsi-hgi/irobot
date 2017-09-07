@@ -296,8 +296,9 @@ handlers. That is:
 * `Basic <payload>`, where the payload is the Base64 encoding of
   `username:password` for basic HTTP authentication.
 
-* `Arvados <payload>`, where the payload is an API token supplied by
-  Arvados for Arvados authentication.
+* `Bearer <payload>`, where the payload is an API token supplied by
+  Arvados for Arvados authentication. (Note that the challenge for
+  Arvados authentication will include the API host as its `realm`.)
 
 If the respective authentication handler cannot authenticate the payload
 it's given (or no `Authorization` header exists), a `401 Unauthorized`

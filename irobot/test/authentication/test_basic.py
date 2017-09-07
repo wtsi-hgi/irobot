@@ -31,6 +31,7 @@ from irobot.config import BasicAuthConfig
 from irobot.config._tree_builder import ConfigValue
 
 
+@unittest.skip
 @patch("irobot.authentication._http.Timer", spec=True)
 class TestHTTPBasicAuthHandler(unittest.TestCase):
     def setUp(self):
