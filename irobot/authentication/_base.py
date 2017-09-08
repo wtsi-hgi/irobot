@@ -49,9 +49,9 @@ class AuthenticatedUser(object):
 
 class BaseAuthHandler(metaclass=ABCMeta):
     @abstractmethod
-    def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
+    async def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
         """
-        Validate the authorisation header
+        Asynchronously validate the authorisation header
 
         @param   auth_header  Contents of the "Authorization" header (string)
         @return  Authenticated user (AuthenticatedUser); None on validation failure

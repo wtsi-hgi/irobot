@@ -21,11 +21,12 @@ import atexit
 import logging
 from abc import abstractmethod
 from threading import Lock, Timer
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Optional
 
-from requests import Response, Request, Session
+from aiohttp import ClientSession, ClientResponse
 
 from irobot.authentication._base import AuthenticatedUser, BaseAuthHandler
+from irobot.authentication.parser import HTTPAuthMethod, ParseError, auth_parser
 from irobot.config import Configuration
 from irobot.logging import LogWriter
 
@@ -36,31 +37,38 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
     ## Implement these #################################################
 
     @abstractmethod
-    def parse_auth_header(self, auth_header:str) -> Tuple[str, ...]:
+    def match_auth_challenge(self, auth_challenge:HTTPAuthMethod) -> bool:
         """
-        Parse the authentication header
+        Test the given authentication challenge matches the requirements
+        of the handler class
 
-        @param   auth_header  Contents of the "Authorization" header (string)
-        @return  Parsed contents (tuple of strings)
-        """
-
-    @abstractmethod
-    def auth_request(self, *args:Tuple[str]) -> Request:
-        """
-        Create an authentication request
-
-        @params  *args  Request arguments (strings)
-        @return  Authentication request (requests.Request)
+        @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
+        @return  Match (bool)
         """
 
     @abstractmethod
-    def get_user(self, req:Request, res:Response) -> str:
+    def get_auth_challenge_response(self, auth_challenge:HTTPAuthMethod) -> Dict:
         """
-        Get the user from the authentication request and response
+        Get the parameters for the authentication challenge response.
+        That is, a dictionary with the following keys:
 
-        @param   req  Authentication request (requests.Request)
-        @param   res  Response from authentication URL (requests.Response)
-        @return  Username (string)
+        * url            URL to make authentication response to (string)
+        * auth_response  Authentication challenge response (string)
+        * method         HTTP method to use (optional; string)
+        * headers        Additional request headers to pass (optional; dictionary)
+
+        @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
+        @return  Authentication request parameters (dictionary)
+        """
+
+    @abstractmethod
+    def get_authenticated_user(self, auth_challenge:HTTPAuthMethod, response:ClientResponse) -> AuthenticatedUser:
+        """
+        Get the user from the authentication challenge and response
+
+        @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
+        @param   response        Response from authentication request (ClientResponse)
+        @return  Authenticated user (AuthenticatedUser)
         """
 
     ####################################################################
@@ -69,15 +77,18 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
         Constructor
 
-        @param   config  Arvados authentication configuration
+        @param   config  Authentication configuration
         @param   logger  Logger
         """
         super().__init__(logger=logger)
         self._config = config
 
+        # Get the first word of the WWW-Authenticate string
+        self._auth_method, *_ = self.www_authenticate.split()
+
         # Initialise the cache, if required
         if self._config.cache:
-            self.log(logging.DEBUG, f"Creating {self.www_authenticate} authentication cache")
+            self.log(logging.DEBUG, f"Creating {self._auth_method} authentication cache")
             self._cache:Dict[str, AuthenticatedUser] = {}
             self._cache_lock = Lock()
             self._schedule_cleanup()
@@ -97,35 +108,42 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
     def _cleanup(self) -> None:
         """ Clean up expired entries from the cache """
         with self._cache_lock:
-            self.log(logging.DEBUG, f"Cleaning {self.www_authenticate} authentication cache")
+            self.log(logging.DEBUG, f"Cleaning {self._auth_method} authentication cache")
             for key, user in list(self._cache.items()):
                 if not user.valid(self._config.cache):
                     del self._cache[key]
 
         self._schedule_cleanup()
 
-    def _validate_request(self, req:Request) -> Optional[Response]:
+    async def _validate_request(self, url:str, auth_response:str, *, method:str = "GET", headers:Optional[Dict] = None) -> Optional[ClientResponse]:
         """
-        Make an authentication request to check for validity
+        Asynchronously make an authentication request to check validity
 
-        @param   req  Authentication request (requests.Request)
-        @return  Authentication response (requests.Response; None on failure)
+        @param   url            URL to make the request to (string)
+        @param   auth_response  Authentication challenge response (string)
+        @param   method         HTTP method to use (string; default "GET")
+        @param   headers        Additional headers to send (optional dictionary)
+        @return  Authentication response (ClientResponse; None on failure)
         """
-        session = Session()
-        res = session.send(req.prepare())
+        async with ClientSession() as session:
+            req_headers = {
+                "Authorization": auth_response,
+                **(headers or {})
+            }
 
-        if 200 <= res.status_code < 300:
-            self.log(logging.DEBUG, f"{self.www_authenticate} authenticated")
-            return res
+            async with session.request(method, url, headers=req_headers) as response:
+                if 200 <= response.status < 300:
+                    self.log(logging.DEBUG, f"{self._auth_method} authenticated")
+                    return response
 
-        if res.status_code in [401, 403]:
-            self.log(logging.WARNING, f"{self.www_authenticate} couldn't authenticate")
-        else:
-            res.raise_for_status()
+                if response.status in [401, 403]:
+                    self.log(logging.WARNING, f"{self._auth_method} couldn't authenticate")
+                else:
+                    response.raise_for_status()
 
         return None
 
-    def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
+    async def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
         """
         Validate the authorisation header
 
@@ -133,10 +151,15 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         @return  Authenticated user (AuthenticatedUser)
         """
         try:
-            parsed = self.parse_auth_header(auth_header)
+            _auth_methods = auth_parser(auth_header)
+            auth_challenge, *_ = filter(self.match_auth_challenge, _auth_methods)
+
+        except ParseError:
+            self.log(logging.WARNING, f"{self._auth_method} authentication handler couldn't parse authentication header")
+            return None
 
         except ValueError:
-            self.log(logging.WARNING, f"{self.www_authenticate} authentication handler couldn't parse authentication header")
+            self.log(logging.ERROR, f"No HTTP {self._auth_method} authentication challenge found")
             return None
 
         # Check the cache
@@ -151,10 +174,9 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
                     # Clean up expired users
                     del self._cache[auth_header]
 
-        req = self.auth_request(*parsed)
-        res = self._validate_request(req)
-        if res:
-            user = AuthenticatedUser(self.get_user(req, res))
+        response = await self._validate_request(**self.get_auth_challenge_response(auth_challenge))
+        if response:
+            user = self.get_authenticated_user(auth_challenge, response)
 
             # Put validated user in the cache
             if self._config.cache:
