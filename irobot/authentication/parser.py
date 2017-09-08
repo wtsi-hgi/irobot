@@ -237,8 +237,8 @@ def _params(s:str) -> Tuple[Dict[str, str], str]:
     return parameters, remainder
 
 
-class AuthHandler(Mapping[str, str]):
-    """ Authentication handler model """
+class HTTPAuthMethod(Mapping[str, str]):
+    """ HTTP authentication method model """
     _method:str
     _payload:str
     _params:Dict[str, str]
@@ -287,7 +287,7 @@ class AuthHandler(Mapping[str, str]):
     def payload(self) -> str:
         return self._payload
 
-def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
+def _auth_handler(s:str) -> Tuple[HTTPAuthMethod, str]:
     """
     Authentication handler parser
 
@@ -300,7 +300,7 @@ def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
         # Lookahead to see if we're at the end of the list item
         if remainder:
             _lookahead = _LIST_SEPARATOR(remainder)
-        return AuthHandler(auth_method), remainder
+        return HTTPAuthMethod(auth_method), remainder
 
     except ParseError:
         # There's no list separator, so there must be a payload/parameters
@@ -308,20 +308,20 @@ def _auth_handler(s:str) -> Tuple[AuthHandler, str]:
 
         try:
             params, remainder = _params(remainder)
-            return AuthHandler(auth_method, params=params), remainder
+            return HTTPAuthMethod(auth_method, params=params), remainder
 
         except ParseError:
             payload, remainder = _TOKEN68(remainder)
-            return AuthHandler(auth_method, payload=payload), remainder
+            return HTTPAuthMethod(auth_method, payload=payload), remainder
 
-def auth_parser(auth_header:str) -> List[AuthHandler]:
+def auth_parser(auth_header:str) -> List[HTTPAuthMethod]:
     """
     Authentication header parser
 
     @param   auth_header   Authentication header (string)
-    @return  List of authentication handlers
+    @return  List of HTTP authentication methods
     """
-    auth_handlers:List[AuthHandler] = []
+    auth_handlers:List[HTTPAuthMethod] = []
 
     handler, remainder = _auth_handler(auth_header)
     auth_handlers.append(handler)

@@ -19,25 +19,25 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
-from irobot.authentication.parser import AuthHandler, ParseError, auth_parser
+from irobot.authentication.parser import HTTPAuthMethod, ParseError, auth_parser
 
 
 class TestAuthParser(unittest.TestCase):
     def test_simple(self):
         self.assertEqual(auth_parser("Basic"),
-                         [AuthHandler("Basic")])
+                         [HTTPAuthMethod("Basic")])
 
         self.assertEqual(auth_parser("foo,bar  , quux"),
-                         [AuthHandler("foo"), AuthHandler("bar"), AuthHandler("quux")])
+                         [HTTPAuthMethod("foo"), HTTPAuthMethod("bar"), HTTPAuthMethod("quux")])
 
     def test_payload(self):
         self.assertEqual(auth_parser("foo quux"),
-                         [AuthHandler("foo", payload="quux")])
+                         [HTTPAuthMethod("foo", payload="quux")])
 
     def test_params(self):
         self.assertEqual(auth_parser("foo bar=quux, quux xyzzy=baz, foo=\"abc123\""),
-                         [AuthHandler("foo", params={"bar":"quux"}),
-                          AuthHandler("quux", params={"xyzzy":"baz", "foo":"\"abc123\""})])
+                         [HTTPAuthMethod("foo", params={"bar":"quux"}),
+                          HTTPAuthMethod("quux", params={"xyzzy":"baz", "foo":"\"abc123\""})])
 
 
 if __name__ == "__main__":
