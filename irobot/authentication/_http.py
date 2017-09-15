@@ -21,7 +21,7 @@ import atexit
 import logging
 from abc import abstractmethod
 from threading import Lock, Timer
-from typing import Dict, Optional
+from typing import Dict, NamedTuple, Optional
 
 from aiohttp import ClientSession, ClientResponse
 
@@ -31,13 +31,21 @@ from irobot.config import Configuration
 from irobot.logging import LogWriter
 
 
-class HTTPAuthHandler(LogWriter, BaseAuthHandler):
-    """ HTTP-based authentication handler with logging and caching """
+class HTTPValidatorParameters(NamedTuple):
+    """ Parameters for the HTTP validator """
+    url:str                      # URL to make the authentication response to
+    payload:str                  # Challenge response payload
+    method:str = "GET"           # HTTP method
+    headers:Dict[str, str] = {}  # Additional request headers
+
+
+class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
+    """ Base HTTP-based authentication handler with logging and caching """
 
     ## Implement these #################################################
 
     @abstractmethod
-    def match_auth_challenge(self, auth_challenge:HTTPAuthMethod) -> bool:
+    def match_challenge(self, auth_challenge:HTTPAuthMethod) -> bool:
         """
         Test the given authentication challenge matches the requirements
         of the handler class
@@ -47,18 +55,12 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
 
     @abstractmethod
-    def get_auth_challenge_response(self, auth_challenge:HTTPAuthMethod) -> Dict:
+    def get_challenge_response(self, auth_challenge:HTTPAuthMethod) -> HTTPValidatorParameters:
         """
         Get the parameters for the authentication challenge response.
-        That is, a dictionary with the following keys:
-
-        * url            URL to make authentication response to (string)
-        * auth_response  Authentication challenge response (string)
-        * method         HTTP method to use (optional; string)
-        * headers        Additional request headers to pass (optional; dictionary)
 
         @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
-        @return  Authentication request parameters (dictionary)
+        @return  Authentication request parameters (HTTPValidatorParameters)
         """
 
     @abstractmethod
@@ -115,23 +117,20 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
 
         self._schedule_cleanup()
 
-    async def _validate_request(self, url:str, auth_response:str, *, method:str = "GET", headers:Optional[Dict] = None) -> Optional[ClientResponse]:
+    async def _validate_request(self, params:HTTPValidatorParameters) -> Optional[ClientResponse]:
         """
         Asynchronously make an authentication request to check validity
 
-        @param   url            URL to make the request to (string)
-        @param   auth_response  Authentication challenge response (string)
-        @param   method         HTTP method to use (string; default "GET")
-        @param   headers        Additional headers to send (optional dictionary)
+        @param   params  Challenge response validator parameters (HTTPValidatorParameters)
         @return  Authentication response (ClientResponse; None on failure)
         """
         async with ClientSession() as session:
             req_headers = {
-                "Authorization": auth_response,
-                **(headers or {})
+                "Authorization": params.payload,
+                **params.headers
             }
 
-            async with session.request(method, url, headers=req_headers) as response:
+            async with session.request(params.method, params.url, headers=req_headers) as response:
                 if 200 <= response.status < 300:
                     self.log(logging.DEBUG, f"{self._auth_method} authenticated")
                     return response
@@ -152,7 +151,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
         try:
             _auth_methods = auth_parser(auth_header)
-            auth_challenge, *_ = filter(self.match_auth_challenge, _auth_methods)
+            auth_challenge, *_ = filter(self.match_challenge, _auth_methods)
 
         except ParseError:
             self.log(logging.WARNING, f"{self._auth_method} authentication handler couldn't parse authentication header")
@@ -174,7 +173,7 @@ class HTTPAuthHandler(LogWriter, BaseAuthHandler):
                     # Clean up expired users
                     del self._cache[auth_header]
 
-        response = await self._validate_request(**self.get_auth_challenge_response(auth_challenge))
+        response = await self._validate_request(self.get_challenge_response(auth_challenge))
         if response:
             user = self.get_authenticated_user(auth_challenge, response)
 
