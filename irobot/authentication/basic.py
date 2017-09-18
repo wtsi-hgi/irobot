@@ -54,6 +54,6 @@ class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
             payload=str(challenge_response)
         )
 
-    def get_authenticated_user(self, challenge_response:HTTPAuthMethod, _:ClientResponse) -> AuthenticatedUser:
+    async def get_authenticated_user(self, challenge_response:HTTPAuthMethod, _:ClientResponse) -> AuthenticatedUser:
         username, _ = b64decode(challenge_response.payload).decode().split(":")
         return AuthenticatedUser(username)

@@ -64,7 +64,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
 
     @abstractmethod
-    def get_authenticated_user(self, challenge_response:HTTPAuthMethod, auth_response:ClientResponse) -> AuthenticatedUser:
+    async def get_authenticated_user(self, challenge_response:HTTPAuthMethod, auth_response:ClientResponse) -> AuthenticatedUser:
         """
         Get the user from the authentication challenge response and any
         response back from the authentication server
@@ -176,7 +176,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
 
         auth_response = await self._validate_request(self.set_handler_parameters(challenge_response))
         if auth_response:
-            user = self.get_authenticated_user(challenge_response, auth_response)
+            user = await self.get_authenticated_user(challenge_response, auth_response)
 
             # Put validated user in the cache
             if self._config.cache:
