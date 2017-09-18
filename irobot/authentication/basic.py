@@ -50,7 +50,7 @@ class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
     def set_handler_parameters(self, challenge_response:HTTPAuthMethod) -> HTTPValidatorParameters:
         return HTTPValidatorParameters(
             url=self._config.url,
-            payload=f"Basic {challenge_response.payload}"
+            payload=str(challenge_response)
         )
 
     def get_authenticated_user(self, challenge_response:HTTPAuthMethod, _:ClientResponse) -> AuthenticatedUser:

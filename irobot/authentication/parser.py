@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-from typing import Callable, Dict, Iterator, List, Mapping, Optional, Tuple
+from typing import Callable, Dict, Hashable, Iterator, List, Mapping, Optional, Tuple
 from typing.re import Pattern
 
 
@@ -237,7 +237,7 @@ def _params(s:str) -> Tuple[Dict[str, str], str]:
     return parameters, remainder
 
 
-class HTTPAuthMethod(Mapping[str, str]):
+class HTTPAuthMethod(Hashable, Mapping[str, str]):
     """ HTTP authentication method model """
     _method:str
     _payload:str
@@ -259,8 +259,8 @@ class HTTPAuthMethod(Mapping[str, str]):
         self._payload = payload
         self._params  = params or {}
 
-    def __repr__(self) -> str:
-        output = f"<{self._method}"
+    def __str__(self) -> str:
+        output = self._method
 
         if self._payload:
             output += f" {self._payload}"
@@ -268,10 +268,13 @@ class HTTPAuthMethod(Mapping[str, str]):
             for k, v in self._params.items():
                 output += f" {k}={v}"
 
-        return f"{output}>"
+        return output
+
+    def __repr__(self) -> str:
+        return f"<{self._method} Authenticator at {id(self):#x}>"
 
     def __hash__(self) -> int:
-        return hash(repr(self))
+        return hash(str(self))
 
     def __getitem__(self, param:str) -> str:
         return self._params[param]
