@@ -270,6 +270,9 @@ class HTTPAuthMethod(Mapping[str, str]):
 
         return f"{output}>"
 
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
     def __getitem__(self, param:str) -> str:
         return self._params[param]
 
