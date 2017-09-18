@@ -19,18 +19,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from base64 import b64decode
-from typing import Optional, Tuple
+from typing import Optional
 
-from requests import Response, Request
+from aiohttp import ClientResponse
 
-from irobot.authentication._http import HTTPAuthHandler
-from irobot.authentication.parser import ParseError, auth_parser
+from irobot.authentication._base import AuthenticatedUser
+from irobot.authentication._http import BaseHTTPAuthHandler, HTTPValidatorParameters
+from irobot.authentication.parser import HTTPAuthMethod
 from irobot.config import BasicAuthConfig
 
 
-class HTTPBasicAuthHandler(HTTPAuthHandler):
+class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
     """ HTTP basic authentication handler """
     def __init__(self, config:BasicAuthConfig, logger:Optional[logging.Logger] = None) -> None:
+        # This only exists to override the correct types in the signature
         super().__init__(config=config, logger=logger)
 
     @property
@@ -41,37 +43,16 @@ class HTTPBasicAuthHandler(HTTPAuthHandler):
 
         return challenge
 
-    def parse_auth_header(self, auth_header:str) -> Tuple[str, str]:
-        """
-        Parse the basic authentication authorisation header
+    def match_auth_method(self, challenge_response:HTTPAuthMethod) -> bool:
+        return challenge_response.auth_method == "Basic" \
+           and challenge_response.payload is not None
 
-        @param   auth_header  Contents of the "Authorization" header (string)
-        @return  Tuple of username (string) and password (string)
-        """
-        try:
-            auth_handlers = auth_parser(auth_header)
-        except ParseError:
-            raise ValueError("Couldn't parse authentication header")
+    def set_handler_parameters(self, challenge_response:HTTPAuthMethod) -> HTTPValidatorParameters:
+        return HTTPValidatorParameters(
+            url=self._config.url,
+            payload=f"Basic {challenge_response.payload}"
+        )
 
-        for handler in auth_handlers:
-            if handler.auth_method == "Basic" and handler.payload:
-                basic_handler = handler
-                break
-        else:
-            raise ValueError("No HTTP basic authentication response found")
-
-        return tuple(b64decode(basic_handler.payload).decode().split(":"))
-
-    def auth_request(self, user:str, password:str) -> Request:
-        """
-        Create an authentication request
-
-        @param   user      Username (string)
-        @param   password  Password (string)
-        @return  Authentication request (requests.Request)
-        """
-        return Request("GET", self._config.url, auth=(user, password))
-
-    def get_user(self, req:Request, _:Response) -> str:
-        """ Get the user from the authentication request """
-        return req.auth[0]
+    def get_authenticated_user(self, challenge_response:HTTPAuthMethod, _:ClientResponse) -> AuthenticatedUser:
+        username, _ = b64decode(challenge_response.payload).decode().split(":")
+        return AuthenticatedUser(username)
