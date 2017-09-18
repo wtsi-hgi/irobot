@@ -160,18 +160,12 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
             # Fail on missing Authorization header
             raise HTTPAuthenticationFailure("No authentication credentials provided")
 
-        user = None
         for auth_handler in auth_handlers:
-            # TODO The authentication handler should probably also
-            # be asynchronous. This is planned with the deprecation
-            # of the requests library (all our authentication
-            # handlers are currently HTTP-based)
-            user = auth_handler.authenticate(auth_header)
+            user = await auth_handler.authenticate(auth_header)
             if user:
                 # Short-circuit if authentication succeeded
                 break
-
-        if not user:
+        else:
             # Fail on inability to authenticate
             raise HTTPAuthenticationFailure("Could not authenticate credentials")
 
