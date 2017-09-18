@@ -45,31 +45,32 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
     ## Implement these #################################################
 
     @abstractmethod
-    def match_challenge(self, auth_challenge:HTTPAuthMethod) -> bool:
+    def match_auth_method(self, challenge_response:HTTPAuthMethod) -> bool:
         """
-        Test the given authentication challenge matches the requirements
-        of the handler class
+        Test the given challenge response matches the requirements of
+        the handler class
 
-        @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
+        @params  challenge_response  Authentication challenge response (HTTPAuthMethod)
         @return  Match (bool)
         """
 
     @abstractmethod
-    def get_challenge_response(self, auth_challenge:HTTPAuthMethod) -> HTTPValidatorParameters:
+    def set_handler_parameters(self, challenge_response:HTTPAuthMethod) -> HTTPValidatorParameters:
         """
-        Get the parameters for the authentication challenge response.
+        Set the parameters for the authentication challenge response
 
-        @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
+        @params  challenge_response  Authentication challenge reponse (HTTPAuthMethod)
         @return  Authentication request parameters (HTTPValidatorParameters)
         """
 
     @abstractmethod
-    def get_authenticated_user(self, auth_challenge:HTTPAuthMethod, response:ClientResponse) -> AuthenticatedUser:
+    def get_authenticated_user(self, challenge_response:HTTPAuthMethod, auth_response:ClientResponse) -> AuthenticatedUser:
         """
-        Get the user from the authentication challenge and response
+        Get the user from the authentication challenge response and any
+        response back from the authentication server
 
-        @params  auth_challenge  Authentication method challenge (HTTPAuthMethod)
-        @param   response        Response from authentication request (ClientResponse)
+        @params  challenge_response  Authentication challenge response (HTTPAuthMethod)
+        @param   auth_response       Response from authentication request (ClientResponse)
         @return  Authenticated user (AuthenticatedUser)
         """
 
@@ -91,7 +92,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
         # Initialise the cache, if required
         if self._config.cache:
             self.log(logging.DEBUG, f"Creating {self._auth_method} authentication cache")
-            self._cache:Dict[str, AuthenticatedUser] = {}
+            self._cache:Dict[HTTPAuthMethod, AuthenticatedUser] = {}
             self._cache_lock = Lock()
             self._schedule_cleanup()
             atexit.register(self._cleanup_timer.cancel)
@@ -151,36 +152,36 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
         try:
             _auth_methods = auth_parser(auth_header)
-            auth_challenge, *_ = filter(self.match_challenge, _auth_methods)
+            challenge_response, *_ = filter(self.match_auth_method, _auth_methods)
 
         except ParseError:
             self.log(logging.WARNING, f"{self._auth_method} authentication handler couldn't parse authentication header")
             return None
 
         except ValueError:
-            self.log(logging.ERROR, f"No HTTP {self._auth_method} authentication challenge found")
+            self.log(logging.ERROR, f"No HTTP {self._auth_method} authentication handler available")
             return None
 
         # Check the cache
         if self._config.cache:
             with self._cache_lock:
-                if auth_header in self._cache:
-                    user = self._cache[auth_header]
+                if challenge_response in self._cache:
+                    user = self._cache[challenge_response]
                     if user.valid(self._config.cache):
                         self.log(logging.DEBUG, f"Authenticated user \"{user.user}\" from cache")
                         return user
 
                     # Clean up expired users
-                    del self._cache[auth_header]
+                    del self._cache[challenge_response]
 
-        response = await self._validate_request(self.get_challenge_response(auth_challenge))
-        if response:
-            user = self.get_authenticated_user(auth_challenge, response)
+        auth_response = await self._validate_request(self.set_handler_parameters(challenge_response))
+        if auth_response:
+            user = self.get_authenticated_user(challenge_response, auth_response)
 
             # Put validated user in the cache
             if self._config.cache:
                 with self._cache_lock:
-                    self._cache[auth_header] = user
+                    self._cache[challenge_response] = user
 
             return user
 
