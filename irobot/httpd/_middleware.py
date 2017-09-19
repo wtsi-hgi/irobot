@@ -169,8 +169,8 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
             # Fail on inability to authenticate
             raise HTTPAuthenticationFailure("Could not authenticate credentials")
 
-        # Success: Thread the authenticated user into the request
-        request["irobot_auth_user"] = user
+        # Success: Thread the authenticated username into the request
+        request["irobot_auth_user"] = user.user
         return await handler(request)
 
     return _middleware
