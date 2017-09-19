@@ -25,6 +25,7 @@ from typing import List, Optional
 
 from aiohttp import web
 
+from irobot import __version__
 from irobot.authentication import BaseAuthHandler
 from irobot.config import HTTPdConfig
 from irobot.httpd import _middleware, handlers
@@ -44,7 +45,7 @@ _laws = [
 
 async def _set_server_header(_request:web.Request, response:web.Response) -> None:
     """ Set the Server response header """
-    response.headers["Server"] = "iRobot"
+    response.headers["Server"] = f"iRobot {__version__}"
     response.headers["iRobot-MOTD"] = choice(_laws)
 
 
