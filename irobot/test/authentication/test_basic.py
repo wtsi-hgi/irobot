@@ -18,20 +18,18 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from base64 import b64encode
 from datetime import timedelta
-from threading import Timer
-
-import requests
 
 import irobot.authentication._http as http
 import irobot.authentication.basic as basic
+from irobot.authentication.parser import HTTPAuthMethod
 from irobot.config import BasicAuthConfig
 from irobot.config._tree_builder import ConfigValue
+from irobot.test.async import async_test
 
 
-@unittest.skip
 @patch("irobot.authentication._http.Timer", spec=True)
 class TestHTTPBasicAuthHandler(unittest.TestCase):
     def setUp(self):
@@ -39,23 +37,42 @@ class TestHTTPBasicAuthHandler(unittest.TestCase):
         self.config.add_value("url", ConfigValue("foo", str))
         self.config.add_value("cache", ConfigValue(123, timedelta))
 
-    def test_parser(self, *args):
+    def test_challenge(self, *args):
+        auth = basic.HTTPBasicAuthHandler(self.config)
+        self.assertEqual(auth.www_authenticate, "Basic")
+
+        self.config.add_value("realm", ConfigValue("foo", str))
+        auth = basic.HTTPBasicAuthHandler(self.config)
+        self.assertEqual(auth.www_authenticate, "Basic realm=\"foo\"")
+
+    def test_match_auth_method(self, *args):
         auth = basic.HTTPBasicAuthHandler(self.config)
 
-        creds = user, password = ("foo", "bar")
-        payload = f"{user}:{password}".encode()
-        basic_auth = "Basic {}".format(b64encode(payload).decode())
+        challenge_response = HTTPAuthMethod("Basic", payload="foo")
+        self.assertTrue(auth.match_auth_method(challenge_response))
 
-        parse_auth = auth.parse_auth_header
-        self.assertEqual(parse_auth(basic_auth), creds)
-        self.assertRaises(ValueError, parse_auth, "foo bar")
+        challenge_response = HTTPAuthMethod("Basic")
+        self.assertFalse(auth.match_auth_method(challenge_response))
 
-    def test_request(self, *args):
+        challenge_response = HTTPAuthMethod("foo", params={"bar": "quux"})
+        self.assertFalse(auth.match_auth_method(challenge_response))
+
+    def test_set_handler_parameters(self, *args):
         auth = basic.HTTPBasicAuthHandler(self.config)
-        req = auth.auth_request("foo", "bar")
 
-        self.assertEqual(req.auth, ("foo", "bar"))
-        self.assertEqual(auth.get_user(req, None), "foo")
+        challenge_response = HTTPAuthMethod("Basic", payload="bar")
+        self.assertEqual(auth.set_handler_parameters(challenge_response),
+                         http.HTTPValidatorParameters(url="foo", payload="Basic bar"))
+
+    @async_test
+    async def test_get_authenticated_user(self, *args):
+        auth = basic.HTTPBasicAuthHandler(self.config)
+
+        payload = b64encode(f"foo:bar".encode()).decode()
+        challenge_response = HTTPAuthMethod("Basic", payload=payload)
+
+        user = await auth.get_authenticated_user(challenge_response, None)
+        self.assertEqual(user.user, "foo")
 
 
 if __name__ == "__main__":

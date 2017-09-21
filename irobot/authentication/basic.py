@@ -34,11 +34,11 @@ class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
     _challenge:str
 
     def __init__(self, config:BasicAuthConfig, logger:Optional[logging.Logger] = None) -> None:
-        super().__init__(config=config, logger=logger)
-
         self._challenge = "Basic"
-        if self._config.realm:
-            self._challenge += f" realm=\"{self._config.realm}\""
+        if "realm" in config._leaves:
+            self._challenge += f" realm=\"{config.realm}\""
+
+        super().__init__(config=config, logger=logger)
 
     @property
     def www_authenticate(self) -> str:
