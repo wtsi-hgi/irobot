@@ -20,14 +20,15 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import unittest
 from unittest.mock import MagicMock, patch
 from datetime import timedelta
-from threading import Timer
 
-from requests import Response
+from aiohttp import ClientResponse
 
 import irobot.authentication._http as http
 import irobot.authentication.arvados as arv
+from irobot.authentication.parser import HTTPAuthMethod
 from irobot.config import ArvadosAuthConfig
 from irobot.config._tree_builder import ConfigValue
+from irobot.test.async import async_test
 
 
 @patch("irobot.authentication._http.Timer", spec=True)
@@ -39,30 +40,58 @@ class TestArvadosAuthHandler(unittest.TestCase):
         self.config.add_value("api_base_url", ConfigValue("https://foo/arvados/v1", str))
         self.config.add_value("cache", ConfigValue(123, timedelta))
 
-    def test_parser(self, *args):
+    def test_challenge(self, *args):
+        auth = arv.ArvadosAuthHandler(self.config)
+        self.assertEqual(auth.www_authenticate,
+                         f"Bearer realm=\"{self.config.api_host}\"")
+
+    def test_match_auth_method(self, *args):
         auth = arv.ArvadosAuthHandler(self.config)
 
-        self.assertEqual(auth.parse_auth_header("Arvados abc123"), ("abc123",))
-        self.assertRaises(ValueError, auth.parse_auth_header, "foo bar")
+        challenge_response = HTTPAuthMethod("Bearer", payload="foo")
+        self.assertTrue(auth.match_auth_method(challenge_response))
 
-    def test_request(self, *args):
+        challenge_response = HTTPAuthMethod("Bearer")
+        self.assertFalse(auth.match_auth_method(challenge_response))
+
+        challenge_response = HTTPAuthMethod("Bearer", params={"foo": "bar"})
+        self.assertFalse(auth.match_auth_method(challenge_response))
+
+        challenge_response = HTTPAuthMethod("foo")
+        self.assertFalse(auth.match_auth_method(challenge_response))
+
+    def test_set_handler_parameters(self, *args):
         auth = arv.ArvadosAuthHandler(self.config)
-        req = auth.auth_request("abc123")
 
-        self.assertEquals(req.url, "https://foo/arvados/v1/users/current")
-        self.assertEquals(req.headers["Authorization"], "OAuth2 abc123")
+        challenge_response = HTTPAuthMethod("Bearer", payload="bar")
+        self.assertEqual(auth.set_handler_parameters(challenge_response),
+                         http.HTTPValidatorParameters(
+                            url=f"{self.config.api_base_url}/users/current",
+                            payload="OAuth2 bar",
+                            headers={"Accept": "application/json"}
+                        ))
 
-    def test_get_user(self, *args):
+        self.config.api_version = "foo"
+        self.assertRaises(RuntimeError, auth.set_handler_parameters, challenge_response)
+
+    @async_test
+    async def test_get_authenticated_user(self, *args):
         auth = arv.ArvadosAuthHandler(self.config)
 
-        res = MagicMock(spec=Response)
+        mock_auth_response = MagicMock(spec=ClientResponse)
+        async def mock_json():
+            return {"username": "foo"}
 
-        res.status_code = 200
-        res.json.return_value = {"username": "foo"}
-        self.assertEquals(auth.get_user(None, res), "foo")
+        mock_auth_response.status = 200
+        mock_auth_response.json = mock_json
+        user = await auth.get_authenticated_user(None, mock_auth_response)
+        self.assertEqual(user.user, "foo")
 
-        res.status_code = "foo"
-        self.assertRaises(ValueError, auth.get_user, None, res)
+        mock_auth_response.status = 123
+        try:
+            await auth.get_authenticated_user(None, mock_auth_response)
+        except Exception as e:
+            self.assertIsInstance(e, ValueError)
 
 
 if __name__ == "__main__":

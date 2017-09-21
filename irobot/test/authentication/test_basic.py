@@ -54,7 +54,10 @@ class TestHTTPBasicAuthHandler(unittest.TestCase):
         challenge_response = HTTPAuthMethod("Basic")
         self.assertFalse(auth.match_auth_method(challenge_response))
 
-        challenge_response = HTTPAuthMethod("foo", params={"bar": "quux"})
+        challenge_response = HTTPAuthMethod("Basic", params={"foo": "bar"})
+        self.assertFalse(auth.match_auth_method(challenge_response))
+
+        challenge_response = HTTPAuthMethod("foo")
         self.assertFalse(auth.match_auth_method(challenge_response))
 
     def test_set_handler_parameters(self, *args):

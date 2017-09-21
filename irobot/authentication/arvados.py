@@ -33,8 +33,8 @@ class ArvadosAuthHandler(BaseHTTPAuthHandler):
     _challenge:str
 
     def __init__(self, config:ArvadosAuthConfig, logger:Optional[logging.Logger] = None) -> None:
+        self._challenge = f"Bearer realm=\"{config.api_host}\""
         super().__init__(config=config, logger=logger)
-        self._challenge = f"Bearer realm=\"{self._config.api_host}\""
 
     @property
     def www_authenticate(self) -> str:
@@ -56,6 +56,7 @@ class ArvadosAuthHandler(BaseHTTPAuthHandler):
 
     async def get_authenticated_user(self, _:HTTPAuthMethod, auth_response:ClientResponse) -> AuthenticatedUser:
         if auth_response.status == 200:
-            return await auth_response.json()["username"]
+            arvados_data = await auth_response.json()
+            return AuthenticatedUser(arvados_data["username"])
 
         raise ValueError("Could not retrieve username from Arvados API host")
