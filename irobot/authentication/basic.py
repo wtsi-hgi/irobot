@@ -35,7 +35,7 @@ class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
 
     def __init__(self, config:BasicAuthConfig, logger:Optional[logging.Logger] = None) -> None:
         self._challenge = "Basic"
-        if "realm" in config._leaves:
+        if "realm" in config:
             self._challenge += f" realm=\"{config.realm}\""
 
         super().__init__(config=config, logger=logger)
