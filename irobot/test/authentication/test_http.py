@@ -21,7 +21,8 @@ import unittest
 from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
 
-from aiohttp import ClientResponse
+from aiohttp import ClientResponse, ClientResponseError
+from aioresponses import aioresponses
 
 import irobot.authentication._http as http
 from irobot.authentication._base import AuthenticatedUser
@@ -46,7 +47,7 @@ class _MockHTTPAuthenticator(http.BaseHTTPAuthHandler):
         return "Mock"
 
     def match_auth_method(self, challenge_response):
-        return True
+        return (challenge_response.auth_method == "foo")
 
     def set_handler_parameters(self, challenge_response):
         return http.HTTPValidatorParameters("foo", "bar")
@@ -90,24 +91,62 @@ class TestHTTPAuthenticationHandler(unittest.TestCase):
         auth._cleanup()
         self.assertEqual(auth._cache, {})
 
-    # FIXME Patching doesn't seem to work for async code; the below test
-    # is still trying to make the HTTP request, regardless of it
-    # supposedly being mocked...
+    @async_test
+    @aioresponses()
+    async def test_request_validator(self, mock_response):
+        auth = _MockHTTPAuthenticator(_CONFIG_NOCACHE)
 
-    # @async_test
-    # @patch("irobot.authentication._http.ClientSession", spec=True)
-    # async def test_request_validator(self, mock_client):
-    #     mock_response = MagicMock(spec=ClientResponse)
-    #     mock_client.request.return_value = mock_response
-    #
-    #     auth = _MockHTTPAuthenticator(_CONFIG_NOCACHE)
-    #     params = http.HTTPValidatorParameters("foo", "bar")
-    #
-    #     mock_response.status = 200
-    #     validation_response = await auth._validate_request(params)
-    #     self.assertEqual(validation_response, mock_response)
-    #
-    # FIXME Same problem anticipated for test_authenticate...
+        mock_url = "foo"
+        params = http.HTTPValidatorParameters(mock_url, "bar")
+
+        mock_response.get(mock_url, status=200)
+        validation_response = await auth._validate_request(params)
+        self.assertIsNotNone(validation_response)
+
+        mock_response.get(mock_url, status=401)
+        validation_response = await auth._validate_request(params)
+        self.assertIsNone(validation_response)
+
+        mock_response.get(mock_url, status=500)
+        try:
+            validation_response = await auth._validate_request(params)
+        except Exception as e:
+            self.assertIsInstance(e, ClientResponseError)
+
+    @async_test
+    @aioresponses()
+    async def test_authenticate(self, mock_response):
+        with patch("irobot.authentication._base.datetime", spec=True) as mock_datetime:
+            # patch and aioresponses don't play nicely together as
+            # decorators, so we use patch's context manager instead
+            validation_time = mock_datetime.utcnow.return_value = datetime.utcnow()
+
+            auth = _MockHTTPAuthenticator(_CONFIG_CACHE)
+
+            auth_response = await auth.authenticate("this is a bad header")
+            self.assertIsNone(auth_response)
+
+            auth_response = await auth.authenticate("bar")
+            self.assertIsNone(auth_response)
+
+            mock_response.get("foo", status=401)
+            auth_response = await auth.authenticate("foo")
+            self.assertIsNone(auth_response)
+
+            mock_response.get("foo", status=200)
+            auth_response = await auth.authenticate("foo")
+            self.assertEqual(auth_response.user, "Testy McTestface")
+
+            # Run again to test it's coming from the cache
+            mock_response.get("foo", status=200)
+            auth_response = await auth.authenticate("foo")
+            self.assertEqual(auth_response.user, "Testy McTestface")
+
+            # Invalidate cache and go again
+            mock_datetime.utcnow.return_value = validation_time + timedelta(minutes=11)
+            mock_response.get("foo", status=200)
+            auth_response = await auth.authenticate("foo")
+            self.assertEqual(auth_response.user, "Testy McTestface")
 
 
 if __name__ == "__main__":
