@@ -10,6 +10,7 @@ before_install:
 - pip install codecov nose2 nose2-cov
 install:
 - pip install -r requirements.txt
+- pip install -r requirements-test.txt
 script:
 - nose2 -F -C --coverage-report=term-missing -v
 - find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/test/todos.awk
