@@ -19,8 +19,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-from typing import List, Optional
+from typing import List
 
+from . import __version__
 from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
 from .config import iRobotConfiguration, LoggingConfig
 from .irods import iRODS
@@ -36,11 +37,17 @@ class _BootstrapLogging(object):
 
     def __init__(self) -> None:
         # This is a bit of a hack, but never mind :P
-        self.config = LoggingConfig()
-        self.config._leaves = {
-            "output": None,
-            "level":  logging.CRITICAL
-        }
+        from configparser import ConfigParser
+        from .config import config
+
+        bootstrap_config = ConfigParser()
+        bootstrap_config.read_string("""
+            [logging]
+            output = STDERR
+            level = info
+        """)
+
+        self.config = config._factories("logging", bootstrap_config)
 
     def __enter__(self) -> logging.Logger:
         self.logger = create_logger(self.config)
@@ -72,7 +79,8 @@ def _instantiate_authentication_handlers(config:iRobotConfiguration, logger:logg
 if __name__ == "__main__":
     # For the sake of homogeneity, create a logger and exception handler
     # for bootstrapping the configuration parsing
-    with _BootstrapLogging():
+    with _BootstrapLogging() as bootstrap_logger:
+        bootstrap_logger.info(f"Starting iRobot {__version__}")
         config = iRobotConfiguration(os.environ.get("IROBOT_CONF", "~/irobot.conf"))
 
     # Plumb everything together and start
