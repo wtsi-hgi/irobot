@@ -21,13 +21,13 @@ import logging
 import os
 from typing import List
 
-from . import __version__
-from .authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
-from .config import iRobotConfiguration, LoggingConfig
-from .irods import iRODS
-from .httpd import start_httpd
-from .precache import Precache
-from .logging import create_logger
+from irobot import __version__
+from irobot.authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
+from irobot.config import iRobotConfiguration, LoggingConfig
+from irobot.irods import iRODS
+from irobot.httpd import start_httpd
+from irobot.precache import Precache
+from irobot.logging import create_logger
 
 
 class _BootstrapLogging(object):
@@ -38,7 +38,7 @@ class _BootstrapLogging(object):
     def __init__(self) -> None:
         # This is a bit of a hack, but never mind :P
         from configparser import ConfigParser
-        from .config import config
+        from irobot.config import config
 
         bootstrap_config = ConfigParser()
         bootstrap_config.read_string("""
