@@ -40,12 +40,11 @@ cleanup() {
 
 get_krb_libdefaults() {
   # Remove comments and extract libdefaults section from /etc/krb5.conf
-  (sed 's/#.*//' \
+  sed 's/#.*//' /etc/krb5.conf \
   | awk 'BEGIN { libdefaults = 0 }
          /\[.*\]/ { libdefaults = 0 }
          /\[libdefaults\]/ { libdefaults = 1 }
-         { if (libdefaults) print $0 }') \
-  < /etc/krb5.conf
+         libdefaults { print $0 }'
 }
 
 get_krb_realm() {
