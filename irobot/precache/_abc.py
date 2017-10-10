@@ -27,7 +27,14 @@ from irobot.precache._types import InProgress
 
 
 class AbstractDataObject(ContextManager[IO[bytes]], metaclass=ABCMeta):
-    """ Abstract metaclass for data object active records """
+    """
+    Abstract metaclass for data object active records
+
+    The following dunder methods must be implemented:
+    * __enter__(self) -> IO[bytes]
+    * __exit__(self, exc_type:Type[BaseException], exc_value:BaseException, traceback:TracebackType) -> bool
+                     exc_type:None,                exc_value:None,          traceback:None         ) -> bool
+    """
 
     ## Data Object Status ##############################################
 

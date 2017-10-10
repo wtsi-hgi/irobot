@@ -19,7 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-from typing import List
+from types import TracebackType
+from typing import List, Type, overload
 
 from irobot import __version__
 from irobot.authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
@@ -53,13 +54,15 @@ class _BootstrapLogging(object):
         self.logger = create_logger(self.config)
         return self.logger
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+    @overload
+    def __exit__(self, exc_type:Type[BaseException], exc_val:BaseException, exc_tb:TracebackType) -> bool: ...
+    def __exit__(self, exc_type:None, exc_val:None, exc_tb:None) -> bool:
         if exc_type:
-            raise exc_val
+            # Propagate exception
+            return False
 
         self.logger.handlers = []
         del self.logger
-
         return True
 
 
