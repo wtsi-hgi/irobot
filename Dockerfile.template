@@ -75,5 +75,5 @@ K RUN kinit -r7d ${user}@${krb_realm} -kt /home/${user}/${keytab}
 *  && sudo -H pip3.6 install -r irobot/requirements.txt
 
 * WORKDIR /home/${user}/irobot
-N CMD python3.6 -m irobot.main
-K CMD sudo cron && python3.6 -m irobot.main
+N CMD python3.6 -OOm irobot.main
+K CMD sudo cron && python3.6 -OOm irobot.main

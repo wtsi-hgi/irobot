@@ -21,6 +21,8 @@ import atexit
 import logging
 import sys
 import time
+from traceback import print_tb
+from types import TracebackType
 from typing import Callable, Optional, Type
 
 from irobot.common import ISO8601_UTC
@@ -52,14 +54,18 @@ class LogWriter(object):
 def _exception_handler(logger:logging.Logger) -> Callable:
     """
     Create an exception handler that logs uncaught exceptions (except
-    keyboard interrupts) before terminating
+    keyboard interrupts) and spews the traceback to stderr (in debugging
+    mode) before terminating
     """
-    def _log_uncaught_exception(exc_class:Type[Exception], exc_obj:Exception, traceback) -> None:
-        if issubclass(exc_class, KeyboardInterrupt):
-            sys.__excepthook__(exc_class, exc_obj, traceback)
+    def _log_uncaught_exception(exc_type:Type[BaseException], exc_val:BaseException, traceback:TracebackType) -> None:
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_val, traceback)
 
         else:
-            logger.critical(str(exc_obj))
+            logger.critical(str(exc_val) or exc_type.__name__)
+            if __debug__:
+                print_tb(traceback)
+
             sys.exit(1)
 
     return _log_uncaught_exception
