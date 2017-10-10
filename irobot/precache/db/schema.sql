@@ -27,9 +27,9 @@ create table if not exists datatypes (
   description  text     not null unique
 ) without rowid;
 
-insert or ignore into datatypes(id, description) values (1, "data"),
-                                                        (2, "metadata"),
-                                                        (3, "checksums");
+insert or replace into datatypes(id, description) values (1, "data"),
+                                                         (2, "metadata"),
+                                                         (3, "checksums");
 
 create table if not exists statuses (
   id           integer  primary key,
@@ -38,11 +38,11 @@ create table if not exists statuses (
 
 -- NOTE "unknown" and "failed" aren't used by the tracking DB, they just
 -- exist to reflect the internal application enumeration type
-insert or ignore into statuses(id, description) values (1, "queued"),
-                                                       (2, "started"),
-                                                       (3, "finished"),
-                                                       (4, "unknown"),
-                                                       (5, "failed");
+insert or replace into statuses(id, description) values (1, "queued"),
+                                                        (2, "started"),
+                                                        (3, "finished"),
+                                                        (4, "unknown"),
+                                                        (5, "failed");
 
 create table if not exists data_objects (
   id             integer    primary key,
