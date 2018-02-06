@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-from datetime import datetime
-from typing import Optional, Tuple
+from datetime import datetime, timedelta
+from typing import Tuple
 
 from irobot.common import ISO8601_UTC, SummaryStat
 
@@ -30,9 +30,10 @@ class PrecacheFull(Exception):
 class InProgress(Exception):
     """ Interrupt raised when data fetching is in progress """
 
+
 class InProgressWithETA(InProgress):
     """ Interrupt raised when data fetching is in progress, with ETA """
-    def __init__(self, size:int, started:datetime, rate:SummaryStat, *args, **kwargs) -> None:
+    def __init__(self, size: int, started: datetime, rate: SummaryStat, *args, **kwargs) -> None:
         """
         Constructor
 

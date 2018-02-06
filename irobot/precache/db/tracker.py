@@ -20,9 +20,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import atexit
 import logging
 import os
-from os.path import dirname, join
 from datetime import datetime, timedelta
-from enum import Enum
+from os.path import dirname, join
 from threading import Timer
 from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
@@ -35,19 +34,20 @@ from irobot.precache.db._exceptions import StatusExists, PrecacheExists
 from irobot.precache.db._udf import StandardError
 
 
-def _nuple(n:int = 1) -> Tuple:
+def _nuple(n: int=1) -> Tuple:
     """ Create an n-tuple of None """
     return (None,) * n
 
 
 class DataObjectFileStatus(NamedTuple):
-    timestamp:datetime
-    status:AsyncTaskStatus
+    timestamp: datetime
+    status: AsyncTaskStatus
 
 
 class TrackingDB(LogWriter):
     """ Tracking DB """
-    def __init__(self, path:str, in_precache:bool = True, logger:Optional[logging.Logger] = None) -> None:
+
+    def __init__(self, path: str, in_precache: bool=True, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 
@@ -158,7 +158,7 @@ class TrackingDB(LogWriter):
             **{
                 process: SummaryStat(rate, stderr)
                 for process, rate, stderr
-                in  self._exec("""
+                in self._exec("""
                     select process,
                            rate,
                            stderr
@@ -178,7 +178,7 @@ class TrackingDB(LogWriter):
         ids = self._exec("select id from data_objects").fetchall()
         return [id for id, in ids]
 
-    def get_data_object_id(self, irods_path:str) -> Optional[int]:
+    def get_data_object_id(self, irods_path: str) -> Optional[int]:
         """
         Get the ID of the data object with the given path on iRODS
 
@@ -192,7 +192,7 @@ class TrackingDB(LogWriter):
         """, (irods_path,)).fetchone() or _nuple()
         return do_id
 
-    def get_precache_path(self, data_object:int) -> Optional[str]:
+    def get_precache_path(self, data_object: int) -> Optional[str]:
         """
         Get the precache path of the data object
 
@@ -206,7 +206,7 @@ class TrackingDB(LogWriter):
         """, (data_object,)).fetchone() or _nuple()
         return precache_path
 
-    def get_last_access(self, data_object:int) -> Optional[datetime]:
+    def get_last_access(self, data_object: int) -> Optional[datetime]:
         """
         Get the last access time of the data object
 
@@ -220,7 +220,7 @@ class TrackingDB(LogWriter):
         """, (data_object,)).fetchone() or _nuple()
         return last_access
 
-    def update_last_access(self, data_object:int) -> None:
+    def update_last_access(self, data_object: int) -> None:
         """
         Set the last access time of a data object to the current time,
         per the database's definition
@@ -237,7 +237,7 @@ class TrackingDB(LogWriter):
             commit;
         """, (data_object,))
 
-    def get_current_status(self, data_object:int, datatype:DataObjectState) -> Optional[DataObjectFileStatus]:
+    def get_current_status(self, data_object: int, datatype: DataObjectState) -> Optional[DataObjectFileStatus]:
         """
         Get the current status of the data object file
 
@@ -254,7 +254,7 @@ class TrackingDB(LogWriter):
         """, (data_object, datatype)).fetchone()
         return DataObjectFileStatus(*status) if status else None
 
-    def set_status(self, data_object:int, datatype:DataObjectState, status:AsyncTaskStatus) -> None:
+    def set_status(self, data_object: int, datatype: DataObjectState, status: AsyncTaskStatus) -> None:
         """
         Set the status of the given data object file
 
@@ -276,7 +276,7 @@ class TrackingDB(LogWriter):
             self._exec("rollback")
             raise StatusExists(f"Data object file already has {status.name} status")
 
-    def get_size(self, data_object:int, datatype:DataObjectState) -> Optional[int]:
+    def get_size(self, data_object: int, datatype: DataObjectState) -> Optional[int]:
         """
         Get the size of a data object file
 
@@ -292,7 +292,7 @@ class TrackingDB(LogWriter):
         """, (data_object, datatype)).fetchone() or _nuple()
         return size
 
-    def set_size(self, data_object:int, datatype:DataObjectState, size:int) -> None:
+    def set_size(self, data_object: int, datatype: DataObjectState, size: int) -> None:
         """
         Set the size of a data object file
 
@@ -313,7 +313,7 @@ class TrackingDB(LogWriter):
             commit;
         """, (data_object, datatype, size))
 
-    def new_request(self, irods_path:str, precache_path:str, sizes:Tuple[int, int, int]) -> int:
+    def new_request(self, irods_path: str, precache_path: str, sizes: Tuple[int, int, int]) -> int:
         """
         Track a new data object (the database will handle setting most
         of the state via triggers)
@@ -343,7 +343,7 @@ class TrackingDB(LogWriter):
 
                 commit;
             """, {
-                "irods_path":    irods_path,
+                "irods_path": irods_path,
                 "precache_path": precache_path
             }).fetchall()
 
@@ -357,7 +357,7 @@ class TrackingDB(LogWriter):
 
         return do_id
 
-    def delete_data_object(self, data_object:int) -> None:
+    def delete_data_object(self, data_object: int) -> None:
         """
         Delete a data object from the database in its entirety (the
         database will handle the cascade)

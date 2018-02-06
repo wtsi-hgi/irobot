@@ -101,7 +101,7 @@ class TestCursor(unittest.TestCase):
         self.conn.register_adaptor(complex, my_adaptor)
 
         c = self.conn.cursor()
-        adapted, = c.execute("select :foo", {"foo": 1+2j}).fetchone()
+        adapted, = c.execute("select :foo", {"foo": 1 + 2j}).fetchone()
         self.assertEqual(adapted, f"COMPLEX {1+2j}")
 
     def test_bad_bindings(self):
@@ -115,7 +115,7 @@ class TestCursor(unittest.TestCase):
     def test_convertor_registration(self):
         def my_convertor(x) -> complex:
             return complex(x)
-            
+
         self.conn.register_convertor("COMPLEX", my_convertor)
 
         c = self.conn.cursor()

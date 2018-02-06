@@ -17,8 +17,10 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
+
 class StatusExists(Exception):
     """ Raised when a new status is set that is not unique to that file  """
+
 
 class PrecacheExists(Exception):
     """ Raised when a precache entity already exists """

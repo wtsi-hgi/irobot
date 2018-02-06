@@ -18,8 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-from typing import Callable, Dict, Hashable, Iterator, List, Mapping, Optional, Tuple
-from typing.re import Pattern
+from typing import Callable, Dict, Hashable, Iterator, List, Mapping, Optional, Tuple, Pattern
 
 
 # Authentication Grammar
@@ -48,14 +47,16 @@ class ParseError(Exception):
 _ParseT = Tuple[str, str]
 _Parser = Callable[[str], _ParseT]
 
-def _terminal(pattern:Pattern) -> _Parser:
+
+def _terminal(pattern: Pattern) -> _Parser:
     """
     Make a terminal grammar node parser
 
     @param   pattern  Pattern to match
     @return  Parser that matches pattern
     """
-    def _parser(s:str) -> _ParseT:
+
+    def _parser(s: str) -> _ParseT:
         match = pattern.match(s)
 
         if not match:
@@ -66,7 +67,8 @@ def _terminal(pattern:Pattern) -> _Parser:
 
     return _parser
 
-def _conjunction(*parsers:_Parser) -> _Parser:
+
+def _conjunction(*parsers: _Parser) -> _Parser:
     """
     Make a conjunction parser from parsers
 
@@ -75,8 +77,8 @@ def _conjunction(*parsers:_Parser) -> _Parser:
     """
     assert parsers
 
-    def _parser(s:str) -> _ParseT:
-        matched   = ""
+    def _parser(s: str) -> _ParseT:
+        matched = ""
         remainder = s
 
         for parser in parsers:
@@ -91,7 +93,8 @@ def _conjunction(*parsers:_Parser) -> _Parser:
 
     return _parser
 
-def _disjunction(*parsers:_Parser) -> _Parser:
+
+def _disjunction(*parsers: _Parser) -> _Parser:
     """
     Make a disjunction parser from parsers
 
@@ -100,7 +103,7 @@ def _disjunction(*parsers:_Parser) -> _Parser:
     """
     assert parsers
 
-    def _parser(s:str) -> _ParseT:
+    def _parser(s: str) -> _ParseT:
         for parser in parsers:
             try:
                 return parser(s)
@@ -111,7 +114,8 @@ def _disjunction(*parsers:_Parser) -> _Parser:
 
     return _parser
 
-def _sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None) -> _Parser:
+
+def _sequence(parser: _Parser, minimum: int=0, maximum: Optional[int]=None) -> _Parser:
     """
     Make a sequence parser from parsers
 
@@ -125,9 +129,9 @@ def _sequence(parser:_Parser, minimum:int = 0, maximum:Optional[int] = None) -> 
     if maximum:
         assert maximum >= minimum
 
-    def _parser(s:str) -> _ParseT:
-        matched     = ""
-        remainder   = s
+    def _parser(s: str) -> _ParseT:
+        matched = ""
+        remainder = s
         num_matched = 0
 
         while True:
@@ -192,31 +196,32 @@ _LIST_SEPARATOR = _conjunction(
     _OWS
 )
 
-
 _PARAM_SEPARATOR = _conjunction(_OWS, _EQUALS, _OWS)
 _PARAM_VALUE = _disjunction(_TOKEN, _QUOTED_STRING)
 
-def _param(s:str) -> Tuple[str, str, str]:
+
+def _param(s: str) -> Tuple[str, str, str]:
     """
     Key-Value parameter parser
 
     @param   s  Input string
     @return  Tuple of parameter key, parameter value and remaining string
     """
-    param_key,   remainder = _TOKEN(s)
-    _equals,     remainder = _PARAM_SEPARATOR(remainder)
+    param_key, remainder = _TOKEN(s)
+    _equals, remainder = _PARAM_SEPARATOR(remainder)
     param_value, remainder = _PARAM_VALUE(remainder)
 
     return param_key, param_value, remainder
 
-def _params(s:str) -> Tuple[Dict[str, str], str]:
+
+def _params(s: str) -> Tuple[Dict[str, str], str]:
     """
     Parameter group parser
 
     @param   s  Input string
     @return  Dictionary of parameters and remaining string
     """
-    parameters:Dict[str, str] = {}
+    parameters: Dict[str, str] = {}
 
     param_key, param_value, remainder = _param(s)
     parameters[param_key] = param_value
@@ -239,11 +244,12 @@ def _params(s:str) -> Tuple[Dict[str, str], str]:
 
 class HTTPAuthMethod(Hashable, Mapping[str, str]):
     """ HTTP authentication method model """
-    _method:str
-    _payload:str
-    _params:Dict[str, str]
+    _method: str
+    _payload: str
+    _params: Dict[str, str]
 
-    def __init__(self, auth_method:str, *, payload:Optional[str] = None, params:Optional[Dict[str, str]] = None) -> None:
+    def __init__(self, auth_method: str, *, payload: Optional[str]=None,
+                 params: Optional[Dict[str, str]]=None) -> None:
         """
         Constructor
 
@@ -255,9 +261,9 @@ class HTTPAuthMethod(Hashable, Mapping[str, str]):
         """
         assert not (payload and params)
 
-        self._method  = auth_method
+        self._method = auth_method
         self._payload = payload
-        self._params  = params or {}
+        self._params = params or {}
 
     def __str__(self) -> str:
         output = self._method
@@ -276,7 +282,7 @@ class HTTPAuthMethod(Hashable, Mapping[str, str]):
     def __hash__(self) -> int:
         return hash(str(self))
 
-    def __getitem__(self, param:str) -> str:
+    def __getitem__(self, param: str) -> str:
         return self._params[param]
 
     def __iter__(self) -> Iterator[str]:
@@ -293,7 +299,8 @@ class HTTPAuthMethod(Hashable, Mapping[str, str]):
     def payload(self) -> str:
         return self._payload
 
-def _auth_handler(s:str) -> Tuple[HTTPAuthMethod, str]:
+
+def _auth_handler(s: str) -> Tuple[HTTPAuthMethod, str]:
     """
     Authentication handler parser
 
@@ -320,14 +327,15 @@ def _auth_handler(s:str) -> Tuple[HTTPAuthMethod, str]:
             payload, remainder = _TOKEN68(remainder)
             return HTTPAuthMethod(auth_method, payload=payload), remainder
 
-def auth_parser(auth_header:str) -> List[HTTPAuthMethod]:
+
+def auth_parser(auth_header: str) -> List[HTTPAuthMethod]:
     """
     Authentication header parser
 
     @param   auth_header   Authentication header (string)
     @return  List of HTTP authentication methods
     """
-    auth_handlers:List[HTTPAuthMethod] = []
+    auth_handlers: List[HTTPAuthMethod] = []
 
     handler, remainder = _auth_handler(auth_header)
     auth_handlers.append(handler)

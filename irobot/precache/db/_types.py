@@ -19,7 +19,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Any, Callable, Union
 
-
 SQLite = Union[str, bytes, int, float, None]
 
 Adaptor = Callable[[Any], SQLite]

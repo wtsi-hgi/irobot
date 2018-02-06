@@ -25,7 +25,7 @@ from typing import List, Optional
 from irobot.config._tree_builder import Configuration
 
 
-def listening_port(value:str) -> int:
+def listening_port(value: str) -> int:
     """
     Canonicalise listening port
 
@@ -40,7 +40,7 @@ def listening_port(value:str) -> int:
     return port
 
 
-def timeout(value:str) -> Optional[timedelta]:
+def timeout(value: str) -> Optional[timedelta]:
     """
     Canonicalise response timeout string into timedelta
 
@@ -87,7 +87,7 @@ def timeout(value:str) -> Optional[timedelta]:
     return output
 
 
-def authentication(value:str) -> List[str]:
+def authentication(value: str) -> List[str]:
     """
     Canonicalise comma-delimited authentication methods into list
 

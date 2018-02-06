@@ -25,7 +25,7 @@ import irobot.common.canon as canon
 from irobot.config._tree_builder import Configuration
 
 
-def url(value:str) -> str:
+def url(value: str) -> str:
     """
     Canonicalise URL
 
@@ -51,7 +51,7 @@ def url(value:str) -> str:
     return value
 
 
-def arvados_hostname(value:str) -> str:
+def arvados_hostname(value: str) -> str:
     """
     Canonicalise API hostname
 
@@ -69,7 +69,7 @@ def arvados_hostname(value:str) -> str:
             raise ParsingError("Couldn't parse API host")
 
 
-def arvados_version(value:str) -> str:
+def arvados_version(value: str) -> str:
     """
     Canonicalise API version
 
@@ -86,6 +86,7 @@ def arvados_version(value:str) -> str:
 
 class BasicAuthConfig(Configuration):
     """ Basic authentication configuration stub """
+
 
 class ArvadosAuthConfig(Configuration):
     """ Arvados authentication configuration stub """

@@ -26,19 +26,17 @@ from typing import Dict, Generator, IO, List, Optional
 from aiohttp.web import Request, Response, StreamResponse
 
 from irobot.common import ByteRange
-from irobot.irods import MetadataJSONEncoder
 from irobot.httpd._common import ENCODING, HandlerT
 from irobot.httpd.handlers import _decorators as request
 from irobot.httpd.handlers.dataobject._common import get_data_object
 from irobot.httpd.handlers.dataobject._range_parser import canonicalise_ranges, parse_range
+from irobot.irods import MetadataJSONEncoder
 from irobot.precache import AbstractDataObject
 
-
 # Media types
-_DATA      = "application/octet-stream"
-_METADATA  = "application/vnd.irobot.metadata+json"
+_DATA = "application/octet-stream"
+_METADATA = "application/vnd.irobot.metadata+json"
 _MULTIPART = "multipart/byteranges"
-
 
 # Multipart bits and pieces
 _CRLF = b"\r\n"
@@ -46,10 +44,10 @@ _DASH = "--".encode("ascii")
 _BOUNDARY_CHARS = string.ascii_letters + string.digits + "'()+_,./:=? -"
 _RE_BOUNDARY = re.compile(rf"(?!.* $)^[{_BOUNDARY_CHARS}]{{1,70}}$")
 
-
 _DataGenerator = Generator[bytes, None, None]
 
-def _get_data(fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size:int = 8192) -> _DataGenerator:
+
+def _get_data(fd: IO[bytes], byte_range: Optional[ByteRange]=None, *, chunk_size: int=8192) -> _DataGenerator:
     """
     Get data or range of data from a file descriptor
 
@@ -86,11 +84,12 @@ def _get_data(fd:IO[bytes], byte_range:Optional[ByteRange] = None, *, chunk_size
 
         yield data
 
+
 class _DataObjectResponseWriter(object):
     """ Data Object data response writer """
-    _data_object:AbstractDataObject
+    _data_object: AbstractDataObject
 
-    def __init__(self, data_object:AbstractDataObject) -> None:
+    def __init__(self, data_object: AbstractDataObject) -> None:
         """
         Constructor
 
@@ -98,7 +97,7 @@ class _DataObjectResponseWriter(object):
         """
         self.data_object = data_object
 
-    def _content_range(self, byte_range:ByteRange) -> str:
+    def _content_range(self, byte_range: ByteRange) -> str:
         """
         Create Content-Range string
 
@@ -107,7 +106,7 @@ class _DataObjectResponseWriter(object):
         """
         return f"bytes {byte_range.start}-{byte_range.finish + 1}/{self._data_object.metadata.size}"
 
-    def _generate_boundary(self, ranges:List[ByteRange], *, length:int = 70) -> str:
+    def _generate_boundary(self, ranges: List[ByteRange], *, length: int=70) -> str:
         """
         Generate a unique boundary (i.e., when prefixed with "--", its
         ASCII encoding doesn't clash with any of the data starting at
@@ -120,7 +119,7 @@ class _DataObjectResponseWriter(object):
         assert ranges
         assert 0 < length <= 70
 
-        taken_boundaries:List[str] = []
+        taken_boundaries: List[str] = []
 
         with self._data_object as fd:
             # Check up to the first 72 bytes of each range for potential
@@ -147,7 +146,7 @@ class _DataObjectResponseWriter(object):
 
         return boundary
 
-    def _write_all(self, byte_range:Optional[ByteRange] = None) -> _DataGenerator:
+    def _write_all(self, byte_range: Optional[ByteRange]=None) -> _DataGenerator:
         """
         Generate data/data range payload
 
@@ -158,7 +157,7 @@ class _DataObjectResponseWriter(object):
             for data in _get_data(fd, byte_range):
                 yield data
 
-    def _write_multipart(self, ranges:List[ByteRange], *, boundary:str) -> _DataGenerator:
+    def _write_multipart(self, ranges: List[ByteRange], *, boundary: str) -> _DataGenerator:
         """
         Generate multipart payload, per RFC7233 and RFC2046
         * https://tools.ietf.org/html/rfc7233#appendix-A
@@ -182,7 +181,7 @@ class _DataObjectResponseWriter(object):
                 yield _CRLF
 
                 headers = {
-                    "Content-Type":  _DATA,
+                    "Content-Type": _DATA,
                     "Content-Range": self._content_range(r),
                 }
 
@@ -202,16 +201,16 @@ class _DataObjectResponseWriter(object):
             yield _DASH
             yield transport_padding
 
-    async def write(self, req:Request) -> StreamResponse:
+    async def write(self, req: Request) -> StreamResponse:
         """
         Create response containing the appropriate payload
 
         @param   req   Request
         @return  Data object response
         """
-        data_generator:_DataGenerator
-        ranges:List[ByteRange] = []
-        headers:Dict[str, str] = {}
+        data_generator: _DataGenerator
+        ranges: List[ByteRange] = []
+        headers: Dict[str, str] = {}
 
         # The entity tag is the MD5 checksum (per iRODS) of the entire
         # data object, unless a single range, which has a calculated
@@ -268,7 +267,7 @@ class _DataObjectResponseWriter(object):
         return resp
 
 
-async def data_handler(req:Request) -> StreamResponse:
+async def data_handler(req: Request) -> StreamResponse:
     """ Data handler """
     precache = req["irobot_precache"]
     irods_path = req["irobot_irods_path"]
@@ -296,7 +295,7 @@ async def data_handler(req:Request) -> StreamResponse:
     return await do_response.write(req)
 
 
-async def metadata_handler(req:Request) -> Response:
+async def metadata_handler(req: Request) -> Response:
     """ Metadata handler """
     precache = req["irobot_precache"]
     irods_path = req["irobot_irods_path"]
@@ -308,13 +307,14 @@ async def metadata_handler(req:Request) -> Response:
 
 
 # Media type -> Handler delegation table
-_media_delegates:Dict[str, HandlerT] = {
-    _DATA:     data_handler,
+_media_delegates: Dict[str, HandlerT] = {
+    _DATA: data_handler,
     _METADATA: metadata_handler
 }
 
+
 @request.accept(*_media_delegates.keys())
-async def handler(req:Request) -> Response:
+async def handler(req: Request) -> Response:
     """ Delegate GET (and HEAD) requests based on preferred media type """
     preferred = req["irobot_preferred"]
     resp = await _media_delegates[preferred](req)

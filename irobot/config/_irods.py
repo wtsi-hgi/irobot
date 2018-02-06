@@ -22,7 +22,7 @@ from configparser import ParsingError
 from irobot.config._tree_builder import Configuration
 
 
-def max_connections(value:str) -> int:
+def max_connections(value: str) -> int:
     """
     Canonicalise maximum connections
 

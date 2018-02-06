@@ -19,8 +19,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import math
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Optional, Type
 from numbers import Number
+from typing import Callable, Optional, Type
 
 from irobot.precache.db._types import SQLite
 
@@ -36,7 +36,7 @@ class AggregateUDF(metaclass=ABCMeta):
         """ Finalise function """
 
 
-def aggregate_udf_factory_factory(udf:Type[AggregateUDF]) -> Callable:
+def aggregate_udf_factory_factory(udf: Type[AggregateUDF]) -> Callable:
     """
     Create the aggregate UDF factory for APSW using an AggregateUDF
     implementation
@@ -47,24 +47,26 @@ def aggregate_udf_factory_factory(udf:Type[AggregateUDF]) -> Callable:
     @param   udf  User-defined aggregate function implementation (AggregateUDF)
     @return  Aggregate UDF factory
     """
-    def _step(context:AggregateUDF, *args) -> None:
+
+    def _step(context: AggregateUDF, *args) -> None:
         context.step(*args)
 
-    def _finalise(context:AggregateUDF) -> SQLite:
+    def _finalise(context: AggregateUDF) -> SQLite:
         return context.finalise()
 
     return lambda: (udf(), _step, _finalise)
+
 
 ## Implementations #####################################################
 
 class StandardError(AggregateUDF):
     """ Calculate the standard error using Welford's algorithm """
     def __init__(self) -> None:
-        self.n     = 0
-        self.mean  = 0.0
+        self.n = 0
+        self.mean = 0.0
         self.mean2 = 0.0
 
-    def step(self, datum:Number) -> None:
+    def step(self, datum: Number) -> None:
         if not isinstance(datum, Number):
             # Pass over non-numeric input
             return None

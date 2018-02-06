@@ -18,10 +18,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
-from aiohttp import ClientResponse, ClientResponseError
+from aiohttp import ClientResponseError
 from aioresponses import aioresponses
 
 import irobot.authentication._http as http
@@ -37,7 +37,8 @@ class _MockHTTPAuthConfig(Configuration):
         super().__init__()
         self.add_value("cache", ConfigValue(cache, lambda x: x))
 
-_CONFIG_CACHE   = _MockHTTPAuthConfig(timedelta(minutes=10))
+
+_CONFIG_CACHE = _MockHTTPAuthConfig(timedelta(minutes=10))
 _CONFIG_NOCACHE = _MockHTTPAuthConfig(None)
 
 

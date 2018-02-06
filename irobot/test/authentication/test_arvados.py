@@ -66,10 +66,10 @@ class TestArvadosAuthHandler(unittest.TestCase):
         challenge_response = HTTPAuthMethod("Bearer", payload="bar")
         self.assertEqual(auth.set_handler_parameters(challenge_response),
                          http.HTTPValidatorParameters(
-                            url=f"{self.config.api_base_url}/users/current",
-                            payload="OAuth2 bar",
-                            headers={"Accept": "application/json"}
-                        ))
+                             url=f"{self.config.api_base_url}/users/current",
+                             payload="OAuth2 bar",
+                             headers={"Accept": "application/json"}
+                         ))
 
         self.config.api_version = "foo"
         self.assertRaises(RuntimeError, auth.set_handler_parameters, challenge_response)
@@ -79,6 +79,7 @@ class TestArvadosAuthHandler(unittest.TestCase):
         auth = arv.ArvadosAuthHandler(self.config)
 
         mock_auth_response = MagicMock(spec=ClientResponse)
+
         async def mock_json():
             return {"username": "foo"}
 

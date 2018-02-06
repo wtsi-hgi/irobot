@@ -19,8 +19,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import atexit
 import logging
-from datetime import datetime
-from enum import Enum
 from concurrent.futures import ThreadPoolExecutor
 from subprocess import CalledProcessError
 from typing import Optional
@@ -34,7 +32,8 @@ from irobot.logging import LogWriter
 
 class iRODS(Listenable, LogWriter, WorkerPool):
     """ High level iRODS interface with iget pool management """
-    def __init__(self, irods_config:iRODSConfig, logger:Optional[logging.Logger] = None) -> None:
+
+    def __init__(self, irods_config: iRODSConfig, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 
@@ -58,7 +57,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         self.log(logging.DEBUG, "Shutting down iget pool")
         self._iget_pool.shutdown()
 
-    def _set_active(self, _t, status:AsyncTaskStatus, _i, _l) -> None:
+    def _set_active(self, _t, status: AsyncTaskStatus, _i, _l) -> None:
         """
         Keep count of currently active downloads
 
@@ -70,7 +69,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         if status in [AsyncTaskStatus.finished, AsyncTaskStatus.failed]:
             self._active -= 1
 
-    def _broadcast_iget_to_log(self, _t, status:AsyncTaskStatus, irods_path:str, local_path:str) -> None:
+    def _broadcast_iget_to_log(self, _t, status: AsyncTaskStatus, irods_path: str, local_path: str) -> None:
         """
         Log all broadcast iget messages
 
@@ -92,7 +91,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         return self._active
 
     @staticmethod
-    def check_access(irods_path:str) -> None:
+    def check_access(irods_path: str) -> None:
         """
         Check data object access status on iRODS, raising an appropriate
         exception if the data object cannot be accessed
@@ -114,7 +113,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
                 raise IOError(f"Data object \"{irods_path}\" inaccessible; "
                               f"iRODS error {errno} {errname}")
 
-    def get_dataobject(self, irods_path:str, local_path:str) -> None:
+    def get_dataobject(self, irods_path: str, local_path: str) -> None:
         """
         Enqueue retrieval of data object from iRODS and store it in the
         local filesystem, broadcasting retrieval status to listeners
@@ -126,7 +125,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         self.broadcast(AsyncTaskStatus.queued, irods_path, local_path)
         self._iget_pool.submit(self._iget, irods_path, local_path)
 
-    def _iget(self, irods_path:str, local_path:str) -> None:
+    def _iget(self, irods_path: str, local_path: str) -> None:
         """
         Perform the iget and broadcast status
 
@@ -143,7 +142,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         except CalledProcessError:
             self.broadcast(AsyncTaskStatus.failed, irods_path, local_path)
 
-    def get_metadata(self, irods_path:str) -> Metadata:
+    def get_metadata(self, irods_path: str) -> Metadata:
         """
         Retrieve AVU and filesystem metadata for data object from iRODS
 

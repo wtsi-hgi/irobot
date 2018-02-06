@@ -22,12 +22,13 @@ import os
 import re
 import subprocess
 from tempfile import TemporaryFile
-from typing import Any, Sequence, TextIO, Tuple, Union
+from typing import Sequence, TextIO, Tuple, Union
 
 from irobot.irods._types import Metadata, MetadataJSONDecoder
 
 
-def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextIO] = None, shell:bool = False) -> Tuple[int, str, str]:
+def _invoke(command: Union[str, Sequence[str]], stdin: Union[None, int, str, TextIO]=None, shell: bool=False) \
+        -> Tuple[int, str, str]:
     """
     Run a command with the provided arguments
 
@@ -52,10 +53,7 @@ def _invoke(command:Union[str, Sequence[str]], stdin:Union[None, int, str, TextI
 
     # ...otherwise
     with TemporaryFile(mode="w+t") as stdout, TemporaryFile(mode="w+t") as stderr:
-        exit_code = subprocess.call(command, stdin=stdin,
-                                             stdout=stdout,
-                                             stderr=stderr,
-                                             shell=shell)
+        exit_code = subprocess.call(command, stdin=stdin, stdout=stdout, stderr=stderr, shell=shell)
         stdout.flush()
         stdout.seek(0)
         out = stdout.read()
@@ -76,8 +74,9 @@ _RE_IRODS_ERROR = re.compile(r"""
     $
 """, re.VERBOSE | re.MULTILINE)
 
+
 class iRODSError(Exception):
-    def __init__(self, exit_code:int, stderr:str, *args, **kwargs) -> None:
+    def __init__(self, exit_code: int, stderr: str, *args, **kwargs) -> None:
         """
         iRODS errors are defined in lib/core/include/rodsErrorTable.h
 
@@ -108,7 +107,7 @@ class iRODSError(Exception):
         return self._errno, self._errname
 
 
-def ils(irods_path:str) -> None:
+def ils(irods_path: str) -> None:
     """
     Wrapper for ils
 
@@ -123,7 +122,8 @@ def ils(irods_path:str) -> None:
     if exit_code:
         raise iRODSError(exit_code, stderr)
 
-def iget(irods_path:str, local_path:str) -> None:
+
+def iget(irods_path: str, local_path: str) -> None:
     """
     Wrapper for iget
 
@@ -136,7 +136,8 @@ def iget(irods_path:str, local_path:str) -> None:
     if exit_code:
         raise iRODSError(exit_code, stderr)
 
-def baton(irods_path:str) -> Metadata:
+
+def baton(irods_path: str) -> Metadata:
     """
     Wrapper for baton-list
 

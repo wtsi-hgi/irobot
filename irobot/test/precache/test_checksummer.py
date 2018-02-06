@@ -20,17 +20,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import filecmp
 import os
 import unittest
-from unittest.mock import MagicMock, call, patch
 from hashlib import md5
 from multiprocessing import cpu_count
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from threading import Lock
+from unittest.mock import MagicMock, call, patch
 
 from irobot.common import AsyncTaskStatus, ByteRange
 from irobot.config import PrecacheConfig
 from irobot.config._tree_builder import ConfigValue
 from irobot.precache._checksummer import Checksummer, _checksum, _parse_checksum_record
-
 
 _mock_checksum = "0123456789abcdef0123456789abcdef"
 
@@ -92,7 +91,7 @@ class TestInternals(unittest.TestCase):
 
 class TestChecksummer(unittest.TestCase):
     def setUp(self):
-        self.chunk_size = chunk_size = 10 # bytes
+        self.chunk_size = chunk_size = 10  # bytes
 
         config = PrecacheConfig()
         config.add_value("location", ConfigValue("/foo", str))
@@ -170,7 +169,7 @@ class TestChecksummer(unittest.TestCase):
 
         # Make sure our listeners are getting the right messages
         mock_listener.assert_has_calls([
-            call(mock_broadcast_time(), AsyncTaskStatus.started,  self.temp_precache.name),
+            call(mock_broadcast_time(), AsyncTaskStatus.started, self.temp_precache.name),
             call(mock_broadcast_time(), AsyncTaskStatus.finished, self.temp_precache.name)
         ])
 
@@ -181,7 +180,8 @@ class TestChecksummer(unittest.TestCase):
         os.rename(os.path.join(self.temp_precache.name, "manual_checksums"),
                   os.path.join(self.temp_precache.name, "checksums"))
 
-        self.assertRaises(IndexError, self.checksummer.get_checksummed_blocks, self.temp_precache.name, ByteRange(0, self.data_size + 10))
+        self.assertRaises(IndexError, self.checksummer.get_checksummed_blocks, self.temp_precache.name,
+                          ByteRange(0, self.data_size + 10))
 
         whole_checksum = md5(b"\0" * self.data_size).hexdigest()
         chunk_checksum = md5(b"\0" * self.chunk_size).hexdigest()
@@ -204,7 +204,8 @@ class TestChecksummer(unittest.TestCase):
         partial_chunk_size = partial_chunk.finish - partial_chunk.start
         checksums = self.checksummer.get_checksummed_blocks(self.temp_precache.name, partial_chunk)
         self.assertEqual(len(checksums), 1)
-        self.assertEqual(checksums[0], ByteRange(partial_chunk.start, partial_chunk.finish, md5(b"\0" * partial_chunk_size).hexdigest()))
+        self.assertEqual(checksums[0], ByteRange(partial_chunk.start, partial_chunk.finish,
+                                                 md5(b"\0" * partial_chunk_size).hexdigest()))
 
     def test_calculate_checksum_filesize(self):
         checksum_file_size = os.stat(os.path.join(self.temp_precache.name, "manual_checksums")).st_size

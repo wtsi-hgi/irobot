@@ -22,9 +22,9 @@ from enum import IntEnum
 from numbers import Number
 from typing import NamedTuple, Optional
 
-
 AsyncTaskStatus = IntEnum("AsyncTaskStatus", "queued started finished unknown failed")
 DataObjectState = IntEnum("DataObjectState", "data metadata checksums")
+
 
 class ByteRange(NamedTuple):
     """ Byte range, with optional checksum """
@@ -34,13 +34,16 @@ class ByteRange(NamedTuple):
     finish: int
     checksum: Optional[str] = None
 
+
 class SummaryStat(NamedTuple):
     """ Tuple of arithmetic mean and standard error """
-    mean:Number
-    stderr:Number
+    mean: Number
+    stderr: Number
+
 
 class WorkerPool(metaclass=ABCMeta):
     """ Interface for worker pools """
+
     @property
     @abstractmethod
     def workers(self) -> int:

@@ -25,7 +25,6 @@ from tempfile import NamedTemporaryFile
 
 from irobot.config import iRobotConfiguration
 
-
 PRECACHE_CONF = [
     "[precache]",
     "location = /foo",

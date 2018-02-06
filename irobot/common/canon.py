@@ -22,7 +22,6 @@ import re
 from datetime import timedelta
 from typing import Optional
 
-
 _RE_HUMAN_SIZE = re.compile(r"""
     ^(?:                                # Anchor to start of string
         (?:
@@ -101,7 +100,7 @@ _RE_FQDN_COMPONENT = re.compile(r"""
 _RE_ESCAPABLE = re.compile(r"([\x09\x20\x22])")
 
 
-def path(p:str) -> str:
+def path(p: str) -> str:
     """
     Canonicalise paths
 
@@ -109,11 +108,11 @@ def path(p:str) -> str:
     @return  Absolute, normalised path (string)
     """
     return os.path.abspath(
-               os.path.normpath(
-                   os.path.expanduser(p)))
+        os.path.normpath(
+            os.path.expanduser(p)))
 
 
-def human_size(s:str) -> int:
+def human_size(s: str) -> int:
     """
     Canonicalise human size string to integer bytes
 
@@ -145,7 +144,7 @@ def human_size(s:str) -> int:
         return int(size * multipliers[match.group('multiplier')])
 
 
-def duration(d:str) -> Optional[timedelta]:
+def duration(d: str) -> Optional[timedelta]:
     """
     Canonicalise short temporal duration string  to timedelta
 
@@ -171,7 +170,7 @@ def duration(d:str) -> Optional[timedelta]:
     return timedelta(**value) or None
 
 
-def ipv4(ip:str) -> str:
+def ipv4(ip: str) -> str:
     """
     Canonicalise IPv4 address to dotted decimal
 
@@ -221,7 +220,7 @@ def ipv4(ip:str) -> str:
     return ".".join(str(part) for part in parts)
 
 
-def domain_name(n:str) -> str:
+def domain_name(n: str) -> str:
     """
     Canonicalise a domain name to (almost) fully qualified (i.e.,
     omitting the root separator)
@@ -238,7 +237,7 @@ def domain_name(n:str) -> str:
     raise ValueError("Invalid domain name")
 
 
-def free_text(t:Optional[str]) -> str:
+def free_text(t: Optional[str]) -> str:
     """
     Canonicalise free text so special characters are escaped
 

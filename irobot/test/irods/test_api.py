@@ -20,9 +20,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import json
 import os
 import unittest
-from unittest.mock import patch
 from subprocess import CalledProcessError
 from tempfile import TemporaryFile
+from unittest.mock import patch
 
 from irobot.irods._api import iRODSError, _invoke, ils, iget, baton
 from irobot.irods._types import MetadataJSONDecoder

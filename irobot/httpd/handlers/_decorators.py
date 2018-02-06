@@ -26,7 +26,6 @@ from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
 from irobot.httpd.handlers._accept_parser import RE_MEDIA_TYPE, AcceptParser
 
-
 _HandlerDecoratorT = Callable[[HandlerT], HandlerT]
 
 
@@ -43,15 +42,16 @@ def allow(*methods) -> _HandlerDecoratorT:
     allowed = {m.upper() for m in [*methods, "OPTIONS"]}
     allow_header = {"Allow": ", ".join(allowed)}
 
-    def _decorator(handler:HandlerT) -> HandlerT:
+    def _decorator(handler: HandlerT) -> HandlerT:
         """
         Decorator that handles the allowed methods
 
         @param   handler  Handler function to decorate
         @return  Decorated handler
         """
+
         @wraps(handler)
-        async def _decorated(request:Request) -> Response:
+        async def _decorated(request: Request) -> Response:
             """
             Check request method against allowed methods
 
@@ -59,7 +59,8 @@ def allow(*methods) -> _HandlerDecoratorT:
             @return  HTTP response (Response)
             """
             if request.method not in allowed:
-                raise error_factory(405, f"Cannot {request.method} the resource at {request.url}.", headers=allow_header)
+                raise error_factory(405, f"Cannot {request.method} the resource at {request.url}.",
+                                    headers=allow_header)
 
             if request.method == "OPTIONS":
                 return Response(status=200, headers=allow_header)
@@ -86,15 +87,16 @@ def accept(*media_types) -> _HandlerDecoratorT:
 
     available = tuple(set(media_types))
 
-    def _decorator(handler:HandlerT) -> HandlerT:
+    def _decorator(handler: HandlerT) -> HandlerT:
         """
         Decorator that handles the accepted media types
 
         @param   handler  Handler function to decorate
         @return  Decorated handler
         """
+
         @wraps(handler)
-        async def _decorated(request:Request) -> Response:
+        async def _decorated(request: Request) -> Response:
             """
             Check Accept header against acceptable media types
 

@@ -23,7 +23,7 @@ from irobot.httpd._error import error_factory
 from irobot.httpd.handlers.dataobject._common import get_data_object
 
 
-async def handler(req:Request) -> Response:
+async def handler(req: Request) -> Response:
     """ Delete data object from precache if it is not contended """
     precache = req.app["irobot_precache"]
     irods_path = req["irobot_irods_path"]
@@ -32,7 +32,7 @@ async def handler(req:Request) -> Response:
     # a data object is precached (i.e., we don't care about iRODS)
     if irods_path not in precache:
         raise error_factory(404, f"No such data object \"{irods_path}\" "
-                                  "in precache; cannot delete.")
+                                 "in precache; cannot delete.")
 
     data_object = get_data_object(precache, irods_path, raise_inprogress=False, raise_inflight=True)
     data_object.delete()

@@ -31,7 +31,7 @@ from irobot.config import LoggingConfig
 
 class LogWriter(object):
     """ Logging base class """
-    def __init__(self, logger:Optional[logging.Logger] = None, *args, **kwargs) -> None:
+    def __init__(self, logger: Optional[logging.Logger]=None, *args, **kwargs) -> None:
         """
         Constructor
 
@@ -40,7 +40,7 @@ class LogWriter(object):
         super().__init__(*args, **kwargs)
         self._logger = logger
 
-    def log(self, level:int, message:str, *args, **kwargs) -> None:
+    def log(self, level: int, message: str, *args, **kwargs) -> None:
         """
         Write to log
 
@@ -51,13 +51,15 @@ class LogWriter(object):
             self._logger.log(level, message, *args, **kwargs)
 
 
-def _exception_handler(logger:logging.Logger) -> Callable:
+def _exception_handler(logger: logging.Logger) -> Callable:
     """
     Create an exception handler that logs uncaught exceptions (except
     keyboard interrupts) and spews the traceback to stderr (in debugging
     mode) before terminating
     """
-    def _log_uncaught_exception(exc_type:Type[BaseException], exc_val:BaseException, traceback:TracebackType) -> None:
+
+    def _log_uncaught_exception(exc_type: Type[BaseException], exc_val: BaseException,
+                                traceback: TracebackType) -> None:
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_val, traceback)
 
@@ -71,7 +73,7 @@ def _exception_handler(logger:logging.Logger) -> Callable:
     return _log_uncaught_exception
 
 
-def create_logger(config:LoggingConfig) -> logging.Logger:
+def create_logger(config: LoggingConfig) -> logging.Logger:
     """
     Create and configure a logger
 

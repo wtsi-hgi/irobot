@@ -25,7 +25,7 @@ import irobot.common.canon as canon
 from irobot.config._tree_builder import Configuration
 
 
-def output(value:str) -> Optional[str]:
+def output(value: str) -> Optional[str]:
     """
     Canonicalise logging output destination
 
@@ -37,7 +37,7 @@ def output(value:str) -> Optional[str]:
     return canon.path(value)
 
 
-def level(value:str) -> int:
+def level(value: str) -> int:
     """
     Canonicalise logging level
 

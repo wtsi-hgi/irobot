@@ -20,7 +20,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple, Type, Union
 
-
 # FIXME? No facility is provided for annotating var- and keyword
 # arguments, so we suck it up with a Tuple and Dict, respectively
 _BaseArgSignature = [datetime, Tuple, Dict]
@@ -42,9 +41,9 @@ class Listenable(object):
     """ Listenable base class """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._listeners:List[_ListenerCallable] = []
+        self._listeners: List[_ListenerCallable] = []
 
-    def add_listener(self, listener:_ListenerCallable) -> None:
+    def add_listener(self, listener: _ListenerCallable) -> None:
         """
         Add a listener for broadcast messages
 

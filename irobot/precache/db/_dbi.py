@@ -23,9 +23,8 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Type, U
 
 import apsw
 
-from irobot.precache.db._udf import AggregateUDF, aggregate_udf_factory_factory
 from irobot.precache.db._types import Adaptor, Convertor, SQLite
-
+from irobot.precache.db._udf import AggregateUDF, aggregate_udf_factory_factory
 
 # Type aliases
 _PyBindings = Union[Tuple[Any, ...], Dict[str, Any]]
@@ -40,7 +39,7 @@ class Cursor(Iterator):
     Cursor implementation that adds adaptor and convertor support to the
     default APSW cursor
     """
-    def __init__(self, native_cursor:"apsw.Cursor") -> None:
+    def __init__(self, native_cursor: "apsw.Cursor") -> None:
         """
         Constructor
         
@@ -69,10 +68,10 @@ class Cursor(Iterator):
         return tuple(
             self._convertors.get(type_decl, lambda x: x)(value)
             for value, (_col_name, type_decl)
-            in  zip(data, desc)
+            in zip(data, desc)
         )
 
-    def _adapt_pyval(self, pyval:Any) -> SQLite:
+    def _adapt_pyval(self, pyval: Any) -> SQLite:
         """
         Adapt a Python value to a native SQLite type
 
@@ -92,7 +91,7 @@ class Cursor(Iterator):
         except KeyError:
             raise TypeError(f"No adaptor for {pytype.__name__} type")
 
-    def _adapt_bindings(self, bindings:_PyBindings) -> _SQLiteBindings:
+    def _adapt_bindings(self, bindings: _PyBindings) -> _SQLiteBindings:
         """
         Adapt bind variables to native SQLite types
 
@@ -103,12 +102,12 @@ class Cursor(Iterator):
             return tuple(map(self._adapt_pyval, bindings))
 
         elif isinstance(bindings, Dict):
-            return {k:self._adapt_pyval(v) for k, v in bindings.items()}
+            return {k: self._adapt_pyval(v) for k, v in bindings.items()}
 
         else:
             raise TypeError("Invalid bindings; should be a tuple or dictionary")
 
-    def execute(self, sql:str, bindings:Optional[_PyBindings] = None) -> "Cursor":
+    def execute(self, sql: str, bindings: Optional[_PyBindings]=None) -> "Cursor":
         """
         Executes the SQL statements with the specified bindings
 
@@ -119,7 +118,7 @@ class Cursor(Iterator):
         sqlite_bindings = self._adapt_bindings(bindings) if bindings else None
         return Cursor(self._cursor.execute(sql, sqlite_bindings))
 
-    def executemany(self, sql:str, binding_seq:Sequence[_PyBindings]) -> "Cursor":
+    def executemany(self, sql: str, binding_seq: Sequence[_PyBindings]) -> "Cursor":
         """
         Executes the SQL statements with a sequence of bindings
 
@@ -157,11 +156,12 @@ class Connection(apsw.Connection):
     convertors and which returns a cursor that supports them, as well as
     a more convenient interface for registering aggregate UDFs
     """
+
     def __init__(self, *args, **kwargs) -> None:
         """ Constructor """
         super().__init__(*args, **kwargs)
-        self._adaptors:_Adaptors = {}
-        self._convertors:_Convertors = {}
+        self._adaptors: _Adaptors = {}
+        self._convertors: _Convertors = {}
 
     def cursor(self) -> Cursor:
         """
@@ -171,7 +171,7 @@ class Connection(apsw.Connection):
         """
         return Cursor(super().cursor())
 
-    def register_aggregate_function(self, name:str, udf:Type[AggregateUDF]) -> None:
+    def register_aggregate_function(self, name: str, udf: Type[AggregateUDF]) -> None:
         """
         Register an aggregation function using an AggregateUDF
         implementation
@@ -190,7 +190,7 @@ class Connection(apsw.Connection):
         assert len(name) < 255, f"\"{name}\" name is too long for aggregate function"
         self.createaggregatefunction(name, aggregate_udf_factory_factory(udf), num_args)
 
-    def register_adaptor(self, t:Type, adaptor:Adaptor) -> None:
+    def register_adaptor(self, t: Type, adaptor: Adaptor) -> None:
         """
         Register a type adaptor
 
@@ -199,7 +199,7 @@ class Connection(apsw.Connection):
         """
         self._adaptors[t] = adaptor
 
-    def register_convertor(self, decl:str, convertor:Convertor) -> None:
+    def register_convertor(self, decl: str, convertor: Convertor) -> None:
         """
         Register a type convertor
 

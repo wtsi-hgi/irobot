@@ -25,19 +25,23 @@ from irobot.config._json import ConfigJSONEncoder
 from irobot.config._tree_builder import Configuration, ConfigValue
 
 
-def _split(s:str) -> List:
+def _split(s: str) -> List:
     return s.split(",")
 
-def _t(s:str) -> datetime:
+
+def _t(s: str) -> datetime:
     return datetime.utcfromtimestamp(int(s))
 
-def _dt(s:str) -> timedelta:
+
+def _dt(s: str) -> timedelta:
     return timedelta(hours=int(s))
 
-def _none(s:str) -> None:
+
+def _none(s: str) -> None:
     return None
 
-def _unknown(s:str) -> object:
+
+def _unknown(s: str) -> object:
     class _foo(object):
         pass
 

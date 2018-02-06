@@ -35,7 +35,6 @@ class AbstractDataObject(ContextManager[IO[bytes]], metaclass=ABCMeta):
     * __exit__(self, exc_type:Type[BaseException], exc_value:BaseException, traceback:TracebackType) -> bool
                      exc_type:None,                exc_value:None,          traceback:None         ) -> bool
     """
-
     ## Data Object Status ##############################################
 
     @property
@@ -95,7 +94,7 @@ class AbstractDataObject(ContextManager[IO[bytes]], metaclass=ABCMeta):
         """ Delete data object (i.e., self) from the precache """
 
     @abstractmethod
-    def checksums(self, byte_range:Optional[ByteRange] = None) -> List[ByteRange]:
+    def checksums(self, byte_range: Optional[ByteRange]=None) -> List[ByteRange]:
         """
         The calculated (i.e., not iRODS) checksums for a data object,
         either in its entirety or for a range

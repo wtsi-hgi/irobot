@@ -22,7 +22,7 @@ import shutil
 from uuid import uuid4
 
 
-def new_name(precache_path:str) -> str:
+def new_name(precache_path: str) -> str:
     """
     Create a new precache directory path (i.e., just the string), by
     appending the precache base directory to a UUID4 split into 2-byte
@@ -35,7 +35,7 @@ def new_name(precache_path:str) -> str:
     return os.path.join(precache_path, *segments)
 
 
-def create(precache_dir:str) -> None:
+def create(precache_dir: str) -> None:
     """
     Create a given precache directory on the filesystem (mkdir -p)
 
@@ -48,7 +48,7 @@ def create(precache_dir:str) -> None:
     os.makedirs(precache_dir, mode=0o750)
 
 
-def delete(precache_dir:str) -> None:
+def delete(precache_dir: str) -> None:
     """
     Delete the top-level precache directory and its contents from the
     filesystem

@@ -22,7 +22,7 @@ from functools import wraps
 from typing import Callable, Union
 
 
-def async_test(fn_or_loop:Union[Callable, asyncio.BaseEventLoop, None] = None) -> Callable:
+def async_test(fn_or_loop: Union[Callable, asyncio.BaseEventLoop, None]=None) -> Callable:
     """
     Decorator for testing asynchronous code
 
@@ -32,7 +32,7 @@ def async_test(fn_or_loop:Union[Callable, asyncio.BaseEventLoop, None] = None) -
     parametrised = isinstance(fn_or_loop, (asyncio.BaseEventLoop, type(None)))
     loop = parametrised and fn_or_loop or asyncio.get_event_loop()
 
-    def _decorator(fn:Callable) -> Callable:
+    def _decorator(fn: Callable) -> Callable:
         @wraps(fn)
         def _decorated(*args, **kwargs):
             coroutine = asyncio.coroutine(fn)

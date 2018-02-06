@@ -19,9 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from configparser import ConfigParser, ParsingError
 from functools import partial
-from typing import Callable, Dict, Type, Union
-
-from irobot.config._tree_builder import ConfigValue, Configuration, OptionalKey, RequiredKey, config_factory
+from typing import Callable, Dict, Type
 
 import irobot.common.canon as canon
 from irobot.config import _auth as auth
@@ -29,17 +27,19 @@ from irobot.config import _httpd as httpd
 from irobot.config import _irods as irods
 from irobot.config import _log as log
 from irobot.config import _precache as precache
+from irobot.config._tree_builder import ConfigValue, Configuration, OptionalKey, RequiredKey, config_factory
 
 
 class _ConfigFactories(object):
     def __init__(self) -> None:
-        self._factories:Dict[str, Callable[[ConfigParser], Configuration]] = {}
+        self._factories: Dict[str, Callable[[ConfigParser], Configuration]] = {}
 
-    def add(self, section:str, constructor:Type[Configuration], *mappings):
+    def add(self, section: str, constructor: Type[Configuration], *mappings):
         self._factories[section] = lambda config: config_factory(constructor, config, section, *mappings)
 
-    def __call__(self, section:str, config:ConfigParser) -> Configuration:
+    def __call__(self, section: str, config: ConfigParser) -> Configuration:
         return self._factories[section](config)
+
 
 _factories = _ConfigFactories()
 
@@ -84,7 +84,7 @@ _factories.add("logging", log.LoggingConfig,
 
 class iRobotConfiguration(Configuration):
     """ Top-level iRobot configuration """
-    def __init__(self, config_file:str) -> None:
+    def __init__(self, config_file: str) -> None:
         """
         Open and parse configuration from file
 

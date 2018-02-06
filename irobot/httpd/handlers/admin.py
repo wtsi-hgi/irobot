@@ -29,11 +29,10 @@ from irobot.httpd._common import ENCODING
 from irobot.httpd.handlers import _decorators as request
 from irobot.precache import AbstractDataObject
 
-
 _json = "application/json"
 
 
-def _human_readable_status(data_object:AbstractDataObject, datatype:DataObjectState) -> str:
+def _human_readable_status(data_object: AbstractDataObject, datatype: DataObjectState) -> str:
     """
     Human readable status of data object state
 
@@ -56,7 +55,7 @@ def _human_readable_status(data_object:AbstractDataObject, datatype:DataObjectSt
 
 @request.allow("GET", "HEAD")
 @request.accept(_json)
-async def status(req:Request) -> Response:
+async def status(req: Request) -> Response:
     """
     Status handler
 
@@ -72,17 +71,17 @@ async def status(req:Request) -> Response:
     production_rates = {
         process: {
             "average": rate.mean if rate else None,
-            "stderr":  rate.stderr if rate else None
+            "stderr": rate.stderr if rate else None
         }
         for process, rate in precache.production_rates.items()
     }
 
-    irobot_status:Dict = {
+    irobot_status: Dict = {
         "authenticated_user": req["irobot_auth_user"],
         "connections": {
             "active": req.app["irobot_connections_active"],
-            "total":  req.app["irobot_connections_total"],
-            "since":  req.app["irobot_start_time"]
+            "total": req.app["irobot_connections_total"],
+            "since": req.app["irobot_start_time"]
         },
         "precache": {
             "commitment": precache.commitment,
@@ -108,7 +107,7 @@ async def status(req:Request) -> Response:
 
 @request.allow("GET", "HEAD")
 @request.accept(_json)
-async def config(req:Request) -> Response:
+async def config(req: Request) -> Response:
     """
     Config status handler
 
@@ -133,7 +132,7 @@ async def config(req:Request) -> Response:
 
 @request.allow("GET", "HEAD")
 @request.accept(_json)
-async def manifest(req:Request) -> Response:
+async def manifest(req: Request) -> Response:
     """
     Precache manifest handler
 
@@ -144,7 +143,7 @@ async def manifest(req:Request) -> Response:
 
     resp = Response(status=200, content_type=_json, charset=ENCODING)
 
-    precache_manifest:List[Dict] = [
+    precache_manifest: List[Dict] = [
         {
             "path": data_object.irods_path,
             "availability": {

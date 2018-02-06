@@ -20,7 +20,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 from datetime import datetime
 from typing import Optional
 
-from irobot.common import AsyncTaskStatus
 from irobot.irods import Metadata
 from irobot.precache._abc import AbstractDataObject
 
@@ -28,7 +27,7 @@ from irobot.precache._abc import AbstractDataObject
 # TODO Flesh this out based on the usage in irobot.precache.Precache
 class DataObject(AbstractDataObject):
     """ Data object state """
-    def __init__(self, irods_path:str, precache:"Precache") -> None:
+    def __init__(self, irods_path: str, precache: "Precache") -> None:
         """
         Constructor
 
@@ -44,11 +43,11 @@ class DataObject(AbstractDataObject):
         # DataObject is an active record, so the exposed properties need
         # to update the tracking DB (where appropriate) upon setting
         self._irods_path = irods_path
-        self._do_id:Optional[int] = tracker.get_data_object_id(irods_path)
+        self._do_id: Optional[int] = tracker.get_data_object_id(irods_path)
 
-        self._precache_path:Optional[str] = None
-        self._metadata:Optional[Metadata] = None
-        self._last_accessed:Optional[datetime] = None
+        self._precache_path: Optional[str] = None
+        self._metadata: Optional[Metadata] = None
+        self._last_accessed: Optional[datetime] = None
 
         if self._is_tracked:
             # Load state from persistent storage
@@ -88,7 +87,7 @@ class DataObject(AbstractDataObject):
         return self._precache_path
 
     @precache_path.setter
-    def precache_path(self, path:str) -> None:
+    def precache_path(self, path: str) -> None:
         # NOTE The data object metadata must be set before we set the
         # precache. This is because the tracking DB expects file sizes
         # in its new_request method and (besides) we'll already have got

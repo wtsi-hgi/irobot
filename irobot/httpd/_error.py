@@ -24,12 +24,11 @@ from aiohttp import web
 
 from irobot.httpd._common import ENCODING
 
-
 # Tuple of error reason (string) and error class
 _ErrorT = Tuple[str, Type[web.HTTPError]]
 
 
-def _undefined_error_factory(status:int) -> _ErrorT:
+def _undefined_error_factory(status: int) -> _ErrorT:
     """
     Fallback error factory
 
@@ -51,7 +50,7 @@ _, _HTTPMethodNotAllowed = _undefined_error_factory(405)
 
 
 # Error responses which iRobot can return
-_status_map:Dict[int, _ErrorT] = {
+_status_map: Dict[int, _ErrorT] = {
     401: ("Unauthorized",          web.HTTPUnauthorized),
     403: ("Forbidden",             web.HTTPForbidden),
     404: ("Not Found",             web.HTTPNotFound),
@@ -66,7 +65,7 @@ _status_map:Dict[int, _ErrorT] = {
 }
 
 
-def error_factory(status:int, description:str, *, headers:Optional[Dict[str, str]] = None) -> web.HTTPError:
+def error_factory(status: int, description: str, *, headers: Optional[Dict[str, str]]=None) -> web.HTTPError:
     """
     Standardised JSON error response factory
 

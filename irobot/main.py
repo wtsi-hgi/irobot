@@ -25,16 +25,16 @@ from typing import List, Type, overload
 from irobot import __version__
 from irobot.authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
 from irobot.config import iRobotConfiguration, LoggingConfig
-from irobot.irods import iRODS
 from irobot.httpd import start_httpd
-from irobot.precache import Precache
+from irobot.irods import iRODS
 from irobot.logging import create_logger
+from irobot.precache import Precache
 
 
 class _BootstrapLogging(object):
     """ Bootstrap logger """
-    logger:logging.Logger
-    config:LoggingConfig
+    logger: logging.Logger
+    config: LoggingConfig
 
     def __init__(self) -> None:
         # This is a bit of a hack, but never mind :P
@@ -55,8 +55,9 @@ class _BootstrapLogging(object):
         return self.logger
 
     @overload
-    def __exit__(self, exc_type:Type[BaseException], exc_val:BaseException, exc_tb:TracebackType) -> bool: ...
-    def __exit__(self, exc_type:None, exc_val:None, exc_tb:None) -> bool:
+    def __exit__(self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackType) -> bool: ...
+
+    def __exit__(self, exc_type: None, exc_val: None, exc_tb: None) -> bool:
         if exc_type:
             # Propagate exception
             return False
@@ -66,7 +67,7 @@ class _BootstrapLogging(object):
         return True
 
 
-def _instantiate_authentication_handlers(config:iRobotConfiguration, logger:logging.Logger) -> List[BaseAuthHandler]:
+def _instantiate_authentication_handlers(config: iRobotConfiguration, logger: logging.Logger) -> List[BaseAuthHandler]:
     """ Instantiate authentication handlers """
     handler_mapping = {
         "arvados": ArvadosAuthHandler,

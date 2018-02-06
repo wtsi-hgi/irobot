@@ -28,7 +28,8 @@ from irobot.config._tree_builder import Configuration, ConfigValue
 
 class ConfigJSONEncoder(JSONEncoder):
     """ Encode configuration trees into JSON """
-    def default(self, o:Any) -> Any:
+
+    def default(self, o: Any) -> Any:
         if isinstance(o, Configuration):
             return {k: o._leaves[k] for k in o}
 

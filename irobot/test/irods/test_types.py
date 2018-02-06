@@ -56,7 +56,7 @@ class TestMetadata(unittest.TestCase):
         raw = json.loads(j)
         self.assertEqual(raw, {
             "timestamps": [
-                {k:v}
+                {k: v}
                 for ts in TEST_BATON_DICT["timestamps"]
                 for k, v in ts.items()
                 if k in ["created", "modified"]

@@ -68,7 +68,7 @@ class TestConvertors(unittest.TestCase):
             bar = "def"
             quux = "xyz"
 
-        def str_cast(value:bytes) -> str:
+        def str_cast(value: bytes) -> str:
             return value.decode()
 
         e_conv = Convertor.enum_factory(my_enum, str_cast)

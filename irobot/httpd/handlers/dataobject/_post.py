@@ -22,7 +22,7 @@ from aiohttp.web import Request, Response
 from irobot.httpd.handlers.dataobject._common import get_data_object, metadata_has_changed
 
 
-async def handler(req:Request) -> Response:
+async def handler(req: Request) -> Response:
     """ (Re)fetch data object from iRODS if it is not contended """
     precache = req["irobot_precache"]
     irods_path = req["irobot_irods_path"]

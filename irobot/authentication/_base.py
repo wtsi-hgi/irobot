@@ -24,7 +24,7 @@ from typing import Optional
 
 class AuthenticatedUser(object):
     """ Authenticated user """
-    def __init__(self, user:str) -> None:
+    def __init__(self, user: str) -> None:
         self._user = user
         self._authenticated = datetime.utcnow()
 
@@ -36,7 +36,7 @@ class AuthenticatedUser(object):
     def authenticated(self) -> datetime:
         return self._authenticated
 
-    def valid(self, invalidation_time:Optional[timedelta]) -> bool:
+    def valid(self, invalidation_time: Optional[timedelta]) -> bool:
         """
         Whether a user's authentication has been temporally invalidated
 
@@ -49,7 +49,7 @@ class AuthenticatedUser(object):
 
 class BaseAuthHandler(metaclass=ABCMeta):
     @abstractmethod
-    async def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
+    async def authenticate(self, auth_header: str) -> Optional[AuthenticatedUser]:
         """
         Asynchronously validate the authorisation header
 

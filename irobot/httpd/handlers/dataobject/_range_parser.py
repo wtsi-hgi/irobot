@@ -25,7 +25,6 @@ from aiohttp.web import HTTPRequestRangeNotSatisfiable
 from irobot.common import ByteRange
 from irobot.httpd._error import error_factory
 
-
 # Range header specification per RFC7233, section 2.1
 # https://tools.ietf.org/html/rfc7233#section-2.1
 
@@ -47,7 +46,7 @@ _RE_RANGE = re.compile(r"""
 """, re.VERBOSE)
 
 
-def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
+def canonicalise_ranges(*ranges: Iterable[ByteRange]) -> List[ByteRange]:
     """
     Canonicalise series of ranges such that they are ordered, mutually
     exclusive and, if they overlap/juxtapose (modulo checksum), merged
@@ -62,7 +61,7 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
 
     # Concatenate and sort input ranges
     prev, *remainder = sorted(r for rs in ranges for r in rs)
-    merged_ranges:List[ByteRange] = []
+    merged_ranges: List[ByteRange] = []
     out_of_order = False
 
     # Merge
@@ -70,7 +69,7 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
         either_checksummed = any([prev.checksum, this.checksum])
 
         if prev.finish < this.start \
-           or (either_checksummed and prev.finish == this.start):
+                or (either_checksummed and prev.finish == this.start):
             # Ranges are completely separated or in juxtaposition with
             # at least one checksummed range
             merged_ranges.append(prev)
@@ -116,7 +115,7 @@ def canonicalise_ranges(*ranges:Iterable[ByteRange]) -> List[ByteRange]:
     return merged_ranges
 
 
-def _invalid_range(range_string:str, description:str) -> HTTPRequestRangeNotSatisfiable:
+def _invalid_range(range_string: str, description: str) -> HTTPRequestRangeNotSatisfiable:
     """
     Standardised invalid range errors
 
@@ -126,7 +125,8 @@ def _invalid_range(range_string:str, description:str) -> HTTPRequestRangeNotSati
     """
     return error_factory(416, f"Invalid range \"{range_string}\"; {description}.")
 
-def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
+
+def parse_range(range_header: str, filesize: int) -> List[ByteRange]:
     """
     Parse and canonicalise the required byte range, raising a 416
     Range Not Satisfiable error if the requested range is invalid in
@@ -143,7 +143,7 @@ def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
     @return  Ordered list of byte ranges, merged if overlapping (list)
     """
     req = _RE_RANGE_REQ.match(range_header)
-    ranges:List[ByteRange] = []
+    ranges: List[ByteRange] = []
 
     if not req:
         raise error_factory(416, "Could not parse range request")
@@ -162,7 +162,7 @@ def parse_range(range_header:str, filesize:int) -> List[ByteRange]:
 
         # At least one of these exist, from our regular expression
         range_from = range_match["from"]
-        range_to   = range_match["to"]
+        range_to = range_match["to"]
 
         # Three cases:
         # a-b  Range from a to b, inclusive, where a <= filesize <= b (truncated to filesize)

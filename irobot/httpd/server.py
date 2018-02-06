@@ -31,7 +31,6 @@ from irobot.config import HTTPdConfig
 from irobot.httpd import _middleware, handlers
 from irobot.precache import AbstractPrecache
 
-
 _noop = lambda *_, **__: None
 
 _laws = [
@@ -43,13 +42,13 @@ _laws = [
 ]
 
 
-async def _set_server_header(_request:web.Request, response:web.Response) -> None:
+async def _set_server_header(_request: web.Request, response: web.Response) -> None:
     """ Set the Server response header """
     response.headers["Server"] = f"iRobot {__version__}"
     response.headers["iRobot-MOTD"] = choice(_laws)
 
 
-async def _shutdown_server(app:web.Application) -> None:
+async def _shutdown_server(app: web.Application) -> None:
     """ Gracefully shutdown the HTTPd server """
     if app.logger:
         app.logger.log(logging.INFO, "Shutting down API server")
@@ -57,7 +56,8 @@ async def _shutdown_server(app:web.Application) -> None:
     app.loop.call_soon_threadsafe(app.loop.stop)
 
 
-def start_httpd(httpd_config:HTTPdConfig, precache:AbstractPrecache, auth_handlers:List[BaseAuthHandler], logger:Optional[logging.Logger] = None) -> None:
+def start_httpd(httpd_config: HTTPdConfig, precache: AbstractPrecache, auth_handlers: List[BaseAuthHandler],
+                logger: Optional[logging.Logger]=None) -> None:
     """
     Start the HTTPd API server on the event loop of the current context
 
@@ -99,5 +99,5 @@ def start_httpd(httpd_config:HTTPdConfig, precache:AbstractPrecache, auth_handle
         logger.log(logging.INFO, f"Starting API server on http://{httpd_config.bind_address}:{httpd_config.listen}")
 
     web.run_app(app, host=httpd_config.bind_address, port=httpd_config.listen,
-                     access_log=logger, access_log_format="%a \"%r\" %s %b",
-                     print=_noop, loop=loop)
+                access_log=logger, access_log_format="%a \"%r\" %s %b",
+                print=_noop, loop=loop)

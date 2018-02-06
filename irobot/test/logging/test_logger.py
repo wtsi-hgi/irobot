@@ -19,20 +19,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import time
 import unittest
-from unittest.mock import MagicMock, patch
 from datetime import datetime, timezone
 from logging import Logger
 from tempfile import NamedTemporaryFile
+from unittest.mock import MagicMock, patch
 
 import irobot.logging.logger as logger
 from irobot.config import LoggingConfig
 from irobot.config._tree_builder import ConfigValue
 
-
 # Mock logger's timestamper
 logger.time = MagicMock(spec=time)
 
-def _set_log_time(t:datetime):
+
+def _set_log_time(t: datetime):
     logger.time.gmtime.return_value = t.replace(tzinfo=timezone.utc).timetuple()
 
 

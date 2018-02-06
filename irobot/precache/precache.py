@@ -22,25 +22,24 @@ import logging
 import os
 from datetime import datetime, timedelta
 from threading import Lock, Timer
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 # A *lot* of moving parts come together here...
-from irobot.common import AsyncTaskStatus, DataObjectState, ISO8601_UTC, SummaryStat, WorkerPool
+from irobot.common import DataObjectState, SummaryStat
 from irobot.config import PrecacheConfig
-from irobot.irods import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder, iRODS
+from irobot.irods import iRODS
 from irobot.logging import LogWriter
 from irobot.precache._abc import AbstractPrecache
 from irobot.precache._checksummer import Checksummer
-from irobot.precache._dir_utils import new_name, create, delete
+from irobot.precache._dir_utils import delete
 from irobot.precache._do import DataObject
-from irobot.precache._types import PrecacheFull, InProgress, InProgressWithETA
-from irobot.precache.db import (TrackingDB, DataObjectFileStatus,
-                                StatusExists, PrecacheExists)
+from irobot.precache._types import PrecacheFull
+from irobot.precache.db import (TrackingDB)
 
 
 class _WorkerMetrics(object):
     """ Simple container for worker metrics """
-    def __init__(self, workers:int, rate:Optional[SummaryStat] = None) -> None:
+    def __init__(self, workers: int, rate: Optional[SummaryStat]=None) -> None:
         self._workers = workers
         self.rate = rate
 
@@ -51,7 +50,7 @@ class _WorkerMetrics(object):
 
 class Precache(AbstractPrecache, LogWriter):
     """ High-level precache management interface """
-    def __init__(self, precache_config:PrecacheConfig, irods:iRODS, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, precache_config: PrecacheConfig, irods: iRODS, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 
@@ -64,11 +63,12 @@ class Precache(AbstractPrecache, LogWriter):
 
         self.config = precache_config
 
-        db_in_precache = os.path.commonpath([precache_config.location, precache_config.index]) == precache_config.location
+        db_in_precache = os.path.commonpath(
+            [precache_config.location, precache_config.index]) == precache_config.location
         self.tracker = TrackingDB(precache_config.index, db_in_precache, logger)
 
         # In-memory representation of the precache
-        self.data_objects:Dict[str, DataObject] = {}
+        self.data_objects: Dict[str, DataObject] = {}
         self._do_lock = Lock()
 
         # TODO We need a function that cleans-up/sanitises bad state on
@@ -83,7 +83,7 @@ class Precache(AbstractPrecache, LogWriter):
 
         # Statistics for workers
         self.worker_stats = {
-            DataObjectState.data:      _WorkerMetrics(self.irods.workers),
+            DataObjectState.data: _WorkerMetrics(self.irods.workers),
             DataObjectState.checksums: _WorkerMetrics(self.checksummer.workers)
         }
         self._update_worker_stats()
@@ -125,8 +125,7 @@ class Precache(AbstractPrecache, LogWriter):
             to_gc = [
                 irods_path
                 for irods_path, do in self.data_objects.items()
-                if do.invalid or \
-                   (self.temporal_gc and gc_time > self.config.expiry(do.last_accessed))
+                if do.invalid or (self.temporal_gc and gc_time > self.config.expiry(do.last_accessed))
             ]
 
             # Garbage collect
@@ -143,7 +142,7 @@ class Precache(AbstractPrecache, LogWriter):
         if self.temporal_gc:
             self._schedule_temporal_gc()
 
-    def _update_worker_stats(self, period:timedelta = timedelta(minutes=15)) -> None:
+    def _update_worker_stats(self, period: timedelta=timedelta(minutes=15)) -> None:
         """
         Update the worker production stats, if available, and refresh
         them periodically.
@@ -159,17 +158,17 @@ class Precache(AbstractPrecache, LogWriter):
         self._update_stats_timer.daemon = True
         self._update_stats_timer.start()
 
-    def __call__(self, irods_path:str) -> DataObject:
+    def __call__(self, irods_path: str) -> DataObject:
         # Convenience wrapper
         return self.get_data_object(irods_path)
 
-    def get_data_object(self, irods_path:str) -> DataObject:
+    def get_data_object(self, irods_path: str) -> DataObject:
         """
         TODO
         """
         pass
 
-    def accommodate(self, accommodation:int) -> None:
+    def accommodate(self, accommodation: int) -> None:
         """
         Attempt to invalidate data objects to fulfil the specified space
         requirements. Data objects will only be invalidated if the
@@ -193,14 +192,14 @@ class Precache(AbstractPrecache, LogWriter):
         with self._do_lock:
             invalidation_time = datetime.utcnow()
 
-            to_invalidate:List[str] = []
+            to_invalidate: List[str] = []
             invalidatable = sorted([
                 (irods_path, do.last_accessed, do.metadata.size)
                 for irods_path, do in self.data_objects.items()
-                if  invalidation_time - do.last_accessed > self.config.age_threshold
+                if invalidation_time - do.last_accessed > self.config.age_threshold
             ], key=lambda x: x[1], reverse=True)
 
-            freed_space:int = 0
+            freed_space: int = 0
             while freed_space < accommodation and invalidatable:
                 irods_path, _, size = invalidatable.pop()
                 to_invalidate.append(irods_path)
@@ -215,7 +214,7 @@ class Precache(AbstractPrecache, LogWriter):
         if to_invalidate:
             self._gc()
 
-    def invalidate(self, irods_path:str) -> None:
+    def invalidate(self, irods_path: str) -> None:
         """
         Manually invalidate a data object and call the GC if needs be
 

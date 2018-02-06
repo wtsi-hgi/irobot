@@ -22,7 +22,7 @@ from datetime import datetime
 from numbers import Number
 
 
-def add_years(timestamp:datetime, years:Number) -> datetime:
+def add_years(timestamp: datetime, years: Number) -> datetime:
     """
     Add a number of years (integer or decimal, positive or negative) to
     a given timestamp

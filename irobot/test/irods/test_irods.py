@@ -19,16 +19,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import json
 import unittest
-from unittest.mock import MagicMock, call, patch
 from subprocess import CalledProcessError
 from threading import Lock
+from unittest.mock import MagicMock, call, patch
 
 from irobot.common import AsyncTaskStatus
 from irobot.config import iRODSConfig
 from irobot.config._tree_builder import ConfigValue
 from irobot.irods._types import MetadataJSONDecoder
 from irobot.irods.irods import iRODS, iRODSError
-from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
+from irobot.test.irods._common import TEST_BATON_JSON
 
 
 @patch("irobot.irods.irods.ils", spec=True)

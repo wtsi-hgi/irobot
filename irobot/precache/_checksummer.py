@@ -24,14 +24,12 @@ import os
 import re
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
-from enum import Enum
 from hashlib import md5
 from typing import List, Optional, Tuple
 
 from irobot.common import AsyncTaskStatus, ByteRange, Listenable, WorkerPool
 from irobot.config import PrecacheConfig
 from irobot.logging import LogWriter
-
 
 _RE_CHECKSUM_RECORD = re.compile(r"""
     ^(?:                                # Anchor to start of string
@@ -49,7 +47,8 @@ _RE_CHECKSUM_RECORD = re.compile(r"""
     )$                                  # Anchor to end of string
 """, re.VERBOSE | re.IGNORECASE)
 
-def _parse_checksum_record(record:str) -> ByteRange:
+
+def _parse_checksum_record(record: str) -> ByteRange:
     """
     Parse (but don't validate) checksum record
 
@@ -61,12 +60,12 @@ def _parse_checksum_record(record:str) -> ByteRange:
     if not match:
         raise SyntaxError("Invalid checksum record")
 
-    range_from = 0  if match["whole"] else int(match["from"])
+    range_from = 0 if match["whole"] else int(match["from"])
     range_to   = -1 if match["whole"] else int(match["to"])
     return ByteRange(range_from, range_to, match["checksum"])
 
 
-def _checksum(filename:str, chunk_size:int, byte_range:Optional[ByteRange] = None) -> Tuple[str, List[ByteRange]]:
+def _checksum(filename: str, chunk_size: int, byte_range: Optional[ByteRange]=None) -> Tuple[str, List[ByteRange]]:
     """
     Calculate the file chunk checksums
 
@@ -81,13 +80,13 @@ def _checksum(filename:str, chunk_size:int, byte_range:Optional[ByteRange] = Non
     whole_file = (byte_range is None)
     file_size = os.stat(filename).st_size
 
-    chunk_checksums:List[ByteRange] = []
+    chunk_checksums: List[ByteRange] = []
     if whole_file:
         whole_checksum = md5()
         byte_range = ByteRange(0, file_size)
 
     # Calculate chunk boundaries
-    chunks:List[ByteRange] = []
+    chunks: List[ByteRange] = []
     range_from, range_to, _ = byte_range
     range_to = min(range_to, file_size)
     for i in range(range_from // chunk_size, (range_to // chunk_size) + 1):
@@ -120,7 +119,7 @@ def _checksum(filename:str, chunk_size:int, byte_range:Optional[ByteRange] = Non
 
 class Checksummer(Listenable, LogWriter, WorkerPool):
     """ Checksummer """
-    def __init__(self, precache_config:PrecacheConfig, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, precache_config: PrecacheConfig, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 
@@ -144,7 +143,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         self.log(logging.DEBUG, "Shutting down checksumming pool")
         self.pool.shutdown()
 
-    def _broadcast_to_log(self, _timestamp:datetime, status:AsyncTaskStatus, precache_path:str) -> None:
+    def _broadcast_to_log(self, _timestamp: datetime, status: AsyncTaskStatus, precache_path: str) -> None:
         """
         Log all checksummer broadcasts (i.e., upon completion)
 
@@ -153,7 +152,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         """
         self.log(logging.INFO, f"Checksumming {status.name} for {precache_path}")
 
-    def _start_checksumming(self, precache_path:str) -> Tuple[str, List[ByteRange]]:
+    def _start_checksumming(self, precache_path: str) -> Tuple[str, List[ByteRange]]:
         """
         Start calculating the checksums for the precache data and notify
         listeners that we've started
@@ -165,7 +164,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         data_file = os.path.join(precache_path, "data")
         return _checksum(data_file, self._config.chunk_size)
 
-    def _write_checksum_file(self, checksum_future:Future) -> None:
+    def _write_checksum_file(self, checksum_future: Future) -> None:
         """
         Write checksums to file and broadcast completion to listeners
 
@@ -191,7 +190,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         # FIXME This relies on an undocumented API call
         return self.pool._max_workers
 
-    def generate_checksum_file(self, precache_path:str) -> None:
+    def generate_checksum_file(self, precache_path: str) -> None:
         """
         Start calculating the checksums (to file) for the precache data
 
@@ -210,7 +209,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         future = self.pool.submit(self._start_checksumming, precache_path)
         future.add_done_callback(self._write_checksum_file)
 
-    def get_checksummed_blocks(self, precache_path:str, byte_range:Optional[ByteRange] = None) -> List[ByteRange]:
+    def get_checksummed_blocks(self, precache_path: str, byte_range: Optional[ByteRange]=None) -> List[ByteRange]:
         """
         Retrieve the checksum blocks of the precache data (from file;
         calculating overlaps/intersections when necessary), or the
@@ -241,7 +240,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
             except AssertionError:
                 raise IndexError("Invalid data range")
 
-            output:List[ByteRange] = []
+            output: List[ByteRange] = []
 
             # Read through records to find intersection
             while True:
@@ -276,7 +275,7 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
 
             return output
 
-    def calculate_checksum_filesize(self, data_size:int) -> int:
+    def calculate_checksum_filesize(self, data_size: int) -> int:
         """
         Calculate the size of the checksum file based on the size of the
         input data
@@ -287,11 +286,12 @@ class Checksummer(Listenable, LogWriter, WorkerPool):
         chunk_size = self._config.chunk_size
         chunks = math.ceil(data_size / chunk_size)
 
-        chunk_index_bytes = sum(map(lambda x: len(f"{x * chunk_size}-{min(data_size, (x + 1) * chunk_size)}"), range(chunks)))
+        chunk_index_bytes = sum(
+            map(lambda x: len(f"{x * chunk_size}-{min(data_size, (x + 1) * chunk_size)}"), range(chunks)))
         chunk_checksum_bytes = chunks * 32
         chunk_whitespace_bytes = chunks * 2  # \t and \n
 
-        return ( 35 # = "*" + \t + <checksum> + \n
-               + chunk_index_bytes
-               + chunk_checksum_bytes
-               + chunk_whitespace_bytes )
+        return (35  # = "*" + \t + <checksum> + \n
+                + chunk_index_bytes
+                + chunk_checksum_bytes
+                + chunk_whitespace_bytes)

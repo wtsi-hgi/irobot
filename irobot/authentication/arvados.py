@@ -30,9 +30,9 @@ from irobot.config import ArvadosAuthConfig
 
 class ArvadosAuthHandler(BaseHTTPAuthHandler):
     """ Arvados authentication handler """
-    _challenge:str
+    _challenge: str
 
-    def __init__(self, config:ArvadosAuthConfig, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, config: ArvadosAuthConfig, logger: Optional[logging.Logger]=None) -> None:
         self._challenge = f"Bearer realm=\"{config.api_host}\""
         super().__init__(config=config, logger=logger)
 
@@ -40,11 +40,11 @@ class ArvadosAuthHandler(BaseHTTPAuthHandler):
     def www_authenticate(self) -> str:
         return self._challenge
 
-    def match_auth_method(self, challenge_response:HTTPAuthMethod) -> bool:
+    def match_auth_method(self, challenge_response: HTTPAuthMethod) -> bool:
         return challenge_response.auth_method == "Bearer" \
-           and challenge_response.payload is not None
+               and challenge_response.payload is not None
 
-    def set_handler_parameters(self, challenge_response:HTTPAuthMethod) -> HTTPValidatorParameters:
+    def set_handler_parameters(self, challenge_response: HTTPAuthMethod) -> HTTPValidatorParameters:
         if self._config.api_version == "v1":
             return HTTPValidatorParameters(
                 url=f"{self._config.api_base_url}/users/current",
@@ -54,7 +54,7 @@ class ArvadosAuthHandler(BaseHTTPAuthHandler):
 
         raise RuntimeError(f"Cannot handle Arvados API version {self._config.api_version}")
 
-    async def get_authenticated_user(self, _:HTTPAuthMethod, auth_response:ClientResponse) -> AuthenticatedUser:
+    async def get_authenticated_user(self, _: HTTPAuthMethod, auth_response: ClientResponse) -> AuthenticatedUser:
         if auth_response.status == 200:
             arvados_data = await auth_response.json()
             return AuthenticatedUser(arvados_data["username"])

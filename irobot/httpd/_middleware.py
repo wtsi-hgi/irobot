@@ -27,11 +27,10 @@ from aiohttp import web
 from irobot.httpd._common import ENCODING, HandlerT
 from irobot.httpd._error import error_factory
 
-
 _HTTPResponseTimeout = error_factory(504, "Response timed out")
 
 
-async def log_connections(app:web.Application, handler:HandlerT) -> HandlerT:
+async def log_connections(app: web.Application, handler: HandlerT) -> HandlerT:
     """
     Keep a log of all active and current connections, seeing as we don't
     appear to be able to access this information from elsewhere
@@ -40,7 +39,8 @@ async def log_connections(app:web.Application, handler:HandlerT) -> HandlerT:
     @param   handler  Route handler
     @return  Connection counting middleware handler
     """
-    async def _middleware(request:web.Request) -> web.Response:
+
+    async def _middleware(request: web.Request) -> web.Response:
         """
         Connection counting middleware
 
@@ -58,7 +58,7 @@ async def log_connections(app:web.Application, handler:HandlerT) -> HandlerT:
     return _middleware
 
 
-async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
+async def catch500(app: web.Application, handler: HandlerT) -> HandlerT:
     """
     Internal server error catch-all factory
 
@@ -66,12 +66,13 @@ async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
     @param   handler  Route handler
     @return  HTTP 500 response middleware handler
     """
-    def _log(message:str) -> None:
+
+    def _log(message: str) -> None:
         """ Convenience wrapper to do logging """
         if app.logger:
             app.logger.log(logging.ERROR, message)
 
-    async def _middleware(request:web.Request) -> web.Response:
+    async def _middleware(request: web.Request) -> web.Response:
         """
         HTTP 500 response middleware
 
@@ -94,7 +95,7 @@ async def catch500(app:web.Application, handler:HandlerT) -> HandlerT:
     return _middleware
 
 
-async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
+async def timeout(app: web.Application, handler: HandlerT) -> HandlerT:
     """
     Timeout middleware factory
 
@@ -111,7 +112,7 @@ async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
     if response_timeout is not None:
         response_timeout = response_timeout.total_seconds()
 
-    async def _middleware(request:web.Request) -> web.Response:
+    async def _middleware(request: web.Request) -> web.Response:
         """
         Timeout middleware
 
@@ -128,7 +129,7 @@ async def timeout(app:web.Application, handler:HandlerT) -> HandlerT:
     return _middleware
 
 
-async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
+async def authentication(app: web.Application, handler: HandlerT) -> HandlerT:
     """
     Authentication middleware factory
 
@@ -147,7 +148,7 @@ async def authentication(app:web.Application, handler:HandlerT) -> HandlerT:
     # Set up HTTP 401 response/exception
     HTTPAuthenticationFailure = lambda msg: error_factory(401, msg, headers={"WWW-Authenticate": www_authenticate})
 
-    async def _middleware(request:web.Request) -> web.Response:
+    async def _middleware(request: web.Request) -> web.Response:
         """
         Authentication middleware
 

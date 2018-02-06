@@ -20,10 +20,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 import re
 from datetime import datetime
 from json import JSONDecoder, JSONEncoder
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, List, NamedTuple, Optional
 
 from irobot.common import ISO8601_UTC
-
 
 # iRODS timestamps are of the form "YYYY-MM-DDTHH:MM:SS" and
 # (experimentally) always UTC
@@ -41,9 +40,9 @@ class AVU(NamedTuple):
     """
     iRODS AVU (attribute, value, units) tuple
     """
-    attribute:str
-    value:str
-    units:Optional[str] = None
+    attribute: str
+    value: str
+    units: Optional[str] = None
 
 
 class Metadata(NamedTuple):
@@ -52,18 +51,19 @@ class Metadata(NamedTuple):
     afraid to ask...
     """
     # iRODS filesystem metadata
-    checksum:str       # MD5 checksum reported by iRODS
-    size:int           # File size in bytes
-    created:datetime   # Creation timestamp (UTC)
-    modified:datetime  # Last modified timestamp (UTC)
+    checksum: str       # MD5 checksum reported by iRODS
+    size: int           # File size in bytes
+    created: datetime   # Creation timestamp (UTC)
+    modified: datetime  # Last modified timestamp (UTC)
 
     # iRODS AVU metadata
-    avus:List[AVU]     # List of AVUs
+    avus: List[AVU]  # List of AVUs
 
 
 class MetadataJSONDecoder(JSONDecoder):
     """ Decode baton's JSON output into a Metadata object """
-    def decode(self, s:str) -> Metadata:
+
+    def decode(self, s: str) -> Metadata:
         base = super().decode(s)
 
         timestamps = {
@@ -79,6 +79,7 @@ class MetadataJSONDecoder(JSONDecoder):
                         timestamps["modified"],
                         [AVU(**avu) for avu in base["avus"]])
 
+
 class MetadataJSONEncoder(JSONEncoder):
     """
     Encode a Metadata object into JSON
@@ -88,7 +89,8 @@ class MetadataJSONEncoder(JSONEncoder):
     tuple is one; all named tuples are tuples) before delegating to the
     default method, which serialises custom types.
     """
-    def default(self, o:Any) -> Any:
+
+    def default(self, o: Any) -> Any:
         if isinstance(o, datetime):
             return o.strftime(_IRODS_TIMESTAMP_FORMAT)
 
@@ -102,7 +104,7 @@ class MetadataJSONEncoder(JSONEncoder):
         # If all else fails
         super().default(o)
 
-    def encode(self, o:Any) -> str:
+    def encode(self, o: Any) -> str:
         if isinstance(o, Metadata):
             return super().encode({
                 "checksum": o.checksum,

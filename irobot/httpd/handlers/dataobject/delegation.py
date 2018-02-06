@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re
 import os
+import re
 from typing import Dict
 
 from aiohttp.web import Request, Response
@@ -26,13 +26,12 @@ from aiohttp.web import Request, Response
 from irobot.httpd._common import HandlerT
 from irobot.httpd._error import error_factory
 from irobot.httpd.handlers import _decorators as request
+from irobot.httpd.handlers.dataobject._delete import handler as delete_handler
 from irobot.httpd.handlers.dataobject._get import handler as get_handler
 from irobot.httpd.handlers.dataobject._post import handler as post_handler
-from irobot.httpd.handlers.dataobject._delete import handler as delete_handler
-
 
 # Method -> Handler delegation table
-_delegates:Dict[str, HandlerT] = {
+_delegates: Dict[str, HandlerT] = {
     "GET":    get_handler,
     "HEAD":   get_handler,
     "POST":   post_handler,
@@ -41,7 +40,7 @@ _delegates:Dict[str, HandlerT] = {
 
 
 @request.allow("GET", "HEAD", "POST", "DELETE")
-async def data_object(req:Request) -> Response:
+async def data_object(req: Request) -> Response:
     """
     Data object handling delegation
 
@@ -56,7 +55,7 @@ async def data_object(req:Request) -> Response:
     # the root collection, so we must be at least one level deep
     if not re.match(r".+/.+", irods_path):
         raise error_factory(404, f"No such data object \"{irods_path}\"; "
-                                  "must be at least one collection deep.")
+                                 "must be at least one collection deep.")
 
     req["irobot_irods_path"] = irods_path
     return await _delegates[req.method](req)

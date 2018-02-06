@@ -25,7 +25,7 @@ from typing import Any, Callable, Type
 class Adaptor(object):
     """ Convenience namespace for adaptors """
     @staticmethod
-    def datetime(dt:stdlib_datetime.datetime) -> int:
+    def datetime(dt: stdlib_datetime.datetime) -> int:
         """
         datetime.datetime adaptor
 
@@ -35,7 +35,7 @@ class Adaptor(object):
         return int(dt.replace(tzinfo=stdlib_datetime.timezone.utc).timestamp())
 
     @staticmethod
-    def timedelta(d:stdlib_datetime.timedelta) -> float:
+    def timedelta(d: stdlib_datetime.timedelta) -> float:
         """
         datetime.timedelta adaptor
 
@@ -45,7 +45,7 @@ class Adaptor(object):
         return d.total_seconds()
 
     @staticmethod
-    def enum(e:stdlib_enum.Enum) -> Any:
+    def enum(e: stdlib_enum.Enum) -> Any:
         """
         Enum adaptor
 
@@ -57,8 +57,9 @@ class Adaptor(object):
 
 class Convertor(object):
     """ Convenience namespace for convertors """
+
     @staticmethod
-    def datetime(dt:bytes) -> stdlib_datetime.datetime:
+    def datetime(dt: bytes) -> stdlib_datetime.datetime:
         """
         datetime.datetime convertor
 
@@ -68,7 +69,7 @@ class Convertor(object):
         return stdlib_datetime.datetime.utcfromtimestamp(int(dt))
 
     @staticmethod
-    def timedelta(d:bytes) -> stdlib_datetime.timedelta:
+    def timedelta(d: bytes) -> stdlib_datetime.timedelta:
         """
         datetime.timedelta convertor
 
@@ -78,7 +79,8 @@ class Convertor(object):
         return stdlib_datetime.timedelta(seconds=float(d))
 
     @staticmethod
-    def enum_factory(enum_type:Type[stdlib_enum.Enum], cast_fn:Callable[[bytes], Any] = int) -> Callable[[bytes], "enum_type"]:
+    def enum_factory(enum_type: Type[stdlib_enum.Enum], cast_fn: Callable[[bytes], Any]=int) \
+            -> Callable[[bytes], "enum_type"]:
         """
         Enum convertor factory
 
@@ -86,7 +88,7 @@ class Convertor(object):
         @param   cast_fn    Function to cast bytes to enum values (default: int)
         @return  Enum convertor function for specific enum type (function)
         """
-        def _enum_convertor(value:bytes) -> enum_type:
+        def _enum_convertor(value: bytes) -> enum_type:
             return enum_type(cast_fn(value))
 
         return _enum_convertor

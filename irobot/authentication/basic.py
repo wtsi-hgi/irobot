@@ -31,9 +31,9 @@ from irobot.config import BasicAuthConfig
 
 class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
     """ HTTP basic authentication handler """
-    _challenge:str
+    _challenge: str
 
-    def __init__(self, config:BasicAuthConfig, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, config: BasicAuthConfig, logger: Optional[logging.Logger]=None) -> None:
         self._challenge = "Basic"
         if "realm" in config:
             self._challenge += f" realm=\"{config.realm}\""
@@ -44,16 +44,16 @@ class HTTPBasicAuthHandler(BaseHTTPAuthHandler):
     def www_authenticate(self) -> str:
         return self._challenge
 
-    def match_auth_method(self, challenge_response:HTTPAuthMethod) -> bool:
+    def match_auth_method(self, challenge_response: HTTPAuthMethod) -> bool:
         return challenge_response.auth_method == "Basic" \
-           and challenge_response.payload is not None
+               and challenge_response.payload is not None
 
-    def set_handler_parameters(self, challenge_response:HTTPAuthMethod) -> HTTPValidatorParameters:
+    def set_handler_parameters(self, challenge_response: HTTPAuthMethod) -> HTTPValidatorParameters:
         return HTTPValidatorParameters(
             url=self._config.url,
             payload=str(challenge_response)
         )
 
-    async def get_authenticated_user(self, challenge_response:HTTPAuthMethod, _:ClientResponse) -> AuthenticatedUser:
+    async def get_authenticated_user(self, challenge_response: HTTPAuthMethod, _: ClientResponse) -> AuthenticatedUser:
         username, _ = b64decode(challenge_response.payload).decode().split(":")
         return AuthenticatedUser(username)

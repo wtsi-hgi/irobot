@@ -19,7 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
 
-from irobot.authentication.parser import HTTPAuthMethod, ParseError, auth_parser
+from irobot.authentication.parser import HTTPAuthMethod, auth_parser
 
 
 class TestAuthParser(unittest.TestCase):
@@ -36,8 +36,8 @@ class TestAuthParser(unittest.TestCase):
 
     def test_params(self):
         self.assertEqual(auth_parser("foo bar=quux, quux xyzzy=baz, foo=\"abc123\""),
-                         [HTTPAuthMethod("foo", params={"bar":"quux"}),
-                          HTTPAuthMethod("quux", params={"xyzzy":"baz", "foo":"\"abc123\""})])
+                         [HTTPAuthMethod("foo", params={"bar": "quux"}),
+                          HTTPAuthMethod("quux", params={"xyzzy": "baz", "foo": "\"abc123\""})])
 
 
 if __name__ == "__main__":

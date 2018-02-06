@@ -21,7 +21,6 @@ from typing import Callable
 
 from aiohttp.web import Request, Response
 
-
 # Constants
 ENCODING = "utf-8"
 

@@ -33,10 +33,10 @@ from irobot.logging import LogWriter
 
 class HTTPValidatorParameters(NamedTuple):
     """ Parameters for the HTTP validator """
-    url:str                      # URL to make the authentication response to
-    payload:str                  # Challenge response payload
-    method:str = "GET"           # HTTP method
-    headers:Dict[str, str] = {}  # Additional request headers
+    url: str                        # URL to make the authentication response to
+    payload: str                    # Challenge response payload
+    method: str = "GET"             # HTTP method
+    headers: Dict[str, str] = {}    # Additional request headers
 
 
 class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
@@ -45,7 +45,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
     ## Implement these #################################################
 
     @abstractmethod
-    def match_auth_method(self, challenge_response:HTTPAuthMethod) -> bool:
+    def match_auth_method(self, challenge_response: HTTPAuthMethod) -> bool:
         """
         Test the given challenge response matches the requirements of
         the handler class
@@ -55,7 +55,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
 
     @abstractmethod
-    def set_handler_parameters(self, challenge_response:HTTPAuthMethod) -> HTTPValidatorParameters:
+    def set_handler_parameters(self, challenge_response: HTTPAuthMethod) -> HTTPValidatorParameters:
         """
         Set the parameters for the authentication challenge response
 
@@ -64,7 +64,8 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
         """
 
     @abstractmethod
-    async def get_authenticated_user(self, challenge_response:HTTPAuthMethod, auth_response:ClientResponse) -> AuthenticatedUser:
+    async def get_authenticated_user(self, challenge_response: HTTPAuthMethod,
+                                     auth_response: ClientResponse) -> AuthenticatedUser:
         """
         Get the user from the authentication challenge response and any
         response back from the authentication server
@@ -76,7 +77,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
 
     ####################################################################
 
-    def __init__(self, config:Configuration, logger:Optional[logging.Logger] = None) -> None:
+    def __init__(self, config: Configuration, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 
@@ -92,7 +93,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
         # Initialise the cache, if required
         if self._config.cache:
             self.log(logging.DEBUG, f"Creating {self._auth_method} authentication cache")
-            self._cache:Dict[HTTPAuthMethod, AuthenticatedUser] = {}
+            self._cache: Dict[HTTPAuthMethod, AuthenticatedUser] = {}
             self._cache_lock = Lock()
             self._schedule_cleanup()
             atexit.register(self._cleanup_timer.cancel)
@@ -118,7 +119,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
 
         self._schedule_cleanup()
 
-    async def _validate_request(self, params:HTTPValidatorParameters) -> Optional[ClientResponse]:
+    async def _validate_request(self, params: HTTPValidatorParameters) -> Optional[ClientResponse]:
         """
         Asynchronously make an authentication request to check validity
 
@@ -143,7 +144,7 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
 
         return None
 
-    async def authenticate(self, auth_header:str) -> Optional[AuthenticatedUser]:
+    async def authenticate(self, auth_header: str) -> Optional[AuthenticatedUser]:
         """
         Validate the authorisation header
 
@@ -155,7 +156,8 @@ class BaseHTTPAuthHandler(LogWriter, BaseAuthHandler):
             challenge_response, *_ = filter(self.match_auth_method, _auth_methods)
 
         except ParseError:
-            self.log(logging.WARNING, f"{self._auth_method} authentication handler couldn't parse authentication header")
+            self.log(logging.WARNING,
+                     f"{self._auth_method} authentication handler couldn't parse authentication header")
             return None
 
         except ValueError:

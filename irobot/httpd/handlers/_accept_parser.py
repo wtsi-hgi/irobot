@@ -19,8 +19,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from functools import total_ordering
-from typing import Dict, List
-
+from typing import List
 
 # Media type naming per RFC6838
 # https://tools.ietf.org/html/rfc6838#section-4.2
@@ -49,7 +48,8 @@ _RE_EQUAL_SEP = re.compile(r"\s*=\s*")
 @total_ordering
 class _MediaRange(object):
     """ Parametrised media range """
-    def __init__(self, media_range:str, **params) -> None:
+
+    def __init__(self, media_range: str, **params) -> None:
         """
         Constructor
 
@@ -58,9 +58,9 @@ class _MediaRange(object):
         """
         self.media_range = media_range
         self.q = float(params.get("q", 1.0))
-        self.params = {k:v for k,v in params.items() if not k == "q"}
+        self.params = {k: v for k, v in params.items() if not k == "q"}
 
-    def in_range(self, media_type:str, **params) -> bool:
+    def in_range(self, media_type: str, **params) -> bool:
         """
         Check the supplied media type is in the media range
 
@@ -82,8 +82,8 @@ class _MediaRange(object):
             return True
 
         return mt_type == range_type \
-           and mt_subtype == range_subtype \
-           and {k:v for k,v in params.items() if not k == "q"} == self.params
+               and mt_subtype == range_subtype \
+               and {k: v for k, v in params.items() if not k == "q"} == self.params
 
     def __str__(self) -> str:
         _builder = [
@@ -96,11 +96,11 @@ class _MediaRange(object):
     def __repr__(self) -> str:
         return f"<MediaRange: {self}>"
 
-    def __eq__(self, other:"_MediaRange") -> bool:
+    def __eq__(self, other: "_MediaRange") -> bool:
         return self.media_range == other.media_range \
-           and self.params == other.params
+               and self.params == other.params
 
-    def __lt__(self, other:"_MediaRange") -> bool:
+    def __lt__(self, other: "_MediaRange") -> bool:
         # This is not a typo :)
         return self.q > other.q
 
@@ -110,13 +110,14 @@ class AcceptParser(object):
     Parse the HTTP Accept request header and provide an interface for
     choosing the most appropriate media type
     """
-    def __init__(self, accept_header:str = "*/*") -> None:
+
+    def __init__(self, accept_header: str="*/*") -> None:
         """
         Constructor: We assume the client sends us this correctly formed
 
         @param   accept_header  The Accept request header (string)
         """
-        _ranges:List[_MediaRange] = []
+        _ranges: List[_MediaRange] = []
 
         for m in _RE_COMMA_SEP.split(accept_header):
             media_range, *_params = _RE_SEMICOLON_SEP.split(m)

@@ -30,7 +30,7 @@ from irobot.common import add_years
 from irobot.config._tree_builder import Configuration
 
 
-def index(location:str, value:str) -> str:
+def index(location: str, value: str) -> str:
     """
     Canonicalise precache tracking database name
 
@@ -49,7 +49,7 @@ def index(location:str, value:str) -> str:
     return os.path.join(canon.path(dirname), basename)
 
 
-def limited_size(value:str) -> int:
+def limited_size(value: str) -> int:
     """
     Canonicalise human size string to bytes
 
@@ -63,7 +63,7 @@ def limited_size(value:str) -> int:
         raise ParsingError("Could not parse file size configuration")
 
 
-def unlimited_size(value:str) -> Optional[int]:
+def unlimited_size(value: str) -> Optional[int]:
     """
     Canonicalise optionally unlimited human size string to bytes
 
@@ -76,7 +76,7 @@ def unlimited_size(value:str) -> Optional[int]:
     return limited_size(value)
 
 
-def _parse_expiry(value:str) -> Optional[Tuple[Number, str]]:
+def _parse_expiry(value: str) -> Optional[Tuple[Number, str]]:
     """
     Canonicalise expiry time limit string
 
@@ -117,7 +117,7 @@ def _parse_expiry(value:str) -> Optional[Tuple[Number, str]]:
     return val, unit
 
 
-def expiry(value:str) -> Callable[[datetime], Optional[datetime]]:
+def expiry(value: str) -> Callable[[datetime], Optional[datetime]]:
     """
     Canonicalise cache invalidation expiry string
 
@@ -138,15 +138,15 @@ def expiry(value:str) -> Callable[[datetime], Optional[datetime]]:
 
     # Hours, Days or Weeks
     dt = val * {
-        "h": timedelta(hours = 1),
-        "d": timedelta(days  = 1),
-        "w": timedelta(weeks = 1)
+        "h": timedelta(hours=1),
+        "d": timedelta(days=1),
+        "w": timedelta(weeks=1)
     }[unit]
 
     return lambda t: t + dt
 
 
-def age_threshold(value:Optional[str]) -> Optional[timedelta]:
+def age_threshold(value: Optional[str]) -> Optional[timedelta]:
     """
     Canonicalise age threshold for cache invalidation based on the logic
     for temporal invalidation, converting "year" values into a timedelta
@@ -162,10 +162,10 @@ def age_threshold(value:Optional[str]) -> Optional[timedelta]:
 
     val, unit = threshold
     return val * {
-        "h": timedelta(hours = 1),
-        "d": timedelta(days  = 1),
-        "w": timedelta(weeks = 1),
-        "y": timedelta(days  = 365)
+        "h": timedelta(hours=1),
+        "d": timedelta(days=1),
+        "w": timedelta(weeks=1),
+        "y": timedelta(days=365)
     }[unit]
 
 
