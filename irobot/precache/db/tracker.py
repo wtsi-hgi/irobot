@@ -27,7 +27,7 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import irobot.common.canon as canon
 from irobot.common import AsyncTaskStatus, DataObjectState, SummaryStat
-from irobot.logging import LogWriter
+from irobot.logs import LogWriter
 from irobot.precache.db._adaptors_convertors import Adaptor, Convertor
 from irobot.precache.db._dbi import Connection, apsw
 from irobot.precache.db._exceptions import StatusExists, PrecacheExists

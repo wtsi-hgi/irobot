@@ -24,7 +24,7 @@ from logging import Logger
 from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock, patch
 
-import irobot.logging.logger as logger
+from irobot.logs import logger
 from irobot.config import LoggingConfig
 from irobot.config._tree_builder import ConfigValue
 
@@ -72,7 +72,7 @@ class TestLoggerCreation(unittest.TestCase):
             self.assertEqual(logged[1], "1981-09-25T05:55:00Z+0000\tINFO\tHello World!\n")
 
 
-@patch("irobot.logging.logger.sys.exit", spec=True)
+@patch("irobot.logs.logger.sys.exit", spec=True)
 class TestExceptionHandler(unittest.TestCase):
     def setUp(self):
         self.log = MagicMock(spec=Logger)

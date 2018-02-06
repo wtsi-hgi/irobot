@@ -29,7 +29,7 @@ from typing import List, Optional, Tuple
 
 from irobot.common import AsyncTaskStatus, ByteRange, Listenable, WorkerPool
 from irobot.config import PrecacheConfig
-from irobot.logging import LogWriter
+from irobot.logs import LogWriter
 
 _RE_CHECKSUM_RECORD = re.compile(r"""
     ^(?:                                # Anchor to start of string

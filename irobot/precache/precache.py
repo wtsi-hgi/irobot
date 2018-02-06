@@ -28,7 +28,7 @@ from typing import Dict, List, Optional
 from irobot.common import DataObjectState, SummaryStat
 from irobot.config import PrecacheConfig
 from irobot.irods import iRODS
-from irobot.logging import LogWriter
+from irobot.logs import LogWriter
 from irobot.precache._abc import AbstractPrecache
 from irobot.precache._checksummer import Checksummer
 from irobot.precache._dir_utils import delete

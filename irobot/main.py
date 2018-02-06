@@ -27,7 +27,7 @@ from irobot.authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasic
 from irobot.config import iRobotConfiguration, LoggingConfig
 from irobot.httpd import start_httpd
 from irobot.irods import iRODS
-from irobot.logging import create_logger
+from irobot.logs import create_logger
 from irobot.precache import Precache
 
 

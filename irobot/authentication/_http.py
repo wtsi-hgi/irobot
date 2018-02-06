@@ -28,7 +28,7 @@ from aiohttp import ClientSession, ClientResponse
 from irobot.authentication._base import AuthenticatedUser, BaseAuthHandler
 from irobot.authentication.parser import HTTPAuthMethod, ParseError, auth_parser
 from irobot.config import Configuration
-from irobot.logging import LogWriter
+from irobot.logs import LogWriter
 
 
 class HTTPValidatorParameters(NamedTuple):
