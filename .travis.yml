@@ -1,21 +1,23 @@
 language: python
+
 python:
-- 3.6
+  - 3.6
+
 before_install:
-- sudo apt-get -qq update
-- sudo apt-get install -y python-software-properties
-- sudo add-apt-repository -y ppa:schot/gawk
-- sudo apt-get -qq update
-- sudo apt-get install -y gawk
-- pip install codecov nose2 nose2-cov
+  - sudo apt-get -qq update
+  - sudo apt-get install -y python-software-properties
+  - sudo add-apt-repository -y ppa:schot/gawk
+  - sudo apt-get -qq update
+  - sudo apt-get install -y gawk
+  - pip install codecov nose2 nose2-cov
+
 install:
-- pip install -r requirements.txt
-- pip install -r requirements-test.txt
+  - pip install -r requirements.txt
+  - pip install -r requirements-test.txt
+
 script:
-- nose2 -F -C --coverage-report=term-missing -v
-- find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/test/todos.awk
+  - nose2 -F -C --coverage-report=term-missing -v
+  - find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/test/todos.awk
+
 after_success:
-- codecov
-notifications:
-  slack:
-    secure: N+qMSwtIDB54W9QZ0VIaa+WDC98NIy7ddqnD7bfw0BVfl8IhkWAjls1qCVQdFvodbvZyy0imX0lzHUxvJ9Wnt8qiY1eN4vbPRrlJwX3l6m00gYhODjL7HuAjRqSMGegMZF7JWgjpddw6V3k+T4G8bXtegtPH4xXT9jM48tik/MDIlkjJBkhWOOYkjrcBi7p878BuKbyUsQzPE0h/hXCO3iG9Aobclw2hvoiEz7t7yiSbX192arpuWYhA5MgTlhBbtTim9AOdRwW+eLXGejfp4qo8ArUr8YTYKHVjqZwEyeHo0y0+6IYQcKcb7qdyraMK2abWhnjjPupKb/hpUC1g9XSZenOrtcL8A7Kc+XRFVcPnNzu8QuZFX/BlAuHJ6ejMcaqPaoOMxaMGU11x5Ow04btTJiGakj6H8xTW/81B4XqhklXie4svj+Gg7bcfCKdMae+TRgB1oh8lO4Ui7H/+MOxfjdlzuLwH5dWxZ65nOxtfu+taEMjkl1u0CjjHnR2s2qk0v4o2mD4vSJ/Ryy05Ak7jBl8gCZhiUZRRK7Xza+HHf2B9q+h1BeOMYVh+RRsMnkhIeE2ut9ZP6V/SnHWQIeFsJsNxpNYtl2E6j+eYp7et0mXJ2jRngUX8z3V037lFWbI+ydAq4JXP5EBMXsPvR7yXfbtFhOF6IhGbRd9wybE=
+  - codecov
