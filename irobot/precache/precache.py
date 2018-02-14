@@ -233,7 +233,7 @@ class Precache(AbstractPrecache, LogWriter):
     def __iter__(self) -> Iterable:
         pass
 
-    def __contains__(self, irods_path:str) -> bool:
+    def __contains__(self, irods_path: str) -> bool:
         pass
 
     def __len__(self) -> int:
