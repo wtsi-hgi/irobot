@@ -22,7 +22,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from threading import Lock, Timer
-from typing import Dict, List, Optional
+from typing import Dict, List, Iterable, Optional
 
 # A *lot* of moving parts come together here...
 from irobot.common import DataObjectState, SummaryStat
@@ -33,8 +33,8 @@ from irobot.precache._abc import AbstractPrecache
 from irobot.precache._checksummer import Checksummer
 from irobot.precache._dir_utils import delete
 from irobot.precache._do import DataObject
-from irobot.precache._types import PrecacheFull
-from irobot.precache.db import (TrackingDB)
+from irobot.precache._types import PrecacheFull, InProgress, InProgressWithETA
+from irobot.precache.db import TrackingDB, DataObjectFileStatus, StatusExists, PrecacheExists
 
 
 class _WorkerMetrics(object):
@@ -229,3 +229,24 @@ class Precache(AbstractPrecache, LogWriter):
 
         if call_gc:
             self._gc()
+
+    def __iter__(self) -> Iterable:
+        pass
+
+    def __contains__(self, irods_path:str) -> bool:
+        pass
+
+    def __len__(self) -> int:
+        pass
+
+    @property
+    def commitment(self) -> int:
+        pass
+
+    @property
+    def current_downloads(self) -> int:
+        pass
+
+    @property
+    def production_rates(self) -> Dict[DataObjectState, Optional[SummaryStat]]:
+        pass
