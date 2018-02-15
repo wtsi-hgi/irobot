@@ -26,7 +26,7 @@ from unittest.mock import patch
 
 from irobot.irods._api import iRODSError, _invoke, ils, iget, baton
 from irobot.irods._types import MetadataJSONDecoder
-from irobot.test.irods._common import TEST_BATON_JSON
+from irobot.tests.unit.irods._common import TEST_BATON_JSON
 
 
 class TestInvocation(unittest.TestCase):

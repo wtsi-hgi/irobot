@@ -28,7 +28,7 @@ import irobot.authentication.arvados as arv
 from irobot.authentication.parser import HTTPAuthMethod
 from irobot.config import ArvadosAuthConfig
 from irobot.config._tree_builder import ConfigValue
-from irobot.test.async import async_test
+from irobot.tests.unit.async import async_test
 
 
 @patch("irobot.authentication._http.Timer", spec=True)

@@ -46,7 +46,7 @@ class TestCanonicalPath(unittest.TestCase):
 class TestCanonicalDuration(unittest.TestCase):
     def test(self):
         self.assertRaises(ValueError, canon.duration, "foo")
-        
+
         self.assertIsNone(canon.duration("never"))
         self.assertIsNone(canon.duration("0s"))
 

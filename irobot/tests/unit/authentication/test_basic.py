@@ -27,7 +27,7 @@ import irobot.authentication.basic as basic
 from irobot.authentication.parser import HTTPAuthMethod
 from irobot.config import BasicAuthConfig
 from irobot.config._tree_builder import ConfigValue
-from irobot.test.async import async_test
+from irobot.tests.unit.async import async_test
 
 
 @patch("irobot.authentication._http.Timer", spec=True)

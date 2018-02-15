@@ -17,7 +17,7 @@ install:
 
 script:
   - nose2 -F -C --coverage-report=term-missing -v
-  - find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/test/todos.awk
+  - find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/tests/todos.awk
 
 after_success:
   - codecov

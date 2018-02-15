@@ -22,7 +22,7 @@ import unittest
 from datetime import datetime
 
 from irobot.irods._types import AVU, Metadata, MetadataJSONDecoder, MetadataJSONEncoder
-from irobot.test.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
+from irobot.tests.unit.irods._common import TEST_BATON_DICT, TEST_BATON_JSON
 
 
 class TestMetadata(unittest.TestCase):

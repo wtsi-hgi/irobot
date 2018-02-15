@@ -28,7 +28,7 @@ from irobot.config import iRODSConfig
 from irobot.config._tree_builder import ConfigValue
 from irobot.irods._types import MetadataJSONDecoder
 from irobot.irods.irods import iRODS, iRODSError
-from irobot.test.irods._common import TEST_BATON_JSON
+from irobot.tests.unit.irods._common import TEST_BATON_JSON
 
 
 @patch("irobot.irods.irods.ils", spec=True)

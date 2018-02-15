@@ -29,7 +29,7 @@ from irobot.authentication._base import AuthenticatedUser
 from irobot.authentication.parser import HTTPAuthMethod
 from irobot.config import Configuration
 from irobot.config._tree_builder import ConfigValue
-from irobot.test.async import async_test
+from irobot.tests.unit.async import async_test
 
 
 class _MockHTTPAuthConfig(Configuration):
