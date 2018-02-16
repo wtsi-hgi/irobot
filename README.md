@@ -78,6 +78,9 @@ Build script requirements:
 * Awk
 * Sed
 
+<!--
+FIXME
+
 If using Kerberos authentication, the Kerberos client packages also need
 to be available on the Docker host. Additionally, it is expected that
 the host's `/etc/krb5.conf` would be bind mounted into the container at
@@ -109,6 +112,7 @@ Kerberos authentication. A `cron` job runs in the Kerberos container to
 renew credentials with the KDC periodically; if the container is down
 for any significant amount of time, this may fail and you'll have to
 rebuild the image.)
+-->
 
 ## Configuration
 

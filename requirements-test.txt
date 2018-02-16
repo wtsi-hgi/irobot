@@ -1,1 +1,3 @@
 aioresponses==0.3.0
+useintest>=5.0.0
+git+https://github.com/wtsi-hgi/irobot-client.git@1.0.0#egg=irobotclient
