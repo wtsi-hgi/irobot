@@ -29,14 +29,18 @@ dpkg -i irods-icommands-4.1.10-ubuntu14-x86_64.deb \
     irods-runtime-4.1.10-ubuntu14-x86_64.deb \
     irods-dev-4.1.10-ubuntu14-x86_64.deb
 
-# TODO: Optionally install Kerberos packages
-apt-get -y --no-install-recommends install \
-    python \
-    krb5-user \
-    libgssapi-krb5-2 \
-    libkrb5-dev
-curl -O ftp://ftp.renci.org/pub/irods/plugins/irods_auth_plugin_krb/1.4/irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb
-dpkg -i irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb
+if [[ ${IRODS_KERBEROS_SUPPORT} -ne 1 ]]; then
+    >&2 echo "Kerberos support not enabled"
+else
+    >&2 echo "Kerberos support enabled"
+    apt-get -y --no-install-recommends install \
+        python \
+        krb5-user \
+        libgssapi-krb5-2 \
+        libkrb5-dev
+    curl -O ftp://ftp.renci.org/pub/irods/plugins/irods_auth_plugin_krb/1.4/irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb
+    dpkg -i irods-auth-plugin-krb-1.4-ubuntu14-x86_64.deb
+fi
 
 mkdir ~/.irods/
 touch ~/.irods/irods_environment.json

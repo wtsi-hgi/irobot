@@ -5,6 +5,9 @@ MAINTAINER Christopher Harrison <ch12@sanger.ac.uk>
 ENV TMP_DIRECTORY="/$TMPDIR/irobot"
 ENV IROBOT_DIRECTORY=/irobot
 
+# TODO: This could be a buildarg if supported on target platforms
+ENV IRODS_KERBEROS_SUPPORT=1
+
 RUN mkdir -p "${TMP_DIRECTORY}"
 WORKDIR "${TMP_DIRECTORY}"
 
