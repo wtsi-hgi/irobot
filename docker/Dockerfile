@@ -18,11 +18,13 @@ ADD docker/install-baton.sh install-baton.sh
 RUN ./install-baton.sh
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/lib:/lib"
 
+ADD requirements.txt requirements.txt
+RUN pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
+
 RUN rm -rf "${TMP_DIRECTORY}"
 RUN mkdir -p "${IROBOT_DIRECTORY}"
 WORKDIR "${IROBOT_DIRECTORY}"
 
 ADD . ./
-RUN pip install -r requirements.txt
 
 ENTRYPOINT ["${IROBOT_DIRECTORY}/docker/setup.sh"]
