@@ -26,4 +26,5 @@ case "${authenticationScheme}" in
         ;;
 esac
 
+# TODO: Handle different CMD
 python3.6 -OOm irobot.main

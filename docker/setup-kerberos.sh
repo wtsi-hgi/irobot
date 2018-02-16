@@ -79,6 +79,6 @@ create_keytab() {
   new_working_file "${keytab}"
 }
 
-# TODO
+# TODO: Correct setup
 #create_keytab
 #cron
