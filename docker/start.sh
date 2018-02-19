@@ -21,10 +21,11 @@ case "${authenticationScheme}" in
         "${SCRIPT_DIRECTORY}/setup-kerberos.sh"
         ;;
     *)
-        >&2 echo "Unsupported authentication scheme: ${authenticationScheme}"
+        >&2 echo "Unsupported authentication scheme in irods_environment.json: ${authenticationScheme}"
         exit 1
         ;;
 esac
+echo "Authentication setup complete"
 
 # TODO: Handle different CMD
 python3.6 -OOm irobot.main

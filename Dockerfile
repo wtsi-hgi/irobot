@@ -1,11 +1,12 @@
 # TODO: Upgrade to Xenial?
 FROM ubuntu:trusty
-MAINTAINER Christopher Harrison <ch12@sanger.ac.uk>
+
+LABEL authors="Christopher Harrison <ch12@sanger.ac.uk>,Colin Nolan <cn13@sanger.ac.uk>"
 
 ENV TMP_DIRECTORY="/$TMPDIR/irobot"
 ENV IROBOT_DIRECTORY=/irobot
 
-# TODO: This could be a buildarg if supported on target platforms
+# TODO: This could be a build-arg if supported on target platforms
 ENV IRODS_KERBEROS_SUPPORT=1
 
 RUN mkdir -p "${TMP_DIRECTORY}"
@@ -27,4 +28,6 @@ WORKDIR "${IROBOT_DIRECTORY}"
 
 ADD . ./
 
-ENTRYPOINT ["${IROBOT_DIRECTORY}/docker/setup.sh"]
+RUN ./docker/install-irobot.sh
+
+ENTRYPOINT "${IROBOT_DIRECTORY}/docker/start.sh"

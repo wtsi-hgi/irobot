@@ -7,6 +7,7 @@ if [[ -f ~/.irods/.irodsA ]]; then
 else
     if [[ -z ${IRODS_PASSWORD+x} ]]; then
         >&2 echo "IRODS_PASSWORD must be defined to use native authentication to generate .irodsA file"
+        exit 1
     fi
     iinit "${IRODS_PASSWORD}"
 fi
