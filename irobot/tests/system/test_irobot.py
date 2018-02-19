@@ -7,7 +7,7 @@ from irobot.tests.system.common import TestWithIrobot
 class TestExample(TestWithIrobot):
     def test_stuff(self):
         logging.root.setLevel(logging.DEBUG)
-        self.irobot()
+        print(self.irobot)
 
 
 if __name__ == "__main__":

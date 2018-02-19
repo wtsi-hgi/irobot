@@ -28,8 +28,8 @@ IrobotServiceController = DockerisedServiceControllerTypeBuilder(
     repository=_IROBOT_IMAGE_NAME,
     tag="latest",
     start_log_detector=lambda line: "Starting API server" in line,
-    start_http_detector=lambda response: False,
-    ports=[27017],
+    start_http_detector=lambda response: response.status_code == 401,
+    ports=[5000],
     name="IrobotDockerServiceController",
     pull=False,
     start_tries=1).build()
@@ -70,7 +70,6 @@ class TestWithIrobot(unittest.TestCase, metaclass=ABCMeta):
         cls._irods_controller = None
         cls._irods_service = None
         cls._irods_environment_location = None
-
 
     @classmethod
     def tearDownClass(cls):
