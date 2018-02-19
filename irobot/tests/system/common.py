@@ -35,9 +35,53 @@ IrobotServiceController = DockerisedServiceControllerTypeBuilder(
     start_tries=1).build()
 
 
-class TestWithIrobot(unittest.TestCase, metaclass=ABCMeta):
+class TestWithIrodsSingleton(unittest.TestCase, metaclass=ABCMeta):
     """
-    Test that uses iRobot.
+    Tests that share an iRODS instance.
+    """
+    @classmethod
+    def setUpClass(cls):
+        temp_directory = tempfile.gettempdir()
+        if temp_directory.startswith("/var/folders/"):
+            # By default, Docker-for-Mac cannot mount /var, therefore ensure temps are created in /tmp
+            temp_directory = "/tmp"
+        cls._temp_manager = TempManager(
+            default_mkdtemp_kwargs=dict(dir=temp_directory), default_mkstemp_kwargs=dict(dir=temp_directory))
+        cls._irods_lock = Lock()
+        cls._irods_controller = None
+        cls._irods_service = None
+        cls._irods_environment_location = None
+
+    @classmethod
+    def tearDownClass(cls):
+        with cls._irods_lock:
+            cls._temp_manager.tear_down()
+            if cls._irods_service is not None:
+                cls._irods_controller.stop_service(cls._irods_service)
+
+    @classmethod
+    def get_irods(cls) -> IrodsDockerisedService:
+        if cls._irods_service is None:
+            with cls._irods_lock:
+                if cls._irods_service is None:
+                    cls._irods_controller = IrodsServiceController()
+                    cls._irods_service = cls._irods_controller.start_service()
+        return cls._irods_service
+
+    @classmethod
+    def get_irods_environment_json_location(cls):
+        if cls._irods_environment_location is None:
+            with cls._irods_lock:
+                if cls._irods_environment_location is None:
+                    _, cls._irods_environment_location = cls._temp_manager.create_temp_file()
+                    os.remove(cls._irods_environment_location)
+            IrodsServiceController.write_connection_settings(cls._irods_environment_location, cls.get_irods())
+        return cls._irods_environment_location
+
+
+class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
+    """
+    Tests that uses iRobot.
     """
     _docker_client = docker.from_env()
     _irobot_built = False
@@ -57,42 +101,13 @@ class TestWithIrobot(unittest.TestCase, metaclass=ABCMeta):
 
         return _IROBOT_IMAGE_NAME
 
-    @classmethod
-    def setUpClass(cls):
-        temp_directory = tempfile.gettempdir()
-        if temp_directory.startswith("/var/folders/"):
-            # By default, Docker-for-Mac cannot mount /var, therefore ensure temps are created in /tmp
-            temp_directory = "/tmp"
-        cls._temp_manager = TempManager(
-            default_mkdtemp_kwargs=dict(dir=temp_directory), default_mkstemp_kwargs=dict(dir=temp_directory))
-
-        cls._irods_lock = Lock()
-        cls._irods_controller = None
-        cls._irods_service = None
-        cls._irods_environment_location = None
-
-    @classmethod
-    def tearDownClass(cls):
-        with cls._irods_lock:
-            if cls._irods_service is not None:
-                cls._irods_controller.stop_service(cls._irods_service)
-
-    @classmethod
-    def get_irods(cls) -> IrodsDockerisedService:
-        if cls._irods_service is None:
-            with cls._irods_lock:
-                if cls._irods_service is None:
-                    cls._irods_controller = IrodsServiceController()
-                    cls._irods_service = cls._irods_controller.start_service()
-        return cls._irods_service
+    @property
+    def irods(self):
+        return self.get_irods()
 
     @property
-    def irods_environment_location(self):
-        if self._irods_environment_location is None:
-            _, self._irods_environment_location = self._temp_manager.create_temp_file()
-            os.remove(self._irods_environment_location)
-            IrodsServiceController.write_connection_settings(self._irods_environment_location, self.get_irods())
-        return self._irods_environment_location
+    def irods_environment_json_location(self):
+        return self.get_irods_environment_json_location()
 
     @property
     def irobot(self):
@@ -100,10 +115,11 @@ class TestWithIrobot(unittest.TestCase, metaclass=ABCMeta):
             self._build_irobot()
             self._irobot_controller = IrobotServiceController()
             self._irobot_service = self._irobot_controller.start_service(dict(
-                volumes={self.irods_environment_location: dict(bind="/root/.irods/irods_environment.json", mode="ro"),
+                volumes={self.irods_environment_json_location: dict(bind="/root/.irods/irods_environment.json",
+                                                                    mode="ro"),
                          _IROBOT_BASIC_CONFIG_LOCATION: dict(bind="/root/irobot.conf", mode="ro")},
-                environment={"IRODS_PASSWORD": self.get_irods().root_user.password},
-                links={self.get_irods().container_id: self.get_irods().container_id}))
+                environment={"IRODS_PASSWORD": self.irods.root_user.password},
+                links={self.irods.container_id: self.irods.container_id}))
         return self._irobot_service
 
     def setUp(self):
@@ -111,6 +127,5 @@ class TestWithIrobot(unittest.TestCase, metaclass=ABCMeta):
         self._irobot_service = None
 
     def tearDown(self):
-        self._temp_manager.tear_down()
         if self._irobot_service is not None:
             self._irobot_controller.stop_service(self._irobot_service)
