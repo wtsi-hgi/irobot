@@ -60,7 +60,8 @@ class TrackingDB(LogWriter):
 
         self.log(logging.DEBUG, f"Initialising precache tracking database in {path}")
 
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if path != ":memory:":
+            os.makedirs(os.path.dirname(path), exist_ok=True)
         self.conn = Connection(path)
 
         self.path = path
