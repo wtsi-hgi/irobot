@@ -77,7 +77,7 @@ docker run -v /path/to/your/precache/directory:/precache \
            -v /path/to/your/irods_environment.json:/root/.irods/irods_environment.json \
            -v /path/to/your/irobot.conf:/root/irobot.conf \
            -p 5000:5000 \
-           mercury/irobot:USER
+           mercury/irobot
 ```
 An example configuration can be found in `irobot.conf.sample`.
 

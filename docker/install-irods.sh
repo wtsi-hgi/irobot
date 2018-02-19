@@ -44,6 +44,7 @@ fi
 
 mkdir ~/.irods/
 touch ~/.irods/irods_environment.json
+touch ~/.irods/.irodsA
 
 apt-get autoremove
 apt-get clean
