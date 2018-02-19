@@ -66,60 +66,28 @@ managing a connection pool to iRODS.
 ## Installation
 
 iRobot is fully containerised, using Docker. The container image can be
-built using the `build.sh` script:
-
-    build.sh AUTH_METHOD [USER] 
-
-Build script requirements:
-
-* Bash (4, or newer)
-* Docker
-* GNU gettext
-* Awk
-* Sed
-
-<!--
-FIXME
-
-If using Kerberos authentication, the Kerberos client packages also need
-to be available on the Docker host. Additionally, it is expected that
-the host's `/etc/krb5.conf` would be bind mounted into the container at
-runtime; this configuration file is also used at build-time to determine
-the default Kerberos realm and permitted encryption algorithms.
-
-Before running the build script, the `irods_environment.json.template`
-file needs to be created, based on `irods_environment.json.template.sample`.
-In which, the `irods_host`, `irods_port`, `irods_zone_name` and,
-potentially, `irods_cwd` and `irods_home` values need to be set
-appropriately. The `${user}` tags in the template file will be replaced
-with `USER` by the build script.
-
-The `AUTH_METHOD` can be either `native` (`nat`) or `kerberos` (`krb`).
-If the `USER` is omitted, then the current login is used. The script
-then builds an image named `hgi/irobot`, with the `USER` given as its
-tag.
+built using:
+```bash
+docker build -f Dockerfile -t mercury/irobot .
+```
 
 To launch the container:
+```bash
+docker run -v /path/to/your/precache/directory:/precache \
+           -v /path/to/your/irods_environment.json:/root/.irods/irods_environment.json \
+           -v /path/to/your/irobot.conf:/root/irobot.conf \
+           -p 5000:5000 \
+           mercury/irobot:USER
+```
+An example configuration can be found in `irobot.conf.sample`.
 
-    docker run -v /path/to/your/precache/directory:/precache \
-               -v /etc/krb5.conf:/etc/krb5.conf \
-               -v /path/to/your/irobot.conf:/home/USER/irobot.conf \
-               -p 5000:5000 \
-               hgi/irobot:USER
+For use with native iRODS authentication, either bind mount the `.irodsA` file onto `/root/.irods/.irodsA` (e.g. 
+`-v /path/to/your/.irodsA:/root/.irods/.irodsA:ro`) or pass it in via the `IRODS_PASSWORD` environment variable (e.g.
+`-e IRODS_PASSWORD=xxx`).
 
-(Note that bind mounting `/etc/krb5.conf` is only necessary when using
-Kerberos authentication. A `cron` job runs in the Kerberos container to
-renew credentials with the KDC periodically; if the container is down
-for any significant amount of time, this may fail and you'll have to
-rebuild the image.)
--->
+For use with Kerberos authentication, bind mount the `krb5.conf` file onto `/etc/krb5.conf` 
+(e.g. `-v /path/to/your/krb5.conf:/etc/krb5.conf`).
 
-## Configuration
-
-The `irobot.conf` configuration is not copied into the image and ought
-to be bind mounted at runtime, into `USER`'s home directory. This allows
-you to make configuration changes without rebuilding. An example
-configuration can be found in `irobot.conf.sample`.
 
 ### Precache Policy
 
