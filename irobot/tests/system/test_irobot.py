@@ -5,8 +5,14 @@ from irobot.tests.system.common import TestWithIrobot
 
 
 class TestExample(TestWithIrobot):
-    def test_stuff(self):
+    """
+    TODO
+    """
+    def setUp(self):
         logging.root.setLevel(logging.DEBUG)
+
+    def test_stuff(self):
+        self.upload_to_irods("test")
         print(self.irobot)
 
 

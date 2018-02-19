@@ -3,16 +3,21 @@ import os
 import tempfile
 import unittest
 from abc import ABCMeta
-from threading import Lock
 
 import docker
+from irods.session import iRODSSession
 from temphelpers import TempManager
+from threading import Lock
+from uuid import uuid4
 
 from useintest.modules.irods import IrodsDockerisedService
 from useintest.modules.irods.services import IrodsServiceController
 from useintest.services.builders import DockerisedServiceControllerTypeBuilder
 
 _ROOT_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../")
+
+_IRODS_ENCODING = "utf-8"
+
 _IROBOT_DOCKER_BUILD_CONTEXT = _ROOT_DIRECTORY
 _IROBOT_DOCKER_BUILD_FILE = os.path.join(_ROOT_DIRECTORY, "Dockerfile")
 _IROBOT_IMAGE_NAME = "mercury/irobot"
@@ -39,6 +44,16 @@ class TestWithIrodsSingleton(unittest.TestCase, metaclass=ABCMeta):
     """
     Tests that share an iRODS instance.
     """
+    @staticmethod
+    def upload_file(irods: IrodsDockerisedService, contents: str) -> str:
+        file_location = f"/{irods.root_user.zone}/{uuid4()}"
+        with iRODSSession(host=irods.host, port=irods.port, user=irods.root_user.username,
+                          password=irods.root_user.password, zone=irods.root_user.zone) as session:
+            irods_object = session.data_objects.create(file_location)
+            with irods_object.open("w") as file:
+                file.write(contents.encode(_IRODS_ENCODING))
+        return file_location
+
     @classmethod
     def setUpClass(cls):
         temp_directory = tempfile.gettempdir()
@@ -129,3 +144,6 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
     def tearDown(self):
         if self._irobot_service is not None:
             self._irobot_controller.stop_service(self._irobot_service)
+
+    def upload_to_irods(self, contents: str) -> str:
+        return TestWithIrodsSingleton.upload_file(self.irods, contents)

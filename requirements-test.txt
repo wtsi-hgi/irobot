@@ -3,3 +3,4 @@ git+https://github.com/wtsi-hgi/useintest.git@develop#egg=useintest
 git+https://github.com/wtsi-hgi/irobot-client.git@1.0.0#egg=irobotclient
 docker
 temphelpers
+python-irodsclient
