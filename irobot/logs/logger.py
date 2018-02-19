@@ -62,12 +62,9 @@ def _exception_handler(logger: logging.Logger) -> Callable:
                                 traceback: TracebackType) -> None:
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_val, traceback)
-
         else:
             logger.critical(str(exc_val) or exc_type.__name__)
-            if __debug__:
-                print_tb(traceback)
-
+            print_tb(traceback)
             sys.exit(1)
 
     return _log_uncaught_exception
