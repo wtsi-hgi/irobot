@@ -24,7 +24,7 @@ from subprocess import CalledProcessError
 from typing import Optional
 
 from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
-from irobot.config import iRODSConfig
+from irobot.config import IrodsConfig
 from irobot.irods._api import IrodsError, baton, iget, ils
 from irobot.irods._types import Metadata
 from irobot.logs import LogWriter
@@ -33,7 +33,7 @@ from irobot.logs import LogWriter
 class Irods(Listenable, LogWriter, WorkerPool):
     """ High level iRODS interface with iget pool management """
 
-    def __init__(self, irods_config: iRODSConfig, logger: Optional[logging.Logger]=None) -> None:
+    def __init__(self, irods_config: IrodsConfig, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 

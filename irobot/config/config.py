@@ -52,9 +52,8 @@ _factories.add("precache", precache.PrecacheConfig,
     RequiredKey("chunk_size",      precache.limited_size)
 )
 
-_factories.add("irods", irods.iRODSConfig,
-    RequiredKey("max_connections", irods.max_connections)
-)
+_factories.add("irods", irods.IrodsConfig,
+               RequiredKey("max_connections", irods.max_connections))
 
 _factories.add("httpd", httpd.HTTPdConfig,
     RequiredKey("bind_address",    canon.ipv4),

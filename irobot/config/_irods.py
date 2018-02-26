@@ -37,5 +37,5 @@ def max_connections(value: str) -> int:
     return value
 
 
-class iRODSConfig(Configuration):
+class IrodsConfig(Configuration):
     """ iRODS configuration stub """

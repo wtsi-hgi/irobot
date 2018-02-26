@@ -24,7 +24,7 @@ from threading import Lock
 from unittest.mock import MagicMock, call, patch
 
 from irobot.common import AsyncTaskStatus
-from irobot.config import iRODSConfig
+from irobot.config import IrodsConfig
 from irobot.config._tree_builder import ConfigValue
 from irobot.irods._types import MetadataJSONDecoder
 from irobot.irods.irods import Irods, IrodsError
@@ -50,7 +50,7 @@ class TestExists(unittest.TestCase):
 
 class TestIrods(unittest.TestCase):
     def setUp(self):
-        config = iRODSConfig()
+        config = IrodsConfig()
         config.add_value("max_connections", ConfigValue(1, lambda x: x))
         self.irods = Irods(config)
 
