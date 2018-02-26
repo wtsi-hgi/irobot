@@ -137,4 +137,4 @@ class DataObject(AbstractDataObject):
 
         # if not self._is_tracked:
         #     raise ValueError(f"Data object {self._irods_path} is not tracked")
-        pass
+        raise NotImplementedError()
