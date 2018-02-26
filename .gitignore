@@ -1,2 +1,3 @@
 irods_environment.json.template
 irobot.conf
+irobot_client_error.log
