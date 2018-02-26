@@ -196,7 +196,11 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
         with TemporaryDirectory() as output_directory:
             arguments = ["irobotclient", "--url", self.irobot_url, "--force", "--basic_username", _DUMMY_VALUE,
                          "--basic_password", _DUMMY_VALUE, data_object_path, output_directory]
-            subprocess.check_output(arguments, stderr=subprocess.STDOUT)
+            # XXX: irobot client does not treat stdout/stderr with respect
+            #      (https://github.com/wtsi-hgi/irobot-client/issues/5) so we can bundle them
+            completed_process = subprocess.run(arguments, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            logger.info(completed_process.stdout)
+            completed_process.check_returncode()
 
             # TODO: read output
 
