@@ -24,7 +24,7 @@ from irobot.httpd.handlers.dataobject._common import get_data_object, metadata_h
 
 async def handler(req: Request) -> Response:
     """ (Re)fetch data object from iRODS if it is not contended """
-    precache = req["irobot_precache"]
+    precache = req.app["irobot_precache"]
     irods_path = req["irobot_irods_path"]
     data_object = get_data_object(precache, irods_path, raise_inprogress=True, raise_inflight=True)
 

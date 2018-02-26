@@ -269,7 +269,7 @@ class _DataObjectResponseWriter(object):
 
 async def data_handler(req: Request) -> StreamResponse:
     """ Data handler """
-    precache = req["irobot_precache"]
+    precache = req.app["irobot_precache"]
     irods_path = req["irobot_irods_path"]
     data_object = get_data_object(precache, irods_path, raise_inprogress=True, raise_inflight=False)
 
@@ -297,7 +297,7 @@ async def data_handler(req: Request) -> StreamResponse:
 
 async def metadata_handler(req: Request) -> Response:
     """ Metadata handler """
-    precache = req["irobot_precache"]
+    precache = req.app["irobot_precache"]
     irods_path = req["irobot_irods_path"]
     data_object = get_data_object(precache, irods_path, raise_inprogress=False, raise_inflight=False)
 
