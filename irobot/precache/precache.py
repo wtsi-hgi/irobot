@@ -166,7 +166,7 @@ class Precache(AbstractPrecache, LogWriter):
         """
         TODO
         """
-        pass
+        raise NotImplementedError()
 
     def accommodate(self, accommodation: int) -> None:
         """
@@ -231,22 +231,22 @@ class Precache(AbstractPrecache, LogWriter):
             self._gc()
 
     def __iter__(self) -> Iterable:
-        pass
+        raise NotImplementedError()
 
     def __contains__(self, irods_path: str) -> bool:
-        pass
+        raise NotImplementedError()
 
     def __len__(self) -> int:
-        pass
+        raise NotImplementedError()
 
     @property
     def commitment(self) -> int:
-        pass
+        raise NotImplementedError()
 
     @property
     def current_downloads(self) -> int:
-        pass
+        raise NotImplementedError()
 
     @property
     def production_rates(self) -> Dict[DataObjectState, Optional[SummaryStat]]:
-        pass
+        raise NotImplementedError()
