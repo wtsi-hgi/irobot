@@ -33,13 +33,13 @@ class TestListenableInternals(unittest.TestCase):
 class TestListenable(unittest.TestCase):
     def test_add_listener(self):
         l = Listenable()
-        self.assertEqual(len(l._listeners), 0)
+        self.assertEqual(len(l.listeners), 0)
 
         _listener = MagicMock()
         l.add_listener(_listener)
 
-        self.assertEqual(len(l._listeners), 1)
-        self.assertEqual(l._listeners.pop(), _listener)
+        self.assertEqual(len(l.listeners), 1)
+        self.assertEqual(l.listeners.pop(), _listener)
 
     @patch("irobot.common.listenable._broadcast_time", spec=True)
     def test_broadcast(self, mock_broadcast_time):

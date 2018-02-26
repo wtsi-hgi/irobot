@@ -18,6 +18,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
+from tempfile import NamedTemporaryFile
+from time import sleep
+
 import re
 import string
 from random import choice

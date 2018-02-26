@@ -21,11 +21,13 @@ import atexit
 import logging
 import os
 from datetime import datetime, timedelta
+from tempfile import NamedTemporaryFile
 from threading import Lock, Timer
+from time import sleep
 from typing import Dict, List, Iterable, Optional
 
 # A *lot* of moving parts come together here...
-from irobot.common import DataObjectState, SummaryStat
+from irobot.common import DataObjectState, SummaryStat, AsyncTaskStatus
 from irobot.config import PrecacheConfig
 from irobot.irods import Irods
 from irobot.logs import LogWriter
@@ -50,6 +52,18 @@ class _WorkerMetrics(object):
 
 class Precache(AbstractPrecache, LogWriter):
     """ High-level precache management interface """
+    @property
+    def commitment(self) -> int:
+        raise NotImplementedError()
+
+    @property
+    def current_downloads(self) -> int:
+        raise NotImplementedError()
+
+    @property
+    def production_rates(self) -> Dict[DataObjectState, Optional[SummaryStat]]:
+        raise NotImplementedError()
+
     def __init__(self, precache_config: PrecacheConfig, irods: Irods, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
@@ -109,54 +123,14 @@ class Precache(AbstractPrecache, LogWriter):
         if self._update_stats_timer.is_alive():
             self._update_stats_timer.cancel()
 
-    def _schedule_temporal_gc(self) -> None:
-        """ Initialise and start the GC timer """
-        self._gc_timer = Timer(self._gc_period.total_seconds(), self._gc)
-        self._gc_timer.daemon = True
-        self._gc_timer.start()
+    def __iter__(self) -> Iterable:
+        raise NotImplementedError()
 
-    def _gc(self) -> None:
-        """ Garbage collect invalidated entries from the precache """
-        with self._do_lock:
-            self.log(logging.DEBUG, "Running precache garbage collection")
-            gc_time = datetime.utcnow()
+    def __contains__(self, irods_path: str) -> bool:
+        raise NotImplementedError()
 
-            # Data objects marked as invalid or expired (if appropriate)
-            to_gc = [
-                irods_path
-                for irods_path, do in self.data_objects.items()
-                if do.invalid or (self.temporal_gc and gc_time > self.config.expiry(do.last_accessed))
-            ]
-
-            # Garbage collect
-            for irods_path in to_gc:
-                self.log(logging.DEBUG, f"Garbage collecting {irods_path} from precache")
-
-                do = self.data_objects[irods_path]
-                do_id = self.tracker.get_data_object_id(irods_path)
-
-                self.tracker.delete_data_object(do_id)
-                delete(do.precache_path)
-                del self.data_objects[irods_path]
-
-        if self.temporal_gc:
-            self._schedule_temporal_gc()
-
-    def _update_worker_stats(self, period: timedelta=timedelta(minutes=15)) -> None:
-        """
-        Update the worker production stats, if available, and refresh
-        them periodically.
-
-        @param   period  Refresh period (timedelta; default 15 minutes)
-        """
-        for datatype, rate in self.tracker.production_rates.items():
-            if rate:
-                self.worker_stats[datatype].rate = rate
-
-        # Schedule next update
-        self._update_stats_timer = Timer(period.total_seconds(), self._update_worker_stats, [period])
-        self._update_stats_timer.daemon = True
-        self._update_stats_timer.start()
+    def __len__(self) -> int:
+        raise NotImplementedError()
 
     def __call__(self, irods_path: str) -> DataObject:
         # Convenience wrapper
@@ -166,7 +140,23 @@ class Precache(AbstractPrecache, LogWriter):
         """
         TODO
         """
-        raise NotImplementedError()
+        download_lock = Lock()
+        download_lock.acquire()
+
+        def on_download_unlocker(timestamp: datetime, async_task_status: AsyncTaskStatus, download_irods_path: str,
+                                 download_local_path: str):
+            if async_task_status == AsyncTaskStatus.finished and download_irods_path == irods_path:
+                download_lock.release()
+
+        self.irods.listeners.add(on_download_unlocker)
+        try:
+            with NamedTemporaryFile() as temp_file:
+                self.irods.get_dataobject(irods_path, temp_file.name)
+                download_lock.acquire()
+        finally:
+            self.irods.listeners.remove(on_download_unlocker)
+
+        return DataObject(irods_path, self)
 
     def accommodate(self, accommodation: int) -> None:
         """
@@ -230,23 +220,51 @@ class Precache(AbstractPrecache, LogWriter):
         if call_gc:
             self._gc()
 
-    def __iter__(self) -> Iterable:
-        raise NotImplementedError()
+    def _schedule_temporal_gc(self) -> None:
+        """ Initialise and start the GC timer """
+        self._gc_timer = Timer(self._gc_period.total_seconds(), self._gc)
+        self._gc_timer.daemon = True
+        self._gc_timer.start()
 
-    def __contains__(self, irods_path: str) -> bool:
-        raise NotImplementedError()
+    def _gc(self) -> None:
+        """ Garbage collect invalidated entries from the precache """
+        with self._do_lock:
+            self.log(logging.DEBUG, "Running precache garbage collection")
+            gc_time = datetime.utcnow()
 
-    def __len__(self) -> int:
-        raise NotImplementedError()
+            # Data objects marked as invalid or expired (if appropriate)
+            to_gc = [
+                irods_path
+                for irods_path, do in self.data_objects.items()
+                if do.invalid or (self.temporal_gc and gc_time > self.config.expiry(do.last_accessed))
+            ]
 
-    @property
-    def commitment(self) -> int:
-        raise NotImplementedError()
+            # Garbage collect
+            for irods_path in to_gc:
+                self.log(logging.DEBUG, f"Garbage collecting {irods_path} from precache")
 
-    @property
-    def current_downloads(self) -> int:
-        raise NotImplementedError()
+                do = self.data_objects[irods_path]
+                do_id = self.tracker.get_data_object_id(irods_path)
 
-    @property
-    def production_rates(self) -> Dict[DataObjectState, Optional[SummaryStat]]:
-        raise NotImplementedError()
+                self.tracker.delete_data_object(do_id)
+                delete(do.precache_path)
+                del self.data_objects[irods_path]
+
+        if self.temporal_gc:
+            self._schedule_temporal_gc()
+
+    def _update_worker_stats(self, period: timedelta=timedelta(minutes=15)) -> None:
+        """
+        Update the worker production stats, if available, and refresh
+        them periodically.
+
+        @param   period  Refresh period (timedelta; default 15 minutes)
+        """
+        for datatype, rate in self.tracker.production_rates.items():
+            if rate:
+                self.worker_stats[datatype].rate = rate
+
+        # Schedule next update
+        self._update_stats_timer = Timer(period.total_seconds(), self._update_worker_stats, [period])
+        self._update_stats_timer.daemon = True
+        self._update_stats_timer.start()
