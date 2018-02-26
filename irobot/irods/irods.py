@@ -25,12 +25,12 @@ from typing import Optional
 
 from irobot.common import AsyncTaskStatus, Listenable, WorkerPool
 from irobot.config import iRODSConfig
-from irobot.irods._api import iRODSError, baton, iget, ils
+from irobot.irods._api import IrodsError, baton, iget, ils
 from irobot.irods._types import Metadata
 from irobot.logs import LogWriter
 
 
-class iRODS(Listenable, LogWriter, WorkerPool):
+class Irods(Listenable, LogWriter, WorkerPool):
     """ High level iRODS interface with iget pool management """
 
     def __init__(self, irods_config: iRODSConfig, logger: Optional[logging.Logger]=None) -> None:
@@ -101,7 +101,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         try:
             ils(irods_path)
 
-        except iRODSError as e:
+        except IrodsError as e:
             if e.error == (317000, "USER_INPUT_PATH_ERR"):
                 raise FileNotFoundError(f"Data object \"{irods_path}\" not found")
 
@@ -121,7 +121,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         @param   irods_path  Path to data object on iRODS (string)
         @param   local_path  Local filesystem target file (string)
         """
-        iRODS.check_access(irods_path)
+        Irods.check_access(irods_path)
         self.broadcast(AsyncTaskStatus.queued, irods_path, local_path)
         self._iget_pool.submit(self._iget, irods_path, local_path)
 
@@ -149,7 +149,7 @@ class iRODS(Listenable, LogWriter, WorkerPool):
         @param   irods_path  Path to data object on iRODS (string)
         @return  AVU and filesystem metadata (tuple of list and dictionary)
         """
-        iRODS.check_access(irods_path)
+        Irods.check_access(irods_path)
 
         self.log(logging.INFO, f"Getting metadata for {irods_path}")
         return baton(irods_path)

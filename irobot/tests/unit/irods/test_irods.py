@@ -27,32 +27,32 @@ from irobot.common import AsyncTaskStatus
 from irobot.config import iRODSConfig
 from irobot.config._tree_builder import ConfigValue
 from irobot.irods._types import MetadataJSONDecoder
-from irobot.irods.irods import iRODS, iRODSError
+from irobot.irods.irods import Irods, IrodsError
 from irobot.tests.unit.irods._common import TEST_BATON_JSON
 
 
 @patch("irobot.irods.irods.ils", spec=True)
 class TestExists(unittest.TestCase):
     def test_exists_pass(self, mock_ils):
-        iRODS.check_access("/foo/bar")
+        Irods.check_access("/foo/bar")
         mock_ils.assert_called_once_with("/foo/bar")
 
     def test_exists_fail(self, mock_ils):
-        mock_ils.side_effect = iRODSError(1, "ERROR: -317000 USER_INPUT_PATH_ERR")
-        self.assertRaises(FileNotFoundError, iRODS.check_access, "/foo/bar")
+        mock_ils.side_effect = IrodsError(1, "ERROR: -317000 USER_INPUT_PATH_ERR")
+        self.assertRaises(FileNotFoundError, Irods.check_access, "/foo/bar")
 
-        mock_ils.side_effect = iRODSError(1, "ERROR: -818000 CAT_NO_ACCESS_PERMISSION")
-        self.assertRaises(PermissionError, iRODS.check_access, "/foo/bar")
+        mock_ils.side_effect = IrodsError(1, "ERROR: -818000 CAT_NO_ACCESS_PERMISSION")
+        self.assertRaises(PermissionError, Irods.check_access, "/foo/bar")
 
-        mock_ils.side_effect = iRODSError(1, "Something has gone horribly wrong!")
-        self.assertRaises(IOError, iRODS.check_access, "/foo/bar")
+        mock_ils.side_effect = IrodsError(1, "Something has gone horribly wrong!")
+        self.assertRaises(IOError, Irods.check_access, "/foo/bar")
 
 
-class TestiRODS(unittest.TestCase):
+class TestIrods(unittest.TestCase):
     def setUp(self):
         config = iRODSConfig()
         config.add_value("max_connections", ConfigValue(1, lambda x: x))
-        self.irods = iRODS(config)
+        self.irods = Irods(config)
 
     def tearDown(self):
         self.irods._iget_pool.shutdown()

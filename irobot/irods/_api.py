@@ -75,7 +75,7 @@ _RE_IRODS_ERROR = re.compile(r"""
 """, re.VERBOSE | re.MULTILINE)
 
 
-class iRODSError(Exception):
+class IrodsError(Exception):
     def __init__(self, exit_code: int, stderr: str, *args, **kwargs) -> None:
         """
         iRODS errors are defined in lib/core/include/rodsErrorTable.h
@@ -120,7 +120,7 @@ def ils(irods_path: str) -> None:
 
     exit_code, stdout, stderr = _invoke(command)
     if exit_code:
-        raise iRODSError(exit_code, stderr)
+        raise IrodsError(exit_code, stderr)
 
 
 def iget(irods_path: str, local_path: str) -> None:
@@ -134,7 +134,7 @@ def iget(irods_path: str, local_path: str) -> None:
 
     exit_code, stdout, stderr = _invoke(command)
     if exit_code:
-        raise iRODSError(exit_code, stderr)
+        raise IrodsError(exit_code, stderr)
 
 
 def baton(irods_path: str) -> Metadata:

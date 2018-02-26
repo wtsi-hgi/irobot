@@ -196,7 +196,7 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
         with TemporaryDirectory() as output_directory:
             arguments = ["irobotclient", "--url", self.irobot_url, "--force", "--basic_username", _DUMMY_VALUE,
                          "--basic_password", _DUMMY_VALUE, data_object_path, output_directory]
-            subprocess.check_output(arguments)
+            subprocess.check_output(arguments, stderr=subprocess.STDOUT)
 
             # TODO: read output
 

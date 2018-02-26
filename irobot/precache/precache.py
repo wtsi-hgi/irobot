@@ -27,7 +27,7 @@ from typing import Dict, List, Iterable, Optional
 # A *lot* of moving parts come together here...
 from irobot.common import DataObjectState, SummaryStat
 from irobot.config import PrecacheConfig
-from irobot.irods import iRODS
+from irobot.irods import Irods
 from irobot.logs import LogWriter
 from irobot.precache._abc import AbstractPrecache
 from irobot.precache._checksummer import Checksummer
@@ -50,7 +50,7 @@ class _WorkerMetrics(object):
 
 class Precache(AbstractPrecache, LogWriter):
     """ High-level precache management interface """
-    def __init__(self, precache_config: PrecacheConfig, irods: iRODS, logger: Optional[logging.Logger]=None) -> None:
+    def __init__(self, precache_config: PrecacheConfig, irods: Irods, logger: Optional[logging.Logger]=None) -> None:
         """
         Constructor
 

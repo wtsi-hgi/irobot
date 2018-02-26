@@ -36,7 +36,7 @@ _IRODS_TIMESTAMP_RE = re.compile(r"""
 """, re.VERBOSE)
 
 
-class AVU(NamedTuple):
+class Avu(NamedTuple):
     """
     iRODS AVU (attribute, value, units) tuple
     """
@@ -57,7 +57,7 @@ class Metadata(NamedTuple):
     modified: datetime  # Last modified timestamp (UTC)
 
     # iRODS AVU metadata
-    avus: List[AVU]  # List of AVUs
+    avus: List[Avu]  # List of AVUs
 
 
 class MetadataJSONDecoder(JSONDecoder):
@@ -77,7 +77,7 @@ class MetadataJSONDecoder(JSONDecoder):
                         base["size"],
                         timestamps["created"],
                         timestamps["modified"],
-                        [AVU(**avu) for avu in base["avus"]])
+                        [Avu(**avu) for avu in base["avus"]])
 
 
 class MetadataJSONEncoder(JSONEncoder):
@@ -94,7 +94,7 @@ class MetadataJSONEncoder(JSONEncoder):
         if isinstance(o, datetime):
             return o.strftime(_IRODS_TIMESTAMP_FORMAT)
 
-        if isinstance(o, AVU):
+        if isinstance(o, Avu):
             return {
                 "attribute": o.attribute,
                 "value": o.value,

@@ -26,7 +26,7 @@ from irobot import __version__
 from irobot.authentication import BaseAuthHandler, ArvadosAuthHandler, HTTPBasicAuthHandler
 from irobot.config import iRobotConfiguration, LoggingConfig
 from irobot.httpd import start_httpd
-from irobot.irods import iRODS
+from irobot.irods import Irods
 from irobot.logs import create_logger
 from irobot.precache import Precache
 
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # Plumb everything together and start
     logger = create_logger(config.logging)
-    irods = iRODS(config.irods, logger)
+    irods = Irods(config.irods, logger)
     precache = Precache(config.precache, irods, logger)
     auth_handlers = _instantiate_authentication_handlers(config, logger)
     start_httpd(config.httpd, precache, auth_handlers, logger)
