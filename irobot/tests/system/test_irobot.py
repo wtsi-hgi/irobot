@@ -15,9 +15,9 @@ class TestDataObjectEndpoint(TestWithIrobot):
     def test_get_when_not_in_irods(self):
         self.request_data("/not/real")
 
-    # def test_get_when_in_irods(self):
-    #     data_object_location = self.upload_to_irods("test")
-    #     raise NotImplementedError()
+    def test_get_when_in_irods(self):
+        data_object_location = self.upload_to_irods("example-data")
+        self.request_data(data_object_location)
 
 
 if __name__ == "__main__":
