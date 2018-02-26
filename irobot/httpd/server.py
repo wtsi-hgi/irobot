@@ -67,7 +67,7 @@ def start_httpd(httpd_config: HTTPdConfig, precache: AbstractPrecache, auth_hand
     @param   logger         Logger
     """
     app = web.Application(logger=logger, middlewares=[_middleware.log_connections,
-                                                      _middleware.catch500,
+                                                      # _middleware.catch500,
                                                       _middleware.timeout,
                                                       _middleware.authentication])
 
