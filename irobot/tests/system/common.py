@@ -193,15 +193,12 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
         :param data_object_path: path to the data
         :return: the data
         """
-        with TemporaryDirectory() as output_file:
+        with TemporaryDirectory() as output_directory:
             arguments = ["irobotclient", "--url", self.irobot_url, "--force", "--basic_username", _DUMMY_VALUE,
-                         "--basic_password", _DUMMY_VALUE, data_object_path, output_file]
+                         "--basic_password", _DUMMY_VALUE, data_object_path, output_directory]
+            subprocess.check_output(arguments)
 
-            print(" ".join(arguments))
-            try:
-                subprocess.check_output(arguments)
-            except subprocess.CalledProcessError as e:
-                print(e)
+            # TODO: read output
 
     def start_irobot_server(self, configuration_location: str, extra_links: Dict[str, str]=None) -> DockerisedService:
         """
