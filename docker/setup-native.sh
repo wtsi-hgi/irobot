@@ -2,12 +2,8 @@
 
 set -eu -o pipefail
 
-if [[ -f ~/.irods/.irodsA ]]; then
-    >&2 echo ".irodsA file already exists"
-else
-    if [[ -z ${IRODS_PASSWORD+x} ]]; then
-        >&2 echo "IRODS_PASSWORD must be defined to use native authentication to generate .irodsA file"
-        exit 1
-    fi
+if [[ -n ${IRODS_PASSWORD+x} ]]; then
+    >&2 echo "IRODS_PASSWORD supplied - using it to generate .irodsA file"
+    rm ~/.irods/.irodsA
     iinit "${IRODS_PASSWORD}"
 fi
