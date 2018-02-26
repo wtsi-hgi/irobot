@@ -22,10 +22,10 @@ from typing import Callable, Dict, List, Tuple, Type, Union
 
 # FIXME? No facility is provided for annotating var- and keyword
 # arguments, so we suck it up with a Tuple and Dict, respectively
-_BaseArgSignature = [datetime, Tuple, Dict]
-_ListenerFunction = Callable[_BaseArgSignature, None]
-_ListenerMethod = Callable[[Type] + _BaseArgSignature, None]
-_ListenerCallable = Union[_ListenerFunction, _ListenerMethod]
+BaseArgSignature = [datetime, Tuple, Dict]
+ListenerFunction = Callable[BaseArgSignature, None]
+ListenerMethod = Callable[[Type] + BaseArgSignature, None]
+ListenerCallable = Union[ListenerFunction, ListenerMethod]
 
 
 def _broadcast_time() -> datetime:
@@ -41,9 +41,9 @@ class Listenable(object):
     """ Listenable base class """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._listeners: List[_ListenerCallable] = []
+        self._listeners: List[ListenerCallable] = []
 
-    def add_listener(self, listener: _ListenerCallable) -> None:
+    def add_listener(self, listener: ListenerCallable) -> None:
         """
         Add a listener for broadcast messages
 
