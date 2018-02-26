@@ -18,7 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from datetime import datetime
-from typing import Callable, Dict, List, Tuple, Type, Union
+from typing import Callable, Dict, List, Tuple, Type, Union, Set
 
 # FIXME? No facility is provided for annotating var- and keyword
 # arguments, so we suck it up with a Tuple and Dict, respectively
@@ -41,20 +41,22 @@ class Listenable(object):
     """ Listenable base class """
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._listeners: List[ListenerCallable] = []
+        self.listeners: Set[ListenerCallable] = set()
 
+    # TODO: This method should be considered deprecated - the Pythonic way of changing `listeners` directly (or via
+    # @property methods if required at a later date) should be preferred
     def add_listener(self, listener: ListenerCallable) -> None:
         """
         Add a listener for broadcast messages
 
         @param   listener  Listener (function taking timestamp, *args and **kwargs)
         """
-        self._listeners.append(listener)
+        self.listeners.add(listener)
 
     def broadcast(self, *args, **kwargs) -> None:
         """ Broadcast a message to all the listeners """
         timestamp = _broadcast_time()
-        for listener in self._listeners:
+        for listener in self.listeners:
             try:
                 listener(timestamp, *args, **kwargs)
             except Exception as e:
