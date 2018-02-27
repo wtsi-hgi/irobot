@@ -23,6 +23,7 @@ from useintest.services.models import DockerisedService
 MOUNTABLE_TEMP_DIRECTORY = tempfile.gettempdir() if not tempfile.gettempdir().startswith("/var/folders/") else "/tmp"
 
 BASIC_AUTHENTICATION_SUCCESS_STATUS_CODE = 200
+BASIC_AUTHENTICATION_FAILED_STATUS_CODE = 401
 
 _ROOT_DIRECTORY = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../")
 
@@ -187,14 +188,18 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
         """
         return TestWithIrodsSingleton.upload_file(self.irods, contents)
 
-    def request_data(self, data_object_path: str) -> Optional[str]:
+    def request_data(self, data_object_path: str, irobot_url: str=None) -> Optional[str]:
         """
         Request data from iRobot.
         :param data_object_path: path to the data
+        :param irobot_url: the base url of iRobot (will use default iRobot instance if not supplied)
         :return: the data
         """
+        if irobot_url is None:
+            irobot_url = self.irobot_url
+
         with TemporaryDirectory() as output_directory:
-            arguments = ["irobotclient", "--url", self.irobot_url, "--basic_username", _DUMMY_VALUE, "--basic_password",
+            arguments = ["irobotclient", "--url", irobot_url, "--basic_username", _DUMMY_VALUE, "--basic_password",
                          _DUMMY_VALUE, "--no_index", data_object_path, output_directory]
             # XXX: irobot client does not treat stdout/stderr with respect
             #      (https://github.com/wtsi-hgi/irobot-client/issues/5) so we can bundle them
