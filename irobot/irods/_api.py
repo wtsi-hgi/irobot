@@ -83,8 +83,8 @@ class IrodsError(Exception):
         @param   exit_code  Exit code (int)
         @param   stderr     Contents of stderr (string)
         """
-        self._exit_code = exit_code
-        self._stderr = stderr
+        self.exit_code = exit_code
+        self.stderr = stderr
 
         # Attempt to extract error identifier and code from stderr
         # (use the last one in the stderr output)
@@ -119,6 +119,7 @@ def ils(irods_path: str) -> None:
     command = ["ils", irods_path]
 
     exit_code, stdout, stderr = _invoke(command)
+
     if exit_code:
         raise IrodsError(exit_code, stderr)
 

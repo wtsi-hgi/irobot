@@ -102,7 +102,9 @@ class Irods(Listenable, LogWriter, WorkerPool):
             ils(irods_path)
 
         except IrodsError as e:
-            if e.error == (317000, "USER_INPUT_PATH_ERR"):
+            # Note: in both the current production system and in test iRODS instances, "ils" returns the latter
+            if e.error == (317000, "USER_INPUT_PATH_ERR") \
+                    or "does not exist or user lacks access permission" in e.stderr:
                 raise FileNotFoundError(f"Data object \"{irods_path}\" not found")
 
             elif e.error == (818000, "CAT_NO_ACCESS_PERMISSION"):
