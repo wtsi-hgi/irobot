@@ -1,6 +1,6 @@
 [run]
+branch = True
+source = .
 omit =
-  .venv/*
-  */__init__.py
-  irobot/irobot.py
-  irobot/test/*
+    irobot/tests/*
+parallel = True
