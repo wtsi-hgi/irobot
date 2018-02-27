@@ -18,6 +18,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
+import os
 from tempfile import NamedTemporaryFile
 from time import sleep
 
@@ -300,8 +301,11 @@ async def data_handler(req: Request) -> StreamResponse:
         "ETag": data_object.metadata.checksum,
         "Content-Type": _DATA
     }
-    with data_object as data_stream:
-        return Response(status=200, body=data_stream.read(), headers=headers)
+    try:
+        with data_object as data_stream:
+            return Response(status=200, body=data_stream.read(), headers=headers)
+    finally:
+        os.remove(data_object._precache_path)
 
 
 async def metadata_handler(req: Request) -> Response:
