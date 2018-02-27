@@ -1,6 +1,7 @@
 aioresponses==0.3.0
 git+https://github.com/wtsi-hgi/useintest.git@develop#egg=useintest
-git+https://github.com/wtsi-hgi/irobot-client.git@4b6857dd67121d6a6b0f17959f1caa89cdcbe5ea#egg=irobotclient
-docker
+git+https://github.com/wtsi-hgi/irobot-client.git@develop#egg=irobotclient
+# Note: docker==3.1.0 is currently broken/incompatible with setup as complains that Dockerfile cannot be found
+docker==3.0.1
 temphelpers
 python-irodsclient
