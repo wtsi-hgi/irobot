@@ -90,8 +90,6 @@ def _get_data(fd: IO[bytes], byte_range: Optional[ByteRange]=None, *, chunk_size
 
 class _DataObjectResponseWriter(object):
     """ Data Object data response writer """
-    _data_object: AbstractDataObject
-
     def __init__(self, data_object: AbstractDataObject) -> None:
         """
         Constructor
@@ -107,7 +105,7 @@ class _DataObjectResponseWriter(object):
         @param   byte_range  Byte Range (ByteRange)
         @return  Value for Content-Range response header (string)
         """
-        return f"bytes {byte_range.start}-{byte_range.finish + 1}/{self._data_object.metadata.size}"
+        return f"bytes {byte_range.start}-{byte_range.finish + 1}/{self.data_object.metadata.size}"
 
     def _generate_boundary(self, ranges: List[ByteRange], *, length: int=70) -> str:
         """
@@ -124,7 +122,7 @@ class _DataObjectResponseWriter(object):
 
         taken_boundaries: List[str] = []
 
-        with self._data_object as fd:
+        with self.data_object as fd:
             # Check up to the first 72 bytes of each range for potential
             # boundary strings for us to avoid
             for r in ranges:
@@ -156,7 +154,7 @@ class _DataObjectResponseWriter(object):
         @param   ranges    Byte ranges (list of ByteRange)
         @return  Generator that yields the full response body (bytes)
         """
-        with self._data_object as fd:
+        with self.data_object as fd:
             for data in _get_data(fd, byte_range):
                 yield data
 
@@ -176,7 +174,7 @@ class _DataObjectResponseWriter(object):
         dash_boundary = f"--{boundary}".encode("ascii")
         transport_padding = b""
 
-        with self._data_object as fd:
+        with self.data_object as fd:
             for r in ranges:
                 yield _CRLF
                 yield dash_boundary
@@ -220,12 +218,12 @@ class _DataObjectResponseWriter(object):
         # checksum, is requested. In which case, that range's checksum
         # is used.
         # FIXME? Is this reasonable behaviour?...
-        etag = self._data_object.metadata.checksum
+        etag = self.data_object.metadata.checksum
 
         if "Range" in req.headers:
             # Fetch ranges from header and mix with checksums, if they exist
-            _ranges = parse_range(req.headers["Range"], self._data_object.metadata.size)
-            _checksummed_ranges = map(self._data_object.checksums, _ranges)
+            _ranges = parse_range(req.headers["Range"], self.data_object.metadata.size)
+            _checksummed_ranges = map(self.data_object.checksums, _ranges)
             ranges = canonicalise_ranges(_ranges, *_checksummed_ranges)
 
         if ranges:
@@ -293,20 +291,32 @@ async def data_handler(req: Request) -> StreamResponse:
     # Currently, this is instead done within the response writing class,
     # so may be subject to data races from intervening async requests.
 
-    data_object.update_last_access()
-    do_response = _DataObjectResponseWriter(data_object)
-    return await do_response.write(req)
+    # FIXME: Enable
+    # data_object.update_last_access()
+    # do_response = _DataObjectResponseWriter(data_object)
+    # return await do_response.write(req)
+
+    headers = {
+        "ETag": data_object.metadata.checksum,
+        "Content-Type": _DATA
+    }
+    with data_object as data_stream:
+        return Response(status=200, body=data_stream.read(), headers=headers)
 
 
 async def metadata_handler(req: Request) -> Response:
     """ Metadata handler """
-    precache = req.app["irobot_precache"]
-    irods_path = req["irobot_irods_path"]
-    data_object = get_data_object(precache, irods_path, raise_inprogress=False, raise_inflight=False)
+    raise NotImplementedError()
 
-    data_object.update_last_access()
-    body = json.dumps(data_object.metadata, cls=MetadataJSONEncoder).encode(ENCODING)
-    return Response(status=200, body=body, content_type=_METADATA, charset=ENCODING)
+    # FIXME
+    # precache = req.app["irobot_precache"]
+    # irods_path = req["irobot_irods_path"]
+    # data_object = get_data_object(precache, irods_path, raise_inprogress=False, raise_inflight=False)
+    #
+    # # FIXME: Enable
+    # # data_object.update_last_access()
+    # body = json.dumps(data_object.metadata, cls=MetadataJSONEncoder).encode(ENCODING)
+    # return Response(status=200, body=body, content_type=_METADATA, charset=ENCODING)
 
 
 # Media type -> Handler delegation table

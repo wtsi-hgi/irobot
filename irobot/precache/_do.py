@@ -127,11 +127,21 @@ class DataObject(AbstractDataObject):
             # TODO Load checksums from file
 
         # TODO Data fetching and checksum statuses
+        self._precache_path_stream = None
 
         self._invalid = False
 
+    def __enter__(self):
+        if self._precache_path is None:
+            raise ValueError("`_precache_path` property not set")
+        # TODO: this is not threadsafe - document if this is acceptable
+        self._precache_path_stream = open(self._precache_path, "rb")
+        return self._precache_path_stream
+
     def __exit__(self, exc_type, exc_value, traceback):
-        raise NotImplementedError()
+        if self._precache_path_stream is not None:
+            self._precache_path_stream.close()
+            self._precache_path_stream = None
 
     def delete(self) -> None:
         raise NotImplementedError()

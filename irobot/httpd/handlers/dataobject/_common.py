@@ -64,6 +64,7 @@ def get_data_object(precache: AbstractPrecache, irods_path: str, *, raise_inprog
     @return  Data object active record (AbstractDataObject)
     """
     try:
+        # FIXME: precache object is not callable - should move `Precache.get_data_object` into abstract superclass
         data_object = precache(irods_path)
 
     except InProgress as e:

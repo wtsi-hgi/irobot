@@ -7,7 +7,7 @@ from abc import ABCMeta
 from configparser import ConfigParser
 from tempfile import TemporaryDirectory
 from threading import Lock
-from typing import Dict
+from typing import Dict, Optional
 from uuid import uuid4
 
 import docker
@@ -187,23 +187,28 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
         """
         return TestWithIrodsSingleton.upload_file(self.irods, contents)
 
-    def request_data(self, data_object_path: str) -> str:
+    def request_data(self, data_object_path: str) -> Optional[str]:
         """
         Request data from iRobot.
         :param data_object_path: path to the data
         :return: the data
         """
         with TemporaryDirectory() as output_directory:
-            arguments = ["irobotclient", "--url", self.irobot_url, "--force", "--basic_username", _DUMMY_VALUE,
-                         "--basic_password", _DUMMY_VALUE, data_object_path, output_directory]
+            arguments = ["irobotclient", "--url", self.irobot_url, "--basic_username", _DUMMY_VALUE, "--basic_password",
+                         _DUMMY_VALUE, "--no_index", data_object_path, output_directory]
             # XXX: irobot client does not treat stdout/stderr with respect
-
             #      (https://github.com/wtsi-hgi/irobot-client/issues/5) so we can bundle them
             completed_process = subprocess.run(arguments, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             logger.info(completed_process.stdout)
             completed_process.check_returncode()
 
-            # TODO: read output
+            data_object_location = os.path.join(output_directory, data_object_path.split("/")[-1])
+
+            if not os.path.exists(data_object_location):
+                return None
+
+            with open(data_object_location) as file:
+                return file.read()
 
     def start_irobot_server(self, configuration_location: str, extra_links: Dict[str, str]=None) -> DockerisedService:
         """

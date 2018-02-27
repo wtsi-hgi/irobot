@@ -23,7 +23,6 @@ import os
 from datetime import datetime, timedelta
 from tempfile import NamedTemporaryFile
 from threading import Lock, Timer
-from time import sleep
 from typing import Dict, List, Iterable, Optional
 
 # A *lot* of moving parts come together here...
@@ -132,6 +131,7 @@ class Precache(AbstractPrecache, LogWriter):
     def __len__(self) -> int:
         raise NotImplementedError()
 
+    # XXX: I find this magic a little confusing - consider using explicit method call instead, cn
     def __call__(self, irods_path: str) -> DataObject:
         # Convenience wrapper
         return self.get_data_object(irods_path)
@@ -140,6 +140,7 @@ class Precache(AbstractPrecache, LogWriter):
         """
         TODO
         """
+        # FIXME: Hackity hack implementation...
         download_lock = Lock()
         download_lock.acquire()
 
@@ -150,13 +151,21 @@ class Precache(AbstractPrecache, LogWriter):
 
         self.irods.listeners.add(on_download_unlocker)
         try:
-            with NamedTemporaryFile() as temp_file:
-                self.irods.get_dataobject(irods_path, temp_file.name)
-                download_lock.acquire()
+            # FIXME: This temp file is not going to be cleaned up - it HAS to be handled properly by the GC!
+            temp_file = NamedTemporaryFile(delete=False)
+            self.irods.get_dataobject(irods_path, temp_file.name)
+            # FIXME: This tool is designed to have clever "come back later" responses - it should not just block
+            download_lock.acquire()
         finally:
             self.irods.listeners.remove(on_download_unlocker)
 
-        return DataObject(irods_path, self)
+        data_object = DataObject(irods_path, self)
+        # FIXME: There seems to be no other way to set this than via a protected property?
+        data_object._metadata = self.irods.get_metadata(irods_path)
+        # FIXME: I assume this is _supposed_ to work via the "backdoor" of the tracking database?
+        data_object._precache_path = temp_file.name
+
+        return data_object
 
     def accommodate(self, accommodation: int) -> None:
         """
