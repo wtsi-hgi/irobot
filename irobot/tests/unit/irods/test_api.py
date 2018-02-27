@@ -30,16 +30,10 @@ from irobot.tests.unit.irods._common import TEST_BATON_JSON
 
 
 class TestInvocation(unittest.TestCase):
-    def test_simple(self):
-        exit_code, stdout, stderr = _invoke("whoami")
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, "{USER}\n".format(**os.environ))
-        self.assertEqual(stderr, "")
-
     def test_tuple(self):
-        exit_code, stdout, stderr = _invoke(("id", "-un"))
+        exit_code, stdout, stderr = _invoke(("echo", "123"))
         self.assertEqual(exit_code, 0)
-        self.assertEqual(stdout, "{USER}\n".format(**os.environ))
+        self.assertEqual(stdout, "123\n")
         self.assertEqual(stderr, "")
 
     def test_shell(self):
