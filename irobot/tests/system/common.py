@@ -240,9 +240,6 @@ class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
         """
         configuration = ConfigParser()
         configuration.read(_IROBOT_EXAMPLE_CONFIG_LOCATION)
-        logger.info(_IROBOT_EXAMPLE_CONFIG_LOCATION)
-        logger.info(open(_IROBOT_EXAMPLE_CONFIG_LOCATION, "r").read())
-        logger.info(configuration)
         configuration["basic_auth"]["url"] = basic_authentication_url
 
         _, configuration_location = self._temp_manager.create_temp_file()
