@@ -3,6 +3,9 @@ language: python
 python:
   - 3.6
 
+services:
+  - docker
+
 before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y python-software-properties
@@ -16,7 +19,7 @@ install:
   - pip install -r requirements-test.txt
 
 script:
-  - nose2 -F -C --coverage-report=term-missing -v
+  - nose2 -C --coverage-report=term-missing -v
   - find irobot -type f -name "*.py" -exec grep -l "TODO\|FIXME" {} \; | sort | uniq | xargs -n1 irobot/tests/todos.awk
 
 after_success:
