@@ -1,4 +1,3 @@
-import logging
 import unittest
 from subprocess import CalledProcessError
 
@@ -11,10 +10,6 @@ class TestDataObjectEndpoint(TestWithIrobot):
     """
     Tests for iRobot's data object endpoints.
     """
-    def setUp(self):
-        super().setUp()
-        logging.root.setLevel(logging.DEBUG)
-
     def test_get_when_unauthorised(self):
         basic_authentication_url = f"{self.basic_authentication_server.name}:" \
                                    f"{list(self.basic_authentication_server.ports.keys())[0]}/" \
