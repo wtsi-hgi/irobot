@@ -120,6 +120,7 @@ class StandaloneIrods:
             self._temp_manager.tear_down()
             if self._irods_service is not None:
                 self._irods_controller.stop_service(self._irods_service)
+                self._irods_service = None
 
 
 class StandaloneAuthenticationServer:
@@ -146,22 +147,23 @@ class StandaloneAuthenticationServer:
         """
         if self._basic_authentication_service is not None:
             self._basic_authentication_controller.stop_service(self._basic_authentication_service)
+            self._basic_authentication_service = None
 
 
 class StandaloneIrobot:
     """
     Standalone iRobot server.
     """
+    irobot_built = False
     _docker_client = docker.from_env()
-    _irobot_built = False
 
     @staticmethod
-    def _build_irobot() -> str:
+    def build_irobot() -> str:
         """
         Builds iRobot Docker image and returns image name.
         :return:
         """
-        if not StandaloneIrobot._irobot_built:
+        if not StandaloneIrobot.irobot_built:
             log_generator =_docker_client.api.build(
                 path=_IROBOT_DOCKER_BUILD_CONTEXT, dockerfile=_IROBOT_DOCKER_BUILD_FILE,
                 tag=_IROBOT_IMAGE_NAME, decode=True)
@@ -170,7 +172,7 @@ class StandaloneIrobot:
                 if len(details) > 0:
                     logger.debug(details)
 
-                    StandaloneIrobot._irobot_built = True
+                    StandaloneIrobot.irobot_built = True
 
         return _IROBOT_IMAGE_NAME
 
@@ -186,7 +188,7 @@ class StandaloneIrobot:
         return self._irobot_service
 
     @property
-    def irobot_url(self) -> str:
+    def url(self) -> str:
         return f"http://{self.service.host}:{self.service.port}"
 
     def __init__(self, authentication_server: StandaloneAuthenticationServer, irods: StandaloneIrods):
@@ -208,6 +210,7 @@ class StandaloneIrobot:
         """
         if self._irobot_service is not None:
             self._irobot_controller.stop_service(self._irobot_service)
+            self._irobot_service = None
         self._temp_manager.tear_down()
 
     def request_data(self, data_object_path: str, irobot_url: str=None) -> Optional[str]:
@@ -218,7 +221,7 @@ class StandaloneIrobot:
         :return: the data
         """
         if irobot_url is None:
-            irobot_url = self.irobot_url
+            irobot_url = self.url
 
         with TemporaryDirectory() as output_directory:
             arguments = ["irobotclient", "--url", irobot_url, "--basic_username", _DUMMY_VALUE, "--basic_password",
@@ -260,7 +263,7 @@ class StandaloneIrobot:
         :return: Dockerised iRobot server
         """
         extra_links = extra_links if extra_links is not None else {}
-        self._build_irobot()
+        self.build_irobot()
         self._irobot_controller = IrobotServiceController()
         irobot_server = self._irobot_controller.start_service(dict(
             volumes={self.irods.configuration_location: dict(bind="/root/.irods/irods_environment.json", mode="ro"),
