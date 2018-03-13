@@ -276,6 +276,7 @@ class TestWithIrodsSingleton(unittest.TestCase, metaclass=ABCMeta):
     """
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         cls._standalone_irods = StandaloneIrods()
 
     @classmethod
@@ -287,14 +288,30 @@ class TestWithIrodsSingleton(unittest.TestCase, metaclass=ABCMeta):
         return self._standalone_irods
 
 
-class TestWithIrobot(TestWithIrodsSingleton, metaclass=ABCMeta):
+class TestWithAutenticationServerSingleton(unittest.TestCase, metaclass=ABCMeta):
+    """
+    Tests that share an authentication server instance.
+    """
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls._standalone_authentication_server = StandaloneAuthenticationServer()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._standalone_authentication_server.tear_down()
+
+    @property
+    def authentication_server(self) -> StandaloneAuthenticationServer:
+        return self._standalone_authentication_server
+
+
+class TestWithIrobot(TestWithIrodsSingleton, TestWithAutenticationServerSingleton, metaclass=ABCMeta):
     """
     Tests that uses iRobot.
     """
     def setUp(self):
-        self.authentication_server = StandaloneAuthenticationServer()
         self.irobot = StandaloneIrobot(self.authentication_server, self.irods)
 
     def tearDown(self):
         self.irobot.tear_down()
-        self.authentication_server.tear_down()

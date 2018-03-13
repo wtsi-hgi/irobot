@@ -2,7 +2,7 @@ import logging
 import unittest
 from subprocess import CalledProcessError
 
-from irobot.tests.system.common import TestWithIrobot, BASIC_AUTHENTICATION_FAILED_STATUS_CODE
+from irobot.tests.system._common import TestWithIrobot, BASIC_AUTHENTICATION_FAILED_STATUS_CODE
 
 EXAMPLE_DATA = "example-data"
 
