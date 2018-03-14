@@ -293,19 +293,22 @@ async def data_handler(req: Request) -> StreamResponse:
     # so may be subject to data races from intervening async requests.
 
     # FIXME: Enable
-    # data_object.update_last_access()
-    # do_response = _DataObjectResponseWriter(data_object)
-    # return await do_response.write(req)
+    # data_object.update_last_access() 
+    try:   
+        do_response = _DataObjectResponseWriter(data_object)
+        return await do_response.write(req)
+    finally:
+        os.remove(data_object._precache_path)
 
-    headers = {
+    ''' headers = {
         "ETag": data_object.metadata.checksum,
         "Content-Type": _DATA
     }
     try:
         with data_object as data_stream:
-            return Response(status=200, body=data_stream.read(), headers=headers)
+            return 60725Response(status=200, body=data_stream.read(), headers=headers)
     finally:
-        os.remove(data_object._precache_path)
+        os.remove(data_object._precache_path) '''
 
 
 async def metadata_handler(req: Request) -> Response:
@@ -326,7 +329,7 @@ async def metadata_handler(req: Request) -> Response:
 # Media type -> Handler delegation table
 _media_delegates: Dict[str, HandlerT] = {
     _DATA: data_handler,
-    _METADATA: metadata_handler
+    #_METADATA: metadata_handler (not implemented)
 }
 
 

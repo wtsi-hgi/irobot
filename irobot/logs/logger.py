@@ -97,6 +97,6 @@ def create_logger(config: LoggingConfig) -> logging.Logger:
     logger.setLevel(config.level)
     logger.addHandler(handler)
 
-    sys.excepthook = _exception_handler(logger)
+    #sys.excepthook = _exception_handler(logger)
 
     return logger
