@@ -31,7 +31,7 @@ _IRODS_ENCODING = "utf-8"
 
 _IROBOT_DOCKER_BUILD_CONTEXT = _ROOT_DIRECTORY
 _IROBOT_DOCKER_BUILD_FILE = os.path.join(_ROOT_DIRECTORY, "Dockerfile")
-_IROBOT_IMAGE_NAME = "mercury/irobot-test"
+_IROBOT_IMAGE_NAME = "mercury/irobot-test:latest"
 _IROBOT_EXAMPLE_CONFIG_LOCATION = os.path.join(os.path.dirname(os.path.realpath(__file__)), "irobot.conf")
 
 
@@ -160,8 +160,8 @@ class StandaloneIrobot:
     @staticmethod
     def build_irobot() -> str:
         """
-        Builds iRobot Docker image and returns image name.
-        :return:
+        Builds iRobot Docker image.
+        :return: name of the built image
         """
         if not StandaloneIrobot.irobot_built:
             log_generator =_docker_client.api.build(
@@ -171,7 +171,6 @@ class StandaloneIrobot:
                 details = log.get("stream", "").strip()
                 if len(details) > 0:
                     logger.debug(details)
-
                     StandaloneIrobot.irobot_built = True
 
         return _IROBOT_IMAGE_NAME
@@ -263,7 +262,7 @@ class StandaloneIrobot:
         :return: Dockerised iRobot server
         """
         extra_links = extra_links if extra_links is not None else {}
-        self.build_irobot()
+        StandaloneIrobot.build_irobot()
         self._irobot_controller = IrobotServiceController()
 
         raise Exception(self._docker_client.images.list())
