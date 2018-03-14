@@ -298,6 +298,7 @@ async def data_handler(req: Request) -> StreamResponse:
         do_response = _DataObjectResponseWriter(data_object)
         return await do_response.write(req)
     finally:
+        # remove from cache until cahcke management is implemented
         os.remove(data_object._precache_path)
 
     ''' headers = {
