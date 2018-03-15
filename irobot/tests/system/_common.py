@@ -265,8 +265,6 @@ class StandaloneIrobot:
         StandaloneIrobot.build_irobot()
         self._irobot_controller = IrobotServiceController()
 
-        raise Exception(self._docker_client.images.list())
-
         irobot_server = self._irobot_controller.start_service(dict(
             volumes={self.irods.configuration_location: dict(bind="/root/.irods/irods_environment.json", mode="ro"),
                      configuration_location: dict(bind="/root/irobot.conf", mode="ro")},
