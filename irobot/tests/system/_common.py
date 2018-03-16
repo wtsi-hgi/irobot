@@ -31,7 +31,7 @@ _IRODS_ENCODING = "utf-8"
 
 _IROBOT_DOCKER_BUILD_CONTEXT = _ROOT_DIRECTORY
 _IROBOT_DOCKER_BUILD_FILE = os.path.join(_ROOT_DIRECTORY, "Dockerfile")
-_IROBOT_IMAGE_NAME = "mercury/irobot-test:latest"
+_IROBOT_IMAGE_NAME = "mercury/irobot-test"
 _IROBOT_EXAMPLE_CONFIG_LOCATION = os.path.join(os.path.dirname(os.path.realpath(__file__)), "irobot.conf")
 
 
